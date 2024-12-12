@@ -4,36 +4,34 @@ Trött på långa länkar? Då har vi systemet just för dig. Stoppa in din lån
 
 Systemet är tänkt att endast användas i sektionsrelaterade ändamål för att exempelvis förkorta länkar till formulär och annat.
 
-När man förkortar en länk kollar systemet om länken finns i svartlistan som innehåller länkar till porr, spam, malware etc.
-
 # API documentation
 
-TODO
+//TODO
 
 # Pls permissions
 
-TODO
+//TODO
 
 # Dependencies (DSektionens system)
 
-TODO
+//TODO
 
 # Dependencies
 
-TODO
+//TODO
 
 # Environment variables
 
-TODO
+//TODO
 
 ## Server
 
-TODO
+//TODO
 
 ## Client
 
-TODO
+//TODO
 
 # How to run
 
-TODO
+//TODO
