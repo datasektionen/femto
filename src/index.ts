@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000; // Default to 3000 if PORT is not set
 // Initialize PostgreSQL client
 const client = new Client({
     user: 'postgres',
-    host: 'postgres-db', // This is the container name
+    host: 'femto-postgres-db-1', // This is the container name
     database: 'mydatabase',
     password: 'postgres',
     port: 5432, // Default port for PostgreSQL
@@ -22,9 +22,9 @@ client.connect()
 app.get('/', async (req: Request, res: Response) => {
     try {
         // Query the database and await the result
-        const result = await client.query('SELECT * FROM links');
+        const result = await client.query('SELECT NOW() as now');
         // Send the result to the user
-        res.send('PostgreSQL Time: ${result.rows[0].now}');
+        res.send('PostgreSQL Time: ' + result.rows[0].now);
     } catch (err) {
         res.status(500).send(err);
     }
