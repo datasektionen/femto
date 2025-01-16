@@ -7,9 +7,9 @@ const PORT = process.env.PORT || 3000; // Default to 3000 if PORT is not set
 // Initialize PostgreSQL client
 const client = new Client({
     user: 'postgres',
-    host: '127.0.0.1',
-    database: 'link',
-    password: 'password',
+    host: 'postgres-db', // This is the container name
+    database: 'mydatabase',
+    password: 'postgres',
     port: 5432, // Default port for PostgreSQL
 });
 
