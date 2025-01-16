@@ -7,17 +7,18 @@ const PORT = process.env.PORT || 3000; // Default to 3000 if PORT is not set
 // Initialize PostgreSQL client
 const client = new Client({
     user: 'postgres',
-    host: 'localhost',
+    host: '127.0.0.1',
     database: 'link',
     password: 'password',
     port: 5432, // Default port for PostgreSQL
 });
 
+// Connect to PostgreSQL
 client.connect()
     .then(() => console.log('Connected to PostgreSQL'))
     .catch(err => console.error('Connection error', err.stack));
 
-// Define a route handler for the default home page. basically what happens when the user goes to http://[URL]/
+// Define a route handler for the default home page. Basically what happens when the user goes to http://[URL]/
 app.get('/', async (req: Request, res: Response) => {
     try {
         // Query the database and await the result
