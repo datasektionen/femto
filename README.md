@@ -4,34 +4,8 @@ Trött på långa länkar? Då har vi systemet just för dig. Stoppa in din lån
 
 Systemet är tänkt att endast användas i sektionsrelaterade ändamål för att exempelvis förkorta länkar till formulär och annat.
 
-# API documentation
+# Run with Docker
 
-//TODO
-
-# Pls permissions
-
-//TODO
-
-# Dependencies (DSektionens system)
-
-//TODO
-
-# Dependencies
-
-//TODO
-
-# Environment variables
-
-//TODO
-
-## Server
-
-//TODO
-
-## Client
-
-//TODO
-
-# How to run
-
-//TODO
+´´´bash
+docker-compose up --build
+´´´
