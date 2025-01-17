@@ -7,5 +7,6 @@ Systemet är tänkt att endast användas i sektionsrelaterade ändamål för att
 # Run with Docker
 
 ```bash
+cd femto
 docker-compose up --build
 ```
