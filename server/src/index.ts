@@ -1,13 +1,22 @@
 import express from 'express';
+import { Client } from 'pg';
 
 const app = express();
 const PORT = process.env.PORT || 5000; //Default to PORT 5000 if not specified
 
-// Example slug redirects, these will be stored in the database
-const slugRedirects: Record<string, string> = {
-    example: 'https://example.com',
-    google: 'https://google.com',
-};
+// Create database client, see docker-compose.yml for the connection details
+const client = new Client({
+    user: 'postgres',
+    host: 'db',
+    database: 'mydatabase',
+    password: 'postgres',
+    port: 5432,
+});
+
+// Connect to the database
+client.connect()
+    .then(() => console.log('Connected to the database'))
+    .catch((err) => console.error('Error connecting to the database', err.stack));
 
 // Empty route, redirect to the main website
 app.get('/', (req, res) => {
@@ -15,14 +24,24 @@ app.get('/', (req, res) => {
 });
 
 // Redirect to the correct URL based on the slug
-app.get('/:slug', (req, res) => {
+app.get('/:slug', async (req, res) => {
+    // Get slug from the requested URL
     const slug = req.params.slug;
 
-    // Check if the slug exists in the database
-    if (slugRedirects[slug]) {
-        res.status(301).location(slugRedirects[slug]).end();
-    } else {
-        res.status(404).send('Slug not found');
+    try {
+        // Query the database and wait for the result
+        const result = await client.query('SELECT url FROM urls WHERE slug = $1', [slug]);
+
+        // If a result is found, redirect to the URL
+        if (result.rows.length > 0) {
+            res.status(301).location(result.rows[0].url).end();
+        } else {
+            res.status(404).send('Slug not found');
+        }
+    } catch (err: any) {
+        // Catch any errors as not to crash the server
+        console.error('Error executing query', err.stack);
+        res.status(500).send('Internal Server Error');
     }
 });
 

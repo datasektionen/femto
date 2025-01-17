@@ -1,6 +1,6 @@
 -- Inserts for testing
 
-INSERT INTO urls (slug, url, user, clicks, expires, description, mandate) 
+INSERT INTO urls (slug, url, user_id, clicks, expires, description, mandate) 
 VALUES 
 ('gh123', 'https://github.com/', 'alice', 42, '2025-12-31 23:59:59', 'GitHub homepage', 'opensource'),
 ('goo456', 'https://www.google.com/', 'bob', 10, NULL, 'Google search engine', 'search'),
