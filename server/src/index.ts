@@ -1,8 +1,12 @@
 import express from 'express';
 import { Client } from 'pg';
+import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 5000; //Default to PORT 5000 if not specified
+
+// Serve the static files from the React app
+app.use(express.static(path.join(__dirname, '../react')));
 
 // Create database client, see docker-compose.yml for the connection details
 const client = new Client({
@@ -18,7 +22,7 @@ client.connect()
     .then(() => console.log('Connected to the database'))
     .catch((err) => console.error('Error connecting to the database', err.stack));
 
-// Empty route, redirect to the main website
+// Empty route, redirect to the chapter website
 app.get('/', (req, res) => {
     res.status(301).location('https://datasektionen.se').end();
 });
@@ -27,6 +31,12 @@ app.get('/', (req, res) => {
 app.get('/:slug', async (req, res) => {
     // Get slug from the requested URL
     const slug = req.params.slug;
+
+    // If the slug is 'femto', serve the react app
+    if (slug === 'femto') {
+        res.sendFile(path.join(__dirname, '../react', 'index.html'));
+        return;
+    }
 
     try {
         // Query the database and wait for the result
