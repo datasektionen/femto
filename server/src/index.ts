@@ -5,6 +5,12 @@ import path from 'path';
 const app = express();
 const PORT = process.env.PORT || 5000; //Default to PORT 5000 if not specified
 
+// !!This function MUST be before the static file serving!!
+// Empty slug redirects to the chapter website.
+app.get('/', (req, res) => {
+    res.status(301).location('https://datasektionen.se').end();
+});
+
 // Serve the static files from the React app
 app.use(express.static(path.join(__dirname, '../react')));
 
@@ -21,11 +27,6 @@ const client = new Client({
 client.connect()
     .then(() => console.log('Connected to the database'))
     .catch((err) => console.error('Error connecting to the database', err.stack));
-
-// Empty route, redirect to the chapter website
-app.get('/', (req, res) => {
-    res.status(301).location('https://datasektionen.se').end();
-});
 
 // Redirect to the correct URL based on the slug
 app.get('/:slug', async (req, res) => {
