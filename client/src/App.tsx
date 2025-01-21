@@ -29,7 +29,7 @@ const App = () => {
       }}
     >
       <BrowserRouter>
-        <div id="application" className="light-blue" style={{ marginTop: "50px" }}>
+        <div id="application" className="light-blue">
           {/* Methone component is used to render the header */}
           <Methone config={config} />
           <Routes>
