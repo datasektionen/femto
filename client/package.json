@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "cra-template-typescript": "1.2.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-scripts": "5.0.1",
-    "react-router-dom": "^6.x.x",
-    "web-vitals": "^4.2.4",
     "@mantine/core": "^4.2.2",
     "@mantine/form": "^4.2.2",
     "@mantine/hooks": "^4.2.2",
+    "axios": "^0.22.0",
+    "cra-template-typescript": "1.2.0",
     "methone": "github:datasektionen/Methone#master",
     "moment": "^2.29.1",
-    "axios": "^0.22.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-moment": "^1.1.1",
-    "react-qrcode-logo": "^2.9.0"
+    "react-qrcode-logo": "^2.9.0",
+    "react-router-dom": "^6.x.x",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^4.2.4"
   },
   "scripts": {
     "start": "react-scripts start",

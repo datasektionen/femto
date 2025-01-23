@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 });
 
 // Serve the static files from the React app
-app.use(express.static(path.join(__dirname, '../react')));
+app.use(express.static(path.join(__dirname, '../build')));
 
 // Create database client, see docker-compose.yml for the connection details
 const client = new Client({
@@ -35,7 +35,7 @@ app.get('/:slug', async (req, res) => {
 
     // If the slug is 'femto', serve the react app
     if (slug === 'femto') {
-        res.sendFile(path.join(__dirname, '../react', 'index.html'));
+        res.sendFile(path.join(__dirname, '../build', 'index.html'));
         return;
     }
 

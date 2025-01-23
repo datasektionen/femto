@@ -9,11 +9,11 @@ const App = () => {
   // taken example from methone documentation
   const config = {
     system_name: "link-shortener",
-    login_href: "/login",
+    login_href: "/femto/login",
     login_text: "Logga in",
     color_scheme: "light-blue",
     links: [
-      <Link to="/shorten" key="methone-link-1">
+      <Link to="/femto/shorten" key="methone-link-1">
         Förkorta
       </Link>,
     ],
@@ -34,9 +34,9 @@ const App = () => {
           <Methone config={config} />
           <Routes>
             {/* Define routes for Home and Login */}
-            <Route exact path="/" element={<Home />} />
-            <Route exact path="/shorten" element={<Home />} />
-            <Route exact path="/login" element={<Login />} />
+            <Route exact path="/femto" element={<Home />} />
+            <Route exact path="/femto/shorten" element={<Home />} />
+            <Route exact path="/femto/login" element={<Login />} />
           </Routes>
         </div>
       </BrowserRouter>
