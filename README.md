@@ -15,4 +15,4 @@ Remember to initialize psql relations and data after starting the container for 
 
 # Develop
 
-All development happens within the ´dev´ branch. Please branch off ´dev´ when you are implementing changes. Only stable builds are merged into ´main´.
+All development happens within the `dev` branch. Please branch off `dev` when you are implementing changes. Only stable builds are merged into `main`.
