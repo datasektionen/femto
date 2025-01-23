@@ -10,3 +10,5 @@ Systemet är tänkt att endast användas i sektionsrelaterade ändamål för att
 cd femto
 docker-compose up --build
 ```
+
+Remember to initialize psql relations and data after starting the container for the first time.
