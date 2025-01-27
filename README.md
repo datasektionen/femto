@@ -11,6 +11,13 @@ cd femto
 docker-compose up --build
 ```
 
+## Connect to database
+
+```bash
+docker ps
+docker exec -it [container-ID] psql -U postgres -d mydatabase
+```
+
 Remember to initialize psql relations and data after starting the container for the first time.
 
 # Develop
