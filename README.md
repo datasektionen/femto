@@ -6,6 +6,9 @@ Systemet är tänkt att endast användas i sektionsrelaterade ändamål för att
 
 # Run with Docker
 
+To run this project using Docker, firstly enter the project directory in the terminal.
+Secondly, use the `docker-compose` command to build and run the project.
+
 ```bash
 cd femto
 docker-compose up --build
@@ -13,12 +16,18 @@ docker-compose up --build
 
 ## Connect to database
 
+‼️Remember to `CREATE TABLE` and `INSERT` when running the project for the first time.‼️
+
+To connect to the database through docker, first start the container using the previous commands.
+Use `docker ps` to get a list of running containers.
+Look up the container named `postgres:15` and copy the container ID.
+Use the `docker exec` command below to connect to the database through docker.
+Then you can run whatever SQL command.
+
 ```bash
 docker ps
 docker exec -it [container-ID] psql -U postgres -d mydatabase
 ```
-
-Remember to initialize psql relations and data after starting the container for the first time.
 
 # Develop
 
