@@ -11,8 +11,9 @@ The system is intended to be used only for section-related purposes, for example
 
 ## Technologies Used
 - TypeScript
-- HTML
-- CSS
+- React
+- Express
+- Node
 
 ## Installation
 To set up the project locally, follow these steps:
@@ -22,7 +23,8 @@ To set up the project locally, follow these steps:
    git clone https://github.com/datasektionen/femto.git
    cd femto
    ```
-2. Install Node.js
+2. Install Node
+   
 3. Install Docker
 
 ## Run with Docker
