@@ -1,20 +1,18 @@
-# Femto - Länkförkortare
+# Femto - Link Shortener
 
-Trött på långa länkar? Då har vi systemet just för dig. Stoppa in din långa länk, klicka på "Förkorta" och vips har du en länk man lätt kommer ihåg.
+Tired of long links? Then we have the system just for you. Insert your long link, click on "Shorten" and voila, you have a link that's easy to remember.
 
-Systemet är tänkt att endast användas i sektionsrelaterade ändamål för att exempelvis förkorta länkar till formulär och annat.
+The system is intended to be used only for section-related purposes, for example, to shorten links to forms and other resources.
 
 ## Features
-- Enkelt gränssnitt för att förkorta länkar.
-- Spara och hantera förkortade länkar.
-- Användarvänlig och snabb.
+- Simple interface for shortening links.
+- Save and manage shortened links.
+- User-friendly and fast.
 
 ## Technologies Used
 - TypeScript
-- React
-- Express
-- Node
-- PostgreSQL
+- HTML
+- CSS
 
 ## Installation
 To set up the project locally, follow these steps:
@@ -24,12 +22,8 @@ To set up the project locally, follow these steps:
    git clone https://github.com/datasektionen/femto.git
    cd femto
    ```
-
-2. Install Docker
-   
-3. Install Node.js
-
-TODO
+2. Install Node.js
+3. Install Docker
 
 ## Run with Docker
 To run this project using Docker, firstly enter the project directory in the terminal. Secondly, use the `docker-compose` command to build and run the project.
@@ -55,6 +49,9 @@ docker exec -it [container-ID] psql -U postgres -d mydatabase
 
 ## Develop
 All development happens within the `dev` branch. Please branch off `dev` when you are implementing changes. Only stable builds are merged into `main`.
+
+## Contributing
+We welcome contributions! Please read our TODO to get started.
 
 ## License
 This project is licensed under the MIT License. See the TODO file for more details.
