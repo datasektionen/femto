@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile.client
     ports:
       - "3000:80"
-
   server:
     build:
       context: ./server
@@ -16,7 +15,6 @@ services:
       - db
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/mydatabase
-
   db:
     image: postgres:15
     container_name: postgres
