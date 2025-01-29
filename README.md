@@ -76,11 +76,5 @@ docker exec -it [container-ID] psql -U postgres -d mydatabase
 ## Develop
 All development happens within the `dev` branch. Please branch off `dev` when you are implementing changes. Only stable builds are merged into `main`.
 
-## Contributing
-We welcome contributions! Please read our TODO to get started.
-
 ## License
 This project is licensed under the MIT License. See the TODO file for more details.
-
-## Contact
-For any inquiries, please contact us at TODO.
