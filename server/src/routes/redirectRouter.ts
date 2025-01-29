@@ -1,25 +1,30 @@
 import { Router } from 'express';
 import client from '../db';
-import path from 'path';
 
+/**
+ * Router for redirection based on slugs.
+ * Handles requests to /* routes.
+ * 
+ * Routes:
+ * - GET /: Redirects to 'https://datasektionen.se'
+ * - GET /:slug: Redirects to the URL associated with the slug
+ */
 const redirectRouter = Router();
 
-// Define redirect routes
+// Root redirect to datasektionen.se
 redirectRouter.get('/', (req, res) => {
     res.status(301).location('https://datasektionen.se').end();
 });
 
+// Redirect to the URL associated with the slug
 redirectRouter.get('/:slug', async (req, res) => {
     const slug = req.params.slug;
 
-    if (slug === 'femto') {
-        res.sendFile(path.join(__dirname, '../build', 'index.html'));
-        return;
-    }
-
+    // Query the database for the URL associated with the slug
     try {
         const result = await client.query('SELECT url FROM urls WHERE slug = $1', [slug]);
 
+        // If a URL is found, redirect to it
         if (result.rows.length > 0) {
             res.status(301).location(result.rows[0].url).end();
         } else {
