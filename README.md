@@ -27,6 +27,30 @@ To set up the project locally, follow these steps:
    
 3. Install Docker
 
+## Project Structure
+
+```
+femto/
+├── client/                          # Frontend React application
+│   ├── public/                      # Public assets
+│   ├── src/                         # Source code
+│   │   ├── ...                      # TODO
+│   ├── Dockerfile.client            # Dockerfile for the client
+├── database/                        # Database schema and initial data
+│   ├── schemas.sql                  # SQL schema for the database
+│   ├── inserts.sql                  # SQL inserts for initial data
+├── server/                          # Backend Express application
+│   ├── src/                         # Source code
+│   │   ├── routes/                  # Express routers
+│   │   │   ├── apiRouter.ts         # Router for API endpoints
+│   │   │   ├── redirectRouter.ts    # Router for redirection based on slugs
+│   │   ├── db.ts                    # Database connection setup
+│   │   ├── index.ts                 # Entry point for the Express application
+│   ├── Dockerfile.server            # Dockerfile for the server
+├── docker-compose.yml               # Docker Compose configuration
+├── README.md                        # Project documentation
+```
+
 ## Run with Docker
 To run this project using Docker, firstly enter the project directory in the terminal. Secondly, use the `docker-compose` command to build and run the project.
 
