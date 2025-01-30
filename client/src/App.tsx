@@ -28,15 +28,15 @@ const App = () => {
         primaryColor: "blue",
       }}
     >
-      <BrowserRouter>
+      <BrowserRouter basename="/">
         <div id="application" className="light-blue">
           {/* Methone component is used to render the header */}
           <Methone config={config} />
           <Routes>
             {/* Define routes for Home and Login */}
-            <Route exact path="" element={<Home />} />
-            <Route exact path="/shorten" element={<Home />} />
-            <Route exact path="/login" element={<Login />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/shorten" element={<Home />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
         </div>
       </BrowserRouter>
