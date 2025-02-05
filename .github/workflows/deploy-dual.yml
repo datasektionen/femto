@@ -1,0 +1,34 @@
+name: Deploy Dual-Task Job
+
+on:
+  push:
+    branches: [ dev ] # FIXME: change to main when development slows down
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - id: build-frontend
+        name: Build Admin Frontend
+        uses: datasektionen/nomad-deploy@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          package-variant: admin-frontend
+          build-context: ./client
+          build-dockerfile: ./client/Dockerfile.client
+          build-vars: |
+            REACT_APP_API_ROOT=https://femto.betasektionen.se/api
+          skip-deploy: true
+
+      - name: Build Backend and Deploy Both
+        uses: datasektionen/nomad-deploy@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          nomad-token: ${{ secrets.NOMAD_TOKEN }}
+          nomad-addr: ${{ vars.NOMAD_ADDR }}
+          package-variant: backend
+          build-context: ./server
+          build-dockerfile: ./server/Dockerfile.server
+          deploy-image-ref-var: backend_image_tag
+          deploy-args: "-var=admin_image_tag=${{ steps.build-frontend.outputs.built-image-ref }}"
