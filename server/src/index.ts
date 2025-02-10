@@ -1,12 +1,13 @@
 import express from 'express';
+import apiRouter from './routes/apiRouter';
+import redirectRouter from './routes/redirectRouter';
 
 const app = express();
-const port = 5000;
+const PORT = process.env.PORT || 5000; // Default to PORT 5000 if not specified
 
-app.get('/', (req, res) => {
-  res.send('Hello from Express!');
-});
+app.use("/api", apiRouter);
+app.use("/", redirectRouter);
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
