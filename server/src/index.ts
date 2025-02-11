@@ -5,6 +5,7 @@ import redirectRouter from './routes/redirectRouter';
 const app = express();
 const PORT = process.env.PORT || 5000; // Default to PORT 5000 if not specified
 
+app.use(express.json()); // Middleware to parse JSON request bodies
 app.use("/api", apiRouter);
 app.use("/", redirectRouter);
 
