@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import client from '../db';
+import pool from '../db';
 
 /**
  * Router for redirection based on slugs.
@@ -21,7 +21,9 @@ redirectRouter.get('/:slug', async (req, res) => {
     const slug = req.params.slug;
 
     // Query the database for the URL associated with the slug
+    let client;
     try {
+        client = await pool.connect();
         const result = await client.query('SELECT url FROM urls WHERE slug = $1', [slug]);
 
         // If a URL is found, redirect to it
@@ -33,6 +35,10 @@ redirectRouter.get('/:slug', async (req, res) => {
     } catch (err: any) {
         console.error('Error executing query', err.stack);
         res.status(500).send('Internal Server Error');
+    } finally {
+        if (client) {
+            client.release();
+        }
     }
 });
 
