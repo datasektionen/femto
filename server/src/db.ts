@@ -1,20 +1,21 @@
 import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config(); // Read the .env file and set the environment variables
 
 /**
  * Database connection setup.
  * Exports a PostgreSQL Pool() instance to be used concurrently by multiple clients.
  *
- * TODO: Current setup is for development purposes only. Ensure to use environment variables
- * for credentials in production.
  */
 const pool = new Pool({
-    user: 'postgres',
-    host: 'db',
-    database: 'mydatabase',
-    password: 'postgres',
-    port: 5432,
+    user: process.env.POSTGRES_USER,
+    host: process.env.POSTGRES_HOST,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
 });
 
 // Read the SQL statements from the schema.sql and insert.sql file

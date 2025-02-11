@@ -12,10 +12,10 @@ export async function getAllLinks(req: any, res: any) {
     try {
         // Connect to the database
         client = await pool.connect();
-        
+
         // Execute the query to retrieve all links
         const result = await client.query('SELECT * FROM urls');
-        
+
         // Send the retrieved links as a JSON response
         res.status(200).json(result.rows);
     } catch (err: any) {
@@ -43,10 +43,10 @@ export async function getLink(req: any, res: any) {
     try {
         // Connect to the database
         client = await pool.connect();
-        
+
         // Execute the query to retrieve the link with the specified slug
         const result = await client.query('SELECT * FROM urls WHERE slug = $1', [slug]);
-        
+
         // Check if the link was found
         if (result.rows.length === 0) {
             // Send a 404 status code if the link was not found
