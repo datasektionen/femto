@@ -17,7 +17,7 @@ const client = new Client({
     port: 5432,
 });
 
-// Read the SQL statements from the schemas.sql file
+// Read the SQL statements from the schema.sql and insert.sql file
 const schemaPath = path.join(__dirname, '../database/schema.sql');
 const insertPath = path.join(__dirname, '../database/insert.sql');
 const schemaStatement = fs.readFileSync(schemaPath, 'utf8');
