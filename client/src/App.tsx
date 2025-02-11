@@ -71,7 +71,7 @@ const LoginRedirect = () => {
     window.location.href = `${Configuration.loginApiUrl}/login?callback=${callbackUrl}`;
   }, []);
 
-  return <div>Redirecting to login...</div>;
+  return <div></div>;
 };
 
 export default App;
