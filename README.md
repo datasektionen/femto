@@ -1,80 +1,195 @@
 # Femto - Link Shortener
 
-Tired of long links? Then we have the system just for you. Insert your long link, click on "Shorten" and voila, you have a link that's easy to remember.
+A simple **link-shortening** service built with **TypeScript**, **React**, and **Express**. Enter a long URL, and Femto generates a shorter, more memorable link. This system is intended for section-related purposes (e.g., linking forms, events, or other resources).
 
-The system is intended to be used only for section-related purposes, for example, to shorten links to forms and other resources.
+---
 
 ## Features
-- Simple interface for shortening links.
-- Save and manage shortened links.
-- User-friendly and fast.
 
-## Technologies Used
-- TypeScript
-- React
-- Express
-- Node
+- **Shorten URLs** quickly and easily.  
+- **Automatic Slug Generation** if none is provided.  
+- **Custom Slug Support** (if slug is available).  
+- **Database-Backed** with PostgreSQL.  
 
-## Installation
-To set up the project locally, follow these steps:
+---
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/datasektionen/femto.git
-   cd femto
-   ```
-2. Install Node
-   
-3. Install Docker
+## Prerequisites
+
+1. [Node.js](https://nodejs.org/) (for local development).
+2. [Docker](https://www.docker.com/) (for containerized deployment).
+3. [Docker Compose](https://docs.docker.com/compose/) (to orchestrate multiple containers).
+
+---
 
 ## Project Structure
 
 ```
 femto/
+├── .github/
+│   └── workflows/
+│       └── deploy-dual.yml         # GitHub Actions CI/CD configuration
 ├── client/                          # Frontend React application
-│   ├── public/                      # Public assets
+│   ├── public/                      # Public assets (index.html, icons, robots.txt, etc.)
 │   ├── src/                         # Source code
-│   │   ├── ...                      # TODO
-│   ├── Dockerfile.client            # Dockerfile for the client
-├── database/                        # Database schema and initial data
-│   ├── schemas.sql                  # SQL schema for the database
-│   ├── inserts.sql                  # SQL inserts for initial data
+│   │   ├── App.css
+│   │   ├── App.test.tsx
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   ├── index.tsx
+│   │   ├── reportWebVitals.ts
+│   │   ├── setupTests.ts
+│   │   └── views/                  # React views (Home, Login, etc.)
+│   ├── Dockerfile.client           # Dockerfile for building/serving the client
+│   ├── nginx.conf                  # Configuration for Nginx
+│   └── package.json                # Dependencies and scripts for the client
 ├── server/                          # Backend Express application
-│   ├── src/                         # Source code
-│   │   ├── routes/                  # Express routers
-│   │   │   ├── apiRouter.ts         # Router for API endpoints
-│   │   │   ├── redirectRouter.ts    # Router for redirection based on slugs
-│   │   ├── db.ts                    # Database connection setup
-│   │   ├── index.ts                 # Entry point for the Express application
-│   ├── Dockerfile.server            # Dockerfile for the server
-├── docker-compose.yml               # Docker Compose configuration
-├── README.md                        # Project documentation
+│   ├── database/                   # Database schema and test data
+│   │   ├── insert.sql
+│   │   └── schema.sql
+│   ├── src/
+│   │   ├── db.ts                   # Database connection setup
+│   │   ├── index.ts                # Server entry point
+│   │   ├── routes/
+│   │   │   ├── apiRouter.ts        # /api/* endpoints
+│   │   │   └── redirectRouter.ts   # Catch-all redirect router
+│   │   └── utils/                  # Helper functions (insertLink, getLink, etc.)
+│   ├── Dockerfile.server           # Dockerfile for building the server
+│   ├── package.json                # Dependencies and scripts for the server
+│   ├── tsconfig.json               # TypeScript compiler configuration
+│   └── .gitignore
+├── job.nomad.hcl                   # Nomad job specification
+├── docker-compose.yml              # Docker Compose configuration (client, server, db)
+├── .env                             # Environment variables (ignored by git)
+└── README.md                       # Project documentation
 ```
 
-## Run with Docker
-To run this project using Docker, firstly enter the project directory in the terminal. Secondly, use the `docker-compose` command to build and run the project.
+---
+
+## Getting Started
+
+### 1. Clone the Repository
 
 ```bash
+git clone https://github.com/datasektionen/femto.git
 cd femto
+```
+
+### 2. Environment Variables
+
+Create a `.env` file in the root (or inside `server`), and define:
+
+```
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=mydatabase
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+SERVER_PORT=5000
+CLIENT_PORT=3000
+```
+
+- **Note**: If using Docker Compose, these variables are passed to each container through `docker-compose.yml`.  
+- **Important**: Never commit your `.env` file to source control.
+
+---
+
+### 3. Running with Docker
+
+Build and start the containers:
+
+```bash
 docker-compose up --build
 ```
 
-## Connect to Database
-‼️Remember to `CREATE TABLE` and `INSERT` when running the project for the first time.‼️
+This will:
+- Launch the **client** React app on [http://localhost:3000/](http://localhost:3000/).  
+- Launch the **server** Express app on port `SERVER_PORT` (default: 5000).  
+- Launch a **PostgreSQL** database container on port `POSTGRES_PORT` (default: 5432).
 
-To connect to the database through docker, first start the container using the previous commands.
-Use `docker ps` to get a list of running containers.
-Look up the container named `postgres:15` and copy the container ID.
-Use the `docker exec` command below to connect to the database through docker.
-Then you can run whatever SQL command.
+#### Connecting to the Database
 
+1. List running containers:
+
+   ```bash
+   docker ps
+   ```
+
+2. Find the `postgres:15` container ID and run:
+
+   ```bash
+   docker exec -it [container-ID] psql -U postgres -d mydatabase
+   ```
+
+3. You can manually run SQL commands there. By default, the `schema.sql` and `insert.sql` files are automatically run at startup (see `server/src/db.ts`).
+
+---
+
+## Local Development (Without Docker)
+
+You can also run the client and server locally:
+
+1. **Server**  
+   ```bash
+   cd server
+   npm install
+   npm run build
+   npm start
+   ```
+   Make sure the `.env` variables are correct, or the database connection may fail.
+
+2. **Client**  
+   ```bash
+   cd client
+   npm install
+   npm start
+   ```
+   The app should start on [http://localhost:3000/](http://localhost:3000/).
+
+---
+
+## Testing
+
+- **Jest** (backend tests) can be integrated to test the server and database queries.  
+- **React Testing Library** (already included) is used for frontend tests.
+
+Run tests with:
 ```bash
-docker ps
-docker exec -it [container-ID] psql -U postgres -d mydatabase
+# From the "server" folder:
+npm test
+
+# From the "client" folder:
+npm test
 ```
 
-## Develop
-All development happens within the `dev` branch. Please branch off `dev` when you are implementing changes. Only stable builds are merged into `main`.
+---
+
+## Usage
+
+1. **Shorten a Link**:  
+   - Go to the frontend at [http://localhost:3000/](http://localhost:3000/)  
+   - Enter your link and click **Förkorta** (if integrated in the UI).
+2. **Retrieve Shortened Links**:  
+   - Access `<HOST>/api/links` (this returns all shortened links).
+3. **Redirect by Slug**:  
+   - Navigate to `<HOST>/<slug>` to be redirected to the original URL.
+
+---
+
+## Deployment
+
+- The project includes a **Nomad** configuration (`job.nomad.hcl`), **GitHub Actions** for CI/CD (`.github/workflows/deploy-dual.yml`), and a **Dockerfile** for each service.  
+- Adjust environment variables and server settings as needed for your production environment.
+
+---
+
+## Contributing
+
+1. **Branch off `dev`** for new features or bug fixes.  
+2. **Open a Pull Request** to merge into `dev` once changes are ready.  
+3. **Keep changes minimal and well-described**.
+
+---
 
 ## License
-This project is licensed under the MIT License. See the TODO file for more details.
+
+This project is licensed under the **MIT License**. See the `LICENSE` or [the MIT License text](https://opensource.org/licenses/MIT) for more details.
