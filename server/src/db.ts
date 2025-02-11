@@ -1,4 +1,6 @@
 import { Client } from 'pg';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Database connection setup.
@@ -15,9 +17,24 @@ const client = new Client({
     port: 5432,
 });
 
+// Read the SQL statements from the schemas.sql file
+const schemaPath = path.join(__dirname, '../database/schemas.sql');
+const createTableStatements = fs.readFileSync(schemaPath, 'utf8');
+
+async function createTables() {
+    try {
+        await client.query(createTableStatements);
+        console.log('Tables created or already exist');
+    } catch (err) {
+        console.error('Error creating tables', err);
+    }
+}
 
 client.connect()
-    .then(() => console.log('Connected to the database'))
+    .then(() => {
+        console.log('Connected to the database');
+        return createTables(); // Call the function to create tables
+    })
     .catch((err) => console.error('Error connecting to the database', err.stack));
 
 export default client;
