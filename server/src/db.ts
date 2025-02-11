@@ -18,15 +18,26 @@ const client = new Client({
 });
 
 // Read the SQL statements from the schemas.sql file
-const schemaPath = path.join(__dirname, '../database/schemas.sql');
-const createTableStatements = fs.readFileSync(schemaPath, 'utf8');
+const schemaPath = path.join(__dirname, '../database/schema.sql');
+const insertPath = path.join(__dirname, '../database/insert.sql');
+const schemaStatement = fs.readFileSync(schemaPath, 'utf8');
+const insertStatement = fs.readFileSync(insertPath, 'utf8');
 
 async function createTables() {
     try {
-        await client.query(createTableStatements);
+        await client.query(schemaStatement);
         console.log('Tables created or already exist');
     } catch (err) {
         console.error('Error creating tables', err);
+    }
+}
+
+async function insertData() {
+    try {
+        await client.query(insertStatement);
+        console.log('Data inserted or already exist');
+    } catch (err) {
+        console.error('Error inserting data', err);
     }
 }
 
@@ -37,6 +48,7 @@ async function connectWithRetry(maxRetries: number = 5, delay: number = 2000) {
             await client.connect();
             console.log('Connected to the database');
             await createTables();
+            await insertData();
             return; // Exit the function if connection is successful
         } catch (err: any) {
             console.error(`Attempt ${retries + 1} failed to connect to the database:`, err.message);
