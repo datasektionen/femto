@@ -19,7 +19,7 @@ const getBlackList = () => {
     // Read blacklist from file
     (async () => {
         console.log("Start read");
-        //File kept in the same directory temporarily, since it will be replaced by the database later.
+        //File used temporarily to store the blacklist, will be replaced by the database.
         const file = fs.readFileSync('./everything.txt');
         const lines = file.toString().split("\n");
         for (const line of lines) {
