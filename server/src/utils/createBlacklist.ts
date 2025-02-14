@@ -13,7 +13,7 @@ const pool = new Pool({
 /*
 Copied from the existing Pico
 */
-export const blackList: Record<string, boolean> = {};
+export const blacklist: Record<string, boolean> = {};
 
 const getBlackList = () => {
     // Read blacklist from file
@@ -24,7 +24,7 @@ const getBlackList = () => {
         const lines = file.toString().split("\n");
         for (const line of lines) {
             if (line.startsWith("#")) continue;
-            blackList[line] = true;
+            blacklist[line] = true;
         }
         console.log("Read file");
     })();
@@ -42,7 +42,7 @@ const getBlackList2 = async () => {
 
         //for every link in result.rows, add it to the blacklist
         for (const link of result.rows) {
-            blackList[link] = true;
+            blacklist[link] = true;
         }
 
     } catch (err: any) {   

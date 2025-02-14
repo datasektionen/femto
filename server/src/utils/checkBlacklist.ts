@@ -1,6 +1,5 @@
-import { blackList } from "./createBlacklist";
+import { blacklist } from "./createBlacklist";
 
-//--------------------------------------------
 /**
  * Checks if link is blacklisted.
  * 
@@ -10,9 +9,9 @@ import { blackList } from "./createBlacklist";
 export function isBlacklisted(link: string): boolean {
     const host = new URL(link).host;
     if (
-        blackList[host] ||
-        blackList[`www.${host}`] ||
-        blackList[host.replace(/www[.]/, "")]
+        blacklist[host] ||
+        blacklist[`www.${host}`] ||
+        blacklist[host.replace(/www[.]/, "")]
     ) { return true; }
     return false;
 }
