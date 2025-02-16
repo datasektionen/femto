@@ -1,9 +1,17 @@
 import React, { useEffect } from "react";
-import { BrowserRouter, Route, Routes, Link, useNavigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import Methone from "methone";
 import { MantineProvider } from "@mantine/core";
-import Home from './views/Home.tsx';
-import Configuration from './configuration.ts'; // Import the Configuration file
+import Home from "./views/Home.tsx";
+import Links from "./views/Links.tsx";
+import Configuration from "./configuration.ts"; // Import the Configuration file
 
 const App = () => {
   const config = {
@@ -14,6 +22,9 @@ const App = () => {
     links: [
       <Link to="/shorten" key="methone-link-1">
         Förkorta
+      </Link>,
+      <Link to="/links" key="methone-link-2">
+        Länkar
       </Link>,
     ],
   };
@@ -29,11 +40,13 @@ const App = () => {
       <BrowserRouter basename="/">
         <div id="application" className="light-blue">
           <Methone config={config} />
-          <RemoveTokenFromURL /> {/* Handle token removal inside BrowserRouter */}
+          <RemoveTokenFromURL />{" "}
+          {/* Handle token removal inside BrowserRouter */}
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/shorten" element={<Home />} />
             <Route path="/login" element={<LoginRedirect />} />
+            <Route path="/links" element={<Links />} />
           </Routes>
         </div>
       </BrowserRouter>
@@ -67,7 +80,10 @@ const RemoveTokenFromURL = () => {
 const LoginRedirect = () => {
   useEffect(() => {
     const callbackUrl = encodeURIComponent(window.location.origin + "/token/");
-    console.log("Redirecting to:", `${Configuration.loginApiUrl}/login?callback=${callbackUrl}`);
+    console.log(
+      "Redirecting to:",
+      `${Configuration.loginApiUrl}/login?callback=${callbackUrl}`
+    );
     window.location.href = `${Configuration.loginApiUrl}/login?callback=${callbackUrl}`;
   }, []);
 
