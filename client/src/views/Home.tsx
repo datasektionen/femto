@@ -2,6 +2,12 @@ import React from "react";
 import { Alert } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 
+/**
+ * Homepage for Femto, using placeholder functions (not yet implemeted) 
+ * hasPermissionsOr and LinkCreator component which also uses placeholder functions
+ */
+
+ // Placeholder hasPermissionsOr
 const hasPermissionsOr = (userPermissions: string[], requiredPermissions: string[]) => {
     return requiredPermissions.some(permission => userPermissions.includes(permission));
 };
@@ -52,7 +58,11 @@ const Home = () => {
                 <LinkCreator
                     title="Autogenererad förkortad länk"
                     disabled={!hasToken}
-                    desc={<p>Slumpa en fyra karaktärer lång sträng.</p>}
+                    desc={
+                        <>
+                            <p>Slumpa en fyra karaktärer lång sträng.</p>
+                        </>
+                    }
                     userMandates={userMandates}
                 />
 
