@@ -1,11 +1,24 @@
-import React, { useState } from "react";
-import { Button, TextInput, Group, Alert, Box } from "@mantine/core";
+import React from "react";
+import { Alert } from "@mantine/core";
+import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
-// import LinkCreator from "../components/LinkCreator.tsx";
 
-const hasToken = true;
+/**
+ * Homepage for Femto, using placeholder functions (not yet implemeted) 
+ * hasPermissionsOr and LinkCreator component which also uses placeholder functions
+ */
+
+ // Placeholder hasPermissionsOr
+const hasPermissionsOr = (userPermissions: string[], requiredPermissions: string[]) => {
+    return requiredPermissions.some(permission => userPermissions.includes(permission));
+};
 
 const Home = () => {
+  // Placeholder data
+  const hasToken = true;
+  const userMandates = [{ id: "1", role: "user" }];  // Mock user mandates
+  const pls = ["admin", "user"];  // Placeholder permissions
+  
   return (
     <>
         <Header title="Länkförkortare" />
@@ -40,17 +53,37 @@ const Home = () => {
                     länken inte innehåller några personliga tokens eller
                     liknande.
                 </p>
-                <p>
-                    För att kunna specificera en förkortad länk, exempelvis
-                    "ior", måste du vara funktionär. Om du trots detta vill
-                    kunna specificera förkortade länkar för ett
-                    sektionsenligt ändamål, kontakta systemansvarig.
-                </p>
             </div>
             
+            {/* LinkCreator Component */}
+                <LinkCreator
+                    title="Autogenererad förkortad länk"
+                    disabled={!hasToken}
+                    desc={
+                        <>
+                            <p>Slumpa en fyra karaktärer lång sträng.</p>
+                        </>
+                    }
+                    userMandates={userMandates}
+                />
+
+                {/* Custom LinkCreator for Admins or Users with "custom-link" permission */}
+                {hasPermissionsOr(pls, ["admin", "custom-link"]) && (
+                    <LinkCreator
+                        title="Specificera förkortad länk"
+                        desc={
+                            <>
+                                <p>Önska en förkortad länk, exempelvis "ior". Giltiga tecken: a-z, 0-9, -, och _.</p>
+                                <p>Används för exempelvis rekryteringsformulär för nämnder. Du måste vara funktionär för att nyttja denna funktionalitet.</p>
+                            </>
+                        }
+                        custom
+                        userMandates={userMandates}
+                    />
+                )}
         </div>
     </>
-);
+  );
 };
 
 export default Home;
