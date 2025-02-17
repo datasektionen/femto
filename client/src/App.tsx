@@ -2,8 +2,9 @@ import React from "react";
 import { BrowserRouter, Route, Routes, Link } from "react-router-dom";
 import Methone from "methone";
 import { MantineProvider } from "@mantine/core";
-import Home from './views/Home.tsx';
-import Login from './views/Login.tsx';
+import Home from "./views/Home.tsx";
+import Login from "./views/Login.tsx";
+import QRCodeGenerator from "./components/QRCodeGenerator.tsx";
 
 const App = () => {
   // taken example from methone documentation
@@ -33,10 +34,14 @@ const App = () => {
           {/* Methone component is used to render the header */}
           <Methone config={config} />
           <Routes>
-            {/* Define routes for Home and Login */}
+            {/* Define routes for Home, Login, and QRCodeGenerator */}
             <Route path="/" element={<Home />} />
             <Route path="/shorten" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route
+              path="/generate-qr"
+              element={<QRCodeGenerator link="https://datasektionen.se/" />}
+            />
           </Routes>
         </div>
       </BrowserRouter>
