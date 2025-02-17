@@ -19,7 +19,7 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT}
       PORT: ${SERVER_PORT}
     ports:
-      - "5001:${SERVER_PORT}"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       - db
   db:
