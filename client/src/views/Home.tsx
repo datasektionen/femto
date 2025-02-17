@@ -1,6 +1,7 @@
 import React from "react";
 import { Alert } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
+import { Header } from "methone";
 
 /**
  * Homepage for Femto, using placeholder functions (not yet implemeted) 
@@ -20,7 +21,7 @@ const Home = () => {
   
   return (
     <>
-        <h1>Länkförkortare</h1> {/* Replaced Header with a simple h1 */}
+        <Header title="Länkförkortare" />
         <div id="content">
             {!hasToken && (
                 <Alert title="Du är inte inloggad" color="blue">

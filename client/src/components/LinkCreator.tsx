@@ -172,7 +172,6 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
                             </h3>
                         </div>
                     </Center>
-
                     <Center>
                         <Tooltip label="Kopierat" opened={copied} transition="fade">
                             <Button
@@ -187,7 +186,6 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
                             </Button>
                         </Tooltip>
                     </Center>
-
                     <br />
                     <Center>
                         <QRCode value={constructShortUrl(result)} size={240} level="H" renderAs="canvas" logoImage="/logo.svg" logoWidth={52} />
