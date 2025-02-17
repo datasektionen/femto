@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Route,
@@ -12,20 +12,28 @@ import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
 import Configuration from "./configuration.ts"; // Import the Configuration file
+import useAuthorization from "./hooks/Authorization.tsx";
+
+
 
 const App = () => {
+  const { pls, loading, hasToken, user } = useAuthorization();
+
   const config = {
     system_name: "link-shortener",
-    login_href: "/login", // This will trigger the login redirect
-    login_text: "Logga in",
+    login_href: hasToken ? "/logout" : "/login",
+    login_text: hasToken ? "Logga ut" : "Logga in",
     color_scheme: "light-blue",
     links: [
       <Link to="/shorten" key="methone-link-1">
         Förkorta
       </Link>,
-      <Link to="/links" key="methone-link-2">
-        Länkar
-      </Link>,
+      // Only show Links link if user has token
+      ...(hasToken ? [
+        <Link to="/links" key="methone-link-2">
+          Länkar
+        </Link>,
+      ] : []),
     ],
   };
 
@@ -46,6 +54,7 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/shorten" element={<Home />} />
             <Route path="/login" element={<LoginRedirect />} />
+            <Route path="/logout" element={<Logout />} />
             <Route path="/links" element={<Links />} />
           </Routes>
         </div>
@@ -58,6 +67,7 @@ const App = () => {
 const RemoveTokenFromURL = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { pls, loading, hasToken, user } = useAuthorization(); 
 
   useEffect(() => {
     console.log("Current Path:", location.pathname);
@@ -66,7 +76,11 @@ const RemoveTokenFromURL = () => {
     // Match /token/:token in the URL
     const tokenMatch = location.pathname.match(/^\/token\/(.+)$/);
     if (tokenMatch) {
-      console.log("🔑 Token Found:", tokenMatch[1]);
+      const token = tokenMatch[1];
+      console.log("🔑 Token Found:", token);
+      console.log("pls, loading, hasToken, user", pls, loading, hasToken, user);
+
+      localStorage.setItem("token", token);
 
       // Redirect to the homepage (or "/shorten") without the token
       navigate("/", { replace: true });
@@ -89,5 +103,21 @@ const LoginRedirect = () => {
 
   return <div></div>;
 };
+
+// Add this component before the export
+const Logout = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Remove token from localStorage
+    localStorage.removeItem("token");
+    // Navigate to shorten page
+    navigate("/shorten", { replace: true });
+  }, [navigate]);
+
+  return <div>Logging out...</div>;
+};
+
+// ...existing code...
 
 export default App;
