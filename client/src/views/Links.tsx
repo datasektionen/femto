@@ -11,17 +11,7 @@ import {
 import { Header } from "methone";
 import axios from "axios";
 
-// Importera Recharts-komponenter
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 // Definiera interface för Link (basinfo om länkarna)
 interface Link {
@@ -54,19 +44,10 @@ const Links: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
 
-  // Statistik (tidsserie)
-  interface LinkStats {
-    date: string;   // ex: "2025-02-18"
-    clicks: number; // ex: 10
-  }
-  const [linkStats, setLinkStats] = useState<LinkStats[]>([]);
-  const [loadingStats, setLoadingStats] = useState(false);
-  const [errorStats, setErrorStats] = useState<string | null>(null);
-
   // 1. useEffect för att hämta länkarna
   useEffect(() => {
     axios
-      .get<Link[]>("http://localhost:5001/api/links")
+      .get<Link[]>(`${API_URL}/api/links`)
       .then((res) => {
         setLinksData(res.data);
         setLoading(false);
@@ -78,26 +59,11 @@ const Links: React.FC = () => {
       });
   }, []);
 
-  // 2. Funktion för att öppna statistik-modal och hämta tidsserie
-  const handleOpenStats = async (link: Link) => {
+  // 2. Funktion för att öppna statistik-modal
+  // (Här hämtas inte statistik, vi visar bara en placeholder)
+  const handleOpenStats = (link: Link) => {
     setSelectedLink(link);
     setModalOpen(true);
-
-    // Rensa ev. gammal data innan ny fetch
-    setLinkStats([]);
-    setLoadingStats(true);
-    setErrorStats(null);
-
-    try {
-      // Hämta klickhistorik / tidsserie
-      const res = await axios.get<LinkStats[]>(`/api/links/${link.slug}/stats`);
-      setLinkStats(res.data);
-    } catch (error) {
-      console.error(error);
-      setErrorStats("Kunde inte hämta statistik");
-    } finally {
-      setLoadingStats(false);
-    }
   };
 
   // Kopiera länk till klippbordet
@@ -220,8 +186,12 @@ const Links: React.FC = () => {
         />
       </div>
 
-      {/* Modal som visar mer info + graf */}
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Länks statistik">
+      {/* Modal för statistik - placeholder */}
+      <Modal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Statistik"
+      >
         {selectedLink && (
           <div>
             <Text>
@@ -242,34 +212,7 @@ const Links: React.FC = () => {
             <Text>
               <strong>Totala klick:</strong> {selectedLink.clicks}
             </Text>
-
-            {/* Här visar vi statistik-grafen */}
-            {loadingStats && <Text>Laddar statistik...</Text>}
-            {errorStats && <Alert color="red">{errorStats}</Alert>}
-
-            {!loadingStats && !errorStats && linkStats.length > 0 && (
-              <div style={{ width: "100%", height: "300px", marginTop: "1rem" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={linkStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="clicks"
-                      stroke="#8884d8"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {!loadingStats && !errorStats && linkStats.length === 0 && (
-              <Text>Ingen statistik att visa.</Text>
-            )}
+            <Text>Statistik kommer implementeras senare.</Text>
           </div>
         )}
       </Modal>
