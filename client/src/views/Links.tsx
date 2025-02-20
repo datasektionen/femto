@@ -10,6 +10,14 @@ import {
 } from "@mantine/core";
 import { Header } from "methone";
 import axios from "axios";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
@@ -26,6 +34,12 @@ interface Link {
   mandate: string | null;
 }
 
+// Interface för statistikdata
+interface StatsData {
+  date: string;
+  clicks: number;
+}
+
 const hasToken = true;
 
 const Links: React.FC = () => {
@@ -40,11 +54,14 @@ const Links: React.FC = () => {
   const [activePage, setActivePage] = useState(1);
   const itemsPerPage = 5;
 
-  // Modal
+  // Modal och statistikstate
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
+  const [statsData, setStatsData] = useState<StatsData[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
-  // 1. useEffect för att hämta länkarna
+  // Hämta länkar
   useEffect(() => {
     axios
       .get<Link[]>(`${API_URL}/api/links`)
@@ -59,8 +76,27 @@ const Links: React.FC = () => {
       });
   }, []);
 
-  // 2. Funktion för att öppna statistik-modal
-  // (Här hämtas inte statistik, vi visar bara en placeholder)
+  // Hämta statistikdata när en länk väljs
+  useEffect(() => {
+    if (selectedLink) {
+      setStatsLoading(true);
+      axios
+        .get<StatsData[]>(`${API_URL}/api/links/${selectedLink.slug}/stats`)
+        .then((res) => {
+          setStatsData(res.data);
+          setStatsLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setStatsError("Kunde inte hämta statistik");
+          setStatsLoading(false);
+        });
+    } else {
+      setStatsData([]);
+    }
+  }, [selectedLink]);
+
+  // Öppna statistik-modal
   const handleOpenStats = (link: Link) => {
     setSelectedLink(link);
     setModalOpen(true);
@@ -74,7 +110,7 @@ const Links: React.FC = () => {
     );
   };
 
-  // 3. Hantera laddning/fel för grundlänkar
+  // Hantera laddning/fel för grundlänkar
   if (loading) {
     return <Text>Laddar...</Text>;
   }
@@ -82,7 +118,7 @@ const Links: React.FC = () => {
     return <Alert color="red">{error}</Alert>;
   }
 
-  // 4. Sortera och pagina de riktiga länkarna
+  // Sortera och pagina länkarna
   const sortedLinks = [...linksData].sort((a, b) => {
     switch (filter) {
       case "newest-oldest":
@@ -118,7 +154,13 @@ const Links: React.FC = () => {
         )}
 
         {/* Filtermeny för sortering */}
-        <div style={{ marginBottom: "25px", display: "flex", flexDirection: "column" }}>
+        <div
+          style={{
+            marginBottom: "25px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Select
             label="Sort by"
             value={filter}
@@ -154,7 +196,11 @@ const Links: React.FC = () => {
               <tr key={link.id}>
                 <td>{link.slug}</td>
                 <td>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {link.url}
                   </a>
                 </td>
@@ -165,7 +211,9 @@ const Links: React.FC = () => {
                 <td>{link.user_id}</td>
                 <td>{link.mandate}</td>
                 <td>
-                  <Button onClick={() => copyToClipboard(link.url)}>Copy</Button>
+                  <Button onClick={() => copyToClipboard(link.url)}>
+                    Copy
+                  </Button>
                   <Button
                     style={{ marginTop: "0.5rem" }}
                     onClick={() => handleOpenStats(link)}
@@ -186,7 +234,7 @@ const Links: React.FC = () => {
         />
       </div>
 
-      {/* Modal för statistik - placeholder */}
+      {/* Modal för statistik */}
       <Modal
         opened={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -207,12 +255,28 @@ const Links: React.FC = () => {
               <strong>Created:</strong> {selectedLink.date}
             </Text>
             <Text>
-              <strong>Expire:</strong> {selectedLink.expires}
+              <strong>Expire:</strong>{" "}
+              {selectedLink.expires ? selectedLink.expires : "No expire"}
             </Text>
             <Text>
               <strong>Totala klick:</strong> {selectedLink.clicks}
             </Text>
-            <Text>Statistik kommer implementeras senare.</Text>
+
+            {statsLoading && <Text>Laddar statistik...</Text>}
+            {statsError && <Alert color="red">{statsError}</Alert>}
+            {!statsLoading && !statsError && statsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={statsData}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="clicks" stroke="#8884d8" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              !statsLoading &&
+              !statsError && <Text>Ingen statistik tillgänglig.</Text>
+            )}
           </div>
         )}
       </Modal>

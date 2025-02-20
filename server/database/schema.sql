@@ -11,3 +11,11 @@ CREATE TABLE IF NOT EXISTS urls (
     description TEXT,            
     mandate VARCHAR(255)         
 );
+
+CREATE TABLE IF NOT EXISTS url_clicks (
+  id BIGSERIAL PRIMARY KEY,
+  url_id BIGINT REFERENCES urls(id) ON DELETE CASCADE,
+  clicked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  --ip_address INET,      -- Valfritt: för att logga IP-adressen för klicket
+  --user_agent TEXT       -- Valfritt: för att logga webbläsarinformation
+);
