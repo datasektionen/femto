@@ -10,7 +10,7 @@ redirectRouter.get('/', (req, res) => {
     res.status(301).location('https://datasektionen.se').end();
 });
 
-// GET /:slug => Hämta länk, öka klick, logga klick och omdirigera
+// GET /:slug => Hämta länk, logga klick och omdirigera
 redirectRouter.get('/:slug', async (req, res) => {
     const slug = req.params.slug;
     let client;
@@ -23,14 +23,12 @@ redirectRouter.get('/:slug', async (req, res) => {
             const urlId = result.rows[0].id;
             const redirectUrl = result.rows[0].url;
 
-            // Uppdatera totala klick i urls-tabellen
-            await client.query('UPDATE urls SET clicks = clicks + 1 WHERE id = $1', [urlId]);
-
-            // Logga klicket i url_clicks-tabellen
+             // Logga klicket i url_clicks-tabellen
+            console.log(`Logging click for URL ID: ${urlId}`);
             await client.query('INSERT INTO url_clicks (url_id) VALUES ($1)', [urlId]);
 
             // Omdirigera
-            res.status(301).location(redirectUrl).end();
+            res.status(302).location(redirectUrl).end();
         } else {
             res.status(404).send('Slug not found');
         }
@@ -43,5 +41,4 @@ redirectRouter.get('/:slug', async (req, res) => {
         }
     }
 });
-
 export default redirectRouter;

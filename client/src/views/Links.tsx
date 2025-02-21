@@ -36,7 +36,7 @@ interface Link {
 
 // Interface för statistikdata
 interface StatsData {
-  date: string;
+  date: string;   // t.ex. "2025-01-01T00:00:00.000Z"
   clicks: number;
 }
 
@@ -57,9 +57,13 @@ const Links: React.FC = () => {
   // Modal och statistikstate
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
+
   const [statsData, setStatsData] = useState<StatsData[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
+
+  // Här väljer vi vilken granularitet vi vill hämta: "hour", "day", "week"
+  const [granularity, setGranularity] = useState("day");
 
   // Hämta länkar
   useEffect(() => {
@@ -76,12 +80,17 @@ const Links: React.FC = () => {
       });
   }, []);
 
-  // Hämta statistikdata när en länk väljs
+  // Hämta statistikdata när en länk eller granularitet ändras
   useEffect(() => {
     if (selectedLink) {
       setStatsLoading(true);
+      setStatsError(null);
+
       axios
-        .get<StatsData[]>(`${API_URL}/api/links/${selectedLink.slug}/stats`)
+        .get<StatsData[]>(`${API_URL}/api/links/${selectedLink.slug}/stats`, {
+          // Skicka med granularity som query‑parameter
+          params: { granularity },
+        })
         .then((res) => {
           setStatsData(res.data);
           setStatsLoading(false);
@@ -92,9 +101,10 @@ const Links: React.FC = () => {
           setStatsLoading(false);
         });
     } else {
+      // Om ingen länk är vald, töm statistiken
       setStatsData([]);
     }
-  }, [selectedLink]);
+  }, [selectedLink, granularity]);
 
   // Öppna statistik-modal
   const handleOpenStats = (link: Link) => {
@@ -196,11 +206,7 @@ const Links: React.FC = () => {
               <tr key={link.id}>
                 <td>{link.slug}</td>
                 <td>
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">
                     {link.url}
                   </a>
                 </td>
@@ -237,7 +243,11 @@ const Links: React.FC = () => {
       {/* Modal för statistik */}
       <Modal
         opened={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedLink(null);
+          setGranularity("day"); // återställ om du vill
+        }}
         title="Statistik"
       >
         {selectedLink && (
@@ -261,6 +271,20 @@ const Links: React.FC = () => {
             <Text>
               <strong>Totala klick:</strong> {selectedLink.clicks}
             </Text>
+
+            {/* Välj granularitet (timme, dag, vecka) */}
+            <div style={{ margin: "1rem 0" }}>
+              <Select
+                label="Visa statistik per"
+                value={granularity}
+                onChange={(value) => setGranularity(value!)}
+                data={[
+                  { value: "hour", label: "Timme" },
+                  { value: "day", label: "Dag" },
+                  { value: "week", label: "Vecka" },
+                ]}
+              />
+            </div>
 
             {statsLoading && <Text>Laddar statistik...</Text>}
             {statsError && <Alert color="red">{statsError}</Alert>}
