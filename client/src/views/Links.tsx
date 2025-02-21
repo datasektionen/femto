@@ -36,7 +36,7 @@ interface Link {
 
 // Interface för statistikdata
 interface StatsData {
-  date: string;   // t.ex. "2025-01-01T00:00:00.000Z"
+  date: string;   // ex: "2025-01-01T09:00:00.000Z"
   clicks: number;
 }
 
@@ -62,7 +62,7 @@ const Links: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
 
-  // Här väljer vi vilken granularitet vi vill hämta: "hour", "day", "week"
+  // Här väljer vi vilken granularitet vi vill hämta: "hour" eller "day"
   const [granularity, setGranularity] = useState("day");
 
   // Hämta länkar
@@ -272,7 +272,7 @@ const Links: React.FC = () => {
               <strong>Totala klick:</strong> {selectedLink.clicks}
             </Text>
 
-            {/* Välj granularitet (timme, dag, vecka) */}
+            {/* Välj granularitet (timme, dag) */}
             <div style={{ margin: "1rem 0" }}>
               <Select
                 label="Visa statistik per"
@@ -281,7 +281,6 @@ const Links: React.FC = () => {
                 data={[
                   { value: "hour", label: "Timme" },
                   { value: "day", label: "Dag" },
-                  { value: "week", label: "Vecka" },
                 ]}
               />
             </div>

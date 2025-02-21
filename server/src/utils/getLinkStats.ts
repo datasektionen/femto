@@ -1,10 +1,12 @@
+// server/src/utils/getLinkStats.ts
+
 import { Request, Response } from 'express';
 import pool from '../db';
 
 /**
  * GET /api/links/:slug/stats
- * Param: ?granularity=hour|day|week  (valfritt, default "day")
- * Returnerar klick-data ENDAST för perioder med klick (inga nollrader).
+ * Param: ?granularity=hour|day (valfritt, default "day")
+ * Returnerar klick-data ENDAST för de tidpunkter där det faktiskt finns klick.
  */
 export async function getLinkStats(req: Request, res: Response): Promise<void> {
   const { slug } = req.params;
@@ -22,11 +24,11 @@ export async function getLinkStats(req: Request, res: Response): Promise<void> {
     }
     const urlId = linkResult.rows[0].id;
 
-    // 2. Validera att "granularity" är en av de vi stödjer
-    const validIntervals = ['hour', 'day', 'week'];
+    // 2. Tillåt endast "hour" eller "day"
+    const validIntervals = ['hour', 'day'];
     const interval = validIntervals.includes(granularity as string) ? granularity : 'day';
 
-    // 3. Enkel query som grupperar per timme/dag/vecka
+    // 3. Gruppar klickdata per timme eller dag
     const statsResult = await client.query(
       `
         SELECT
@@ -42,7 +44,7 @@ export async function getLinkStats(req: Request, res: Response): Promise<void> {
 
     // 4. Mappa resultatet till { date, clicks }
     const data = statsResult.rows.map((row: any) => ({
-      date: row.date.toISOString(),  // ex: "2025-01-01T09:00:00.000Z"
+      date: row.date.toISOString(), // ex: "2025-01-01T09:00:00.000Z"
       clicks: Number(row.clicks),
     }));
 
