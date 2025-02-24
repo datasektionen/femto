@@ -74,38 +74,51 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
     });
 
     // Function to handle form submission
-    const submit = async (values: { url: string; short?: string; expire?: string; mandate?: string }) => {
-        if (fetching) return; // Prevent multiple submissions
+    const submit = async (values) => {
+        if (fetching) return;
         setFetching(true);
         setResult("");
         setError(null);
-
-        // Construct request payload
-        const data: any = { url: values.url };
-        if (values.short) data.desired = values.short;
-        if (radio === "yes" && values.expire) data.expires = new Date(values.expire).getTime();
-        if (values.mandate) data.mandate = values.mandate;
-
+    
+        const data = {
+            slug: values.short || "",
+            url: values.url,
+            user_id: "yourUserIdHere",  // Replace this with actual user ID from state/context
+            expire: values.expire || null, // Include expiry date if available
+            mandate: values.mandate || null, // Include mandate if selected
+        };
+    
         try {
-            // Send API request to shorten URL
-            const res = await axios.post("/api/shorten", data);
-            setResult(res.data.short);
-            form.reset();
-        } catch (err: any) {
-            // Handle errors
-            if (err.response) {
-                const res = err.response;
-                setError({
-                    title: `${res.status}: ${res.statusText}`,
-                    message: res.data.errors?.[0]?.msg || "",
-                });
-            } else {
-                setError({ title: "Error", message: "Something went wrong" });
+            const response = await fetch("http://localhost:5000/api/links", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+    
+            const resData = await response.json();
+            console.log("API Response:", resData);  // Debugging output
+    
+            if (!response.ok) {
+                throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
             }
+    
+            // Check available keys and set result
+            const shortUrl = resData.slug || resData.short || resData.url;
+            if (!shortUrl) throw new Error("No valid short URL returned");
+    
+            setResult(shortUrl);
+            form.reset();
+        } catch (err) {
+            console.error("Error submitting form:", err);
+            setError({ title: "Error", message: err.message || "Something went wrong" });
         } finally {
             setFetching(false);
         }
     };
+    
+    
 
     return (
         <div className={classes.root}>
