@@ -19,7 +19,7 @@ export const apiKeyAuth = (req: any, res: any, next: any) => {
     // Check if the API key is valid
     if (!apiKey || !VALID_API_KEYS.has(apiKey)) {
         // Send a 401 Unauthorized response if the API key is missing or invalid
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).send("Unauthorized");
     }
 
     // Proceed to the next middleware or route handler
