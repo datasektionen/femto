@@ -2,8 +2,7 @@ import { Router } from 'express';
 import pool from '../db';
 import { insertLink } from '../utils/insertLink';
 import { getAllLinks, getLink } from '../utils/getLink';
-import { apiKeyAuth } from "../utils/auth";
-
+import { getLinkStats } from '../utils/getLinkStats'; // Importera statistik-funktionen
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
@@ -38,6 +37,14 @@ apiRouter.get('/status', async (req, res) => {
         }
     }
 });
+
+
+/**
+ * GET /api/stats
+ * Hämtar statistik för länkar: totalt antal länkar och sammanlagda klick.
+ */
+// GET /api/links/:slug/stats
+apiRouter.get('/links/:slug/stats', getLinkStats);
 
 /**
  * POST /api/links

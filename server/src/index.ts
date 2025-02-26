@@ -2,17 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import apiRouter from './routes/apiRouter';
 import redirectRouter from './routes/redirectRouter';
+import cors from 'cors';
+
+
+
 
 const app = express();
-const PORT = process.env.PORT || 5000; // Fallback to 5000 if PORT is not set
-
-// Enable CORS to allow frontend requests
-app.use(cors({
-    origin: "http://localhost:3000", // Allow requests from frontend
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"]
-}));
-
+const PORT = process.env.PORT;
+app.use(cors());
 app.use(express.json()); // Middleware to parse JSON request bodies
 
 // Routes

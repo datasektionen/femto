@@ -1,5 +1,6 @@
 interface AppConfig {
   loginApiUrl: string;
+  
 }
 
 const Configuration: AppConfig = {
