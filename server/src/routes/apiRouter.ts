@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import pool from '../db';
-import { insertLink } from '../utils/insertLink';
-import { getAllLinks, getLink } from '../utils/getLink';
-import { getLinkStats } from '../utils/getLinkStats'; // Importera statistik-funktionen
+import { getLinkStats, getAllLinks, getLink, insertLink } from '../utils/link'; // Importera statistik-funktionen
 import { apiKeyAuth } from '../middleware/auth';
+import { checkToken } from '../utils/token';
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
@@ -39,6 +38,11 @@ apiRouter.get('/status', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/auth/verify-token
+ * Endpoint to verify a user's token.
+ */
+apiRouter.post("/auth/verify-token", async (req, res) => { checkToken(req, res);});
 
 /**
  * GET /api/stats
