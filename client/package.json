@@ -10,6 +10,7 @@
     "cra-template-typescript": "1.2.0",
     "methone": "github:datasektionen/Methone#master",
     "moment": "^2.29.1",
+    "qrcode.react": "^4.2.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-moment": "^1.1.1",
