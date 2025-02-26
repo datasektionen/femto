@@ -15,7 +15,8 @@ export async function insertLink(req: any, res: any) {
         const slugAlreadyTaken = await checkSlug(slug);
 
         if (slugAlreadyTaken) {
-            return res.status(400).json({ error: 'Slug has already been taken' });
+            // If the slug is taken, return a 409 Conflict response
+            return res.status(409).send('Slug has already been taken');
         }
 
         let client;

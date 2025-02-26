@@ -3,8 +3,6 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile.client
-    environment:
-      PORT: ${CLIENT_PORT}§
     ports:
       - "3000:80"
   server:
@@ -12,14 +10,11 @@ services:
       context: ./server
       dockerfile: Dockerfile.server
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_HOST: db
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      PORT: ${SERVER_PORT}
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=db
+      - PORT=5000
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "5000:5000"
     depends_on:
       - db
   db:
@@ -27,8 +22,13 @@ services:
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      - POSTGRES_USER=postgres
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydatabase
     ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "5432:5432"
+
+
+
+

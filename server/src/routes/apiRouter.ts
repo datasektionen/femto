@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../db';
 import { insertLink } from '../utils/insertLink';
 import { getAllLinks, getLink } from '../utils/getLink';
+import { apiKeyAuth } from "../utils/auth";
 
 /**
  * Router for API endpoints.
@@ -10,6 +11,11 @@ import { getAllLinks, getLink } from '../utils/getLink';
  * TODO: Add authentication and authorization to the API routes.
  */
 const apiRouter = Router();
+
+
+// Apply the apiKeyAuth middleware to all routes under the apiRouter.
+// This ensures that any request to the /api/* endpoints must include a valid API key in the Authorization header.
+apiRouter.use(apiKeyAuth);
 
 /**
  * GET /api/status
@@ -22,7 +28,7 @@ apiRouter.get('/status', async (req, res) => {
     try {
         client = await pool.connect();
         const result = await client.query('SELECT NOW()');
-        res.status(200).json({ status: 'API is running', time: result.rows[0].now });
+        res.status(200).json({ message: 'Authorized access', status: 'API is running', time: result.rows[0].now });
     } catch (err: any) {
         console.error('Error executing query', err.stack);
         res.status(500).send('Internal Server Error');
