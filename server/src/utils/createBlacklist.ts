@@ -45,7 +45,7 @@ const getBlackList2 = async () => {
             blacklist[link] = true;
         }
 
-    } catch (err: any) {   
+    } catch (err: any) {
         //Error getting the links
         console.error('Error retrieving links', err.stack);
 

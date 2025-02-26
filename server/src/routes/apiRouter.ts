@@ -3,6 +3,7 @@ import pool from '../db';
 import { getLinkStats, getAllLinks, getLink, insertLink } from '../utils/link'; // Importera statistik-funktionen
 import { apiKeyAuth } from '../middleware/auth';
 import { checkToken } from '../utils/token';
+
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
@@ -10,7 +11,6 @@ import { checkToken } from '../utils/token';
  * TODO: Add authentication and authorization to the API routes.
  */
 const apiRouter = Router();
-
 
 // Apply the apiKeyAuth middleware to all routes under the apiRouter.
 // This ensures that any request to the /api/* endpoints must include a valid API key in the Authorization header.
@@ -42,7 +42,7 @@ apiRouter.get('/status', async (req, res) => {
  * POST /api/auth/verify-token
  * Endpoint to verify a user's token.
  */
-apiRouter.post("/auth/verify-token", async (req, res) => { checkToken(req, res);});
+apiRouter.post("/auth/verify-token", async (req, res) => { checkToken(req, res); });
 
 /**
  * GET /api/stats

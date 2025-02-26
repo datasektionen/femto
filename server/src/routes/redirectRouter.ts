@@ -1,5 +1,3 @@
-// server/src/routes/redirectRouter.ts
-
 import { Router } from 'express';
 import pool from '../db';
 
@@ -23,7 +21,7 @@ redirectRouter.get('/:slug', async (req, res) => {
             const urlId = result.rows[0].id;
             const redirectUrl = result.rows[0].url;
 
-             // Logga klicket i url_clicks-tabellen
+            // Logga klicket i url_clicks-tabellen
             console.log(`Logging click for URL ID: ${urlId}`);
             await client.query('INSERT INTO url_clicks (url_id) VALUES ($1)', [urlId]);
 

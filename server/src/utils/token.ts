@@ -1,6 +1,13 @@
 import axios from "axios";
 import { Request, Response } from "express";
 
+/**
+ * Verifies a user's token by making a request to Datasektionen's API.
+ * 
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} - A promise that resolves when the token is verified and the response is sent.
+ */
 export async function checkToken(req: Request, res: Response): Promise<void> {
 
     const { token } = req.body;
