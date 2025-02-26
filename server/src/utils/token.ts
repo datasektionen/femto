@@ -1,10 +1,10 @@
 import axios from "axios";
 import { Request, Response } from "express";
 
-export async function checkToken(req: Request, res: Response) {
+export async function checkToken(req: Request, res: Response): Promise<void> {
 
     const { token } = req.body;
-    if (!token) return res.status(400).json({ error: "Token is required" });
+    if (!token) { res.status(400).json({ error: "Token is required" }); return; }
 
     try {
         // Make request to Datasektionen's API from your backend

@@ -8,7 +8,7 @@ import pool from '../db';
  * @param {any} res - Express response object.
  * @returns {Promise<void>} - A promise that resolves when the link is generated and the response is sent.
  */
-export async function insertLink(req: any, res: any) {
+export async function insertLink(req: Request, res: Response): Promise<void> {
     const { slug, url, user_id, description, mandate, expires } = req.body;
 
     //Generates a base62 slug from a given number.
@@ -52,7 +52,8 @@ export async function insertLink(req: any, res: any) {
 
         if (slugAlreadyTaken) {
             // If the slug is taken, return a 409 Conflict response
-            return res.status(409).send('Slug has already been taken');
+            res.status(409).send('Slug has already been taken');
+            return;
         }
 
         let client;
@@ -106,7 +107,7 @@ export async function insertLink(req: any, res: any) {
  * @param {any} res - Express response object.
  * @returns {Promise<void>} - A promise that resolves when the links are retrieved and the response is sent.
  */
-export async function getAllLinks(req: any, res: any) {
+export async function getAllLinks(req: Request, res: Response): Promise<void> {
     let client;
     try {
         // Connect to the database
@@ -136,7 +137,7 @@ export async function getAllLinks(req: any, res: any) {
  * @param {any} res - Express response object.
  * @returns {Promise<void>} - A promise that resolves when the link is retrieved and the response is sent.
  */
-export async function getLink(req: any, res: any) {
+export async function getLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
     let client;
     try {
