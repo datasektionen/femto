@@ -13,8 +13,9 @@ import {
     Tooltip,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import axios from "axios";
 import { QRCode } from "react-qrcode-logo";
+
+const API_KEY = process.env.REACT_APP_API_KEY || null;  // Get API key from environment variables
 
 /**
  * LinkCreator contains UI components used for link creation on the Homepage
@@ -93,6 +94,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${API_KEY}`,  // Include API key in the Authorization header
                 },
                 body: JSON.stringify(data),
             });

@@ -27,9 +27,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         return slug;
     }
 
-
-    // Checks if a slug is already taken in the database.
-
+    // Checks if a slug is already in the database.
     async function checkSlug(slug: string) {
         let client;
         try {
