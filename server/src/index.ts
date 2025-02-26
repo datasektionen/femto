@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import apiRouter from './routes/apiRouter';
 import redirectRouter from './routes/redirectRouter';
 import cors from 'cors';

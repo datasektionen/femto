@@ -3,6 +3,7 @@ import pool from '../db';
 import { insertLink } from '../utils/insertLink';
 import { getAllLinks, getLink } from '../utils/getLink';
 import { getLinkStats } from '../utils/getLinkStats'; // Importera statistik-funktionen
+import { apiKeyAuth } from '../middleware/auth';
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
