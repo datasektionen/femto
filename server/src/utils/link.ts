@@ -35,7 +35,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             const result = await client.query('SELECT * FROM urls WHERE slug = $1', [slug]);
             return result.rows.length > 0;
         } catch (err: any) {
-            console.error('Error executing query', err.stack);
+            console.error('❌📁 Error checking slug', err.stack);
             return false;
         } finally {
             if (client) {
@@ -61,7 +61,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             const result = await client.query('INSERT INTO urls (slug, url, user_id, description, mandate, expires) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [slug, url, user_id, description, mandate, expires]);
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
-            console.error('Error executing query', err.stack);
+            console.error('❌📁 Error inserting link', err.stack);
             res.status(500).send('Internal Server Error');
         } finally {
             if (client) {
@@ -88,7 +88,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             res.status(201).json(result.rows[0]);
 
         } catch (err: any) {
-            console.error('Error executing query', err.stack);
+            console.error('❌📁 Error executing query', err.stack);
             res.status(500).send('Internal Server Error');
         } finally {
             if (client) {
@@ -118,7 +118,7 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
         res.status(200).json(result.rows);
     } catch (err: any) {
         // Log the error and send a 500 status code if an error occurs
-        console.error('Error retrieving links', err.stack);
+        console.error('❌📁 Error getting links', err.stack);
         res.status(500).send('Internal Server Error');
     } finally {
         // Release the client back to the pool
@@ -155,7 +155,7 @@ export async function getLink(req: Request, res: Response): Promise<void> {
         }
     } catch (err: any) {
         // Log the error and send a 500 status code if an error occurs
-        console.error('Error retrieving link', err.stack);
+        console.error('❌📁 Error getting link', err.stack);
         res.status(500).send('Internal Server Error');
     } finally {
         // Release the client back to the pool
@@ -212,7 +212,7 @@ export async function getLinkStats(req: Request, res: Response): Promise<void> {
 
         res.json(data);
     } catch (err: any) {
-        console.error('Error retrieving link stats', err.stack);
+        console.error('❌📁 Error retrieving link stats', err.stack);
         res.status(500).json({ error: 'Internal Server Error' });
     } finally {
         if (client) {
