@@ -22,7 +22,7 @@ export async function checkToken(req: Request, res: Response): Promise<void> {
         // Send the validated user data to the frontend
         res.json(response.data);
     } catch (err: any) {
-        console.log("❌🔑 Error validating token", err);
+        console.error("❌🔑 Error validating token", err);
         res.status(401).json({ error: "Invalid token" });
     }
 
