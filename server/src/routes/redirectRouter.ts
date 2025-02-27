@@ -39,4 +39,5 @@ redirectRouter.get('/:slug', async (req, res) => {
         }
     }
 });
+
 export default redirectRouter;
