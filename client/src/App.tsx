@@ -16,16 +16,6 @@ import Configuration from "./configuration.ts"; // Import the Configuration file
 import useAuthorization from "./hooks/Authorization.tsx";
 import axios from "axios";
 
-// ✅ Create a reusable Axios instance with Authorization header
-const apiClient = axios.create({
-  baseURL: Configuration.loginApiUrl,
-  headers: {
-    Authorization: localStorage.getItem("token")
-      ? `Bearer ${localStorage.getItem("token")}`
-      : "",
-  },
-});
-
 // Interfaces
 interface Mandate {
   id: string;
@@ -47,57 +37,16 @@ interface Group {
 }
 
 const App = () => {
-  const { pls, loading, hasToken, user } = useAuthorization();
-  const [userMandates, setUserMandates] = useState<Mandate[]>([]);
-  const [allMandates, setAllMandates] = useState<Role[]>([]);
-  const [allGroups, setAllGroups] = useState<Group[]>([]);
+  const [hasToken, setHasToken] = useState<boolean>(false);
 
-  // Debugging to check user state
   useEffect(() => {
-    console.log("👤 useAuthorization values:", { user, hasToken, pls, loading });
-  }, [user, hasToken, pls, loading]);
-
-  // ✅ Fetch user mandates only when `hasToken` is set
-  const getUserMandates = useCallback(() => {
-    if (!user) return;
-
-    apiClient
-      .get<{ mandates: Mandate[] }>(`/user/kthid/${user}/current`)
-      .then((res) => {
-        console.log("✅ Fetched User Mandates:", res.data.mandates);
-        setUserMandates(res.data.mandates);
-      })
-      .catch((error) => console.error("❌ Failed to fetch user mandates:", error));
-  }, [user]);
-
-  const getAllMandates = useCallback(() => {
-    apiClient
-      .get<Role[]>("/roles")
-      .then((res) => {
-        console.log("✅ Fetched All Mandates:", res.data);
-        setAllMandates(res.data);
-      })
-      .catch((error) => console.error("❌ Failed to fetch all mandates:", error));
+    const token = localStorage.getItem("token");
+    setHasToken(!!token);
   }, []);
 
-  const getAllGroups = useCallback(() => {
-    apiClient
-      .get<Group[]>("/groups/all")
-      .then((res) => {
-        console.log("✅ Fetched All Groups:", res.data);
-        setAllGroups(res.data);
-      })
-      .catch((error) => console.error("❌ Failed to fetch groups:", error));
-  }, []);
-
-  // ✅ Run API calls when `hasToken` changes
   useEffect(() => {
-    if (hasToken) {
-      getUserMandates();
-      getAllMandates();
-      getAllGroups();
-    }
-  }, [hasToken, getUserMandates, getAllMandates, getAllGroups]);
+    console.log("👉 Current hasToken state:", hasToken);
+  }, [hasToken]);
 
   const config = {
     system_name: "link-shortener",
@@ -121,13 +70,13 @@ const App = () => {
       <BrowserRouter basename="/">
         <div id="application" className="light-blue">
           <Methone config={config} />
-          <RemoveTokenFromURL />
           <Routes>
-            <Route path="/" element={<Home userMandates={userMandates} pls={pls} hasToken={hasToken} />} />
-            <Route path="/shorten" element={<Home userMandates={userMandates} pls={pls} hasToken={hasToken} />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/shorten" element={<Home />} />
             <Route path="/login" element={<LoginRedirect />} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/links" element={<Links user={user} userMandates={userMandates} allMandates={allMandates} pls={pls} allGroups={allGroups} />} />
+            <Route path="/links" element={<Links  />} />
+            <Route path="/auth/oidc-callback" element={<OIDCCallback />} />
           </Routes>
         </div>
       </BrowserRouter>
@@ -135,36 +84,66 @@ const App = () => {
   );
 };
 
-// ✅ Handle token removal from URL
-const RemoveTokenFromURL = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { pls, loading, hasToken, user } = useAuthorization();
-
-  useEffect(() => {
-    console.log("🔄 Current Authorization State:", { user, hasToken, pls, loading, currentPath: location.pathname });
-
-    const tokenMatch = location.pathname.match(/^\/token\/(.+)$/);
-    if (tokenMatch) {
-      const token = tokenMatch[1];
-      console.log("🔑 Token Found:", token);
-      localStorage.setItem("token", token);
-      navigate("/", { replace: true });
-    }
-  }, [location, navigate, user, hasToken, pls, loading]);
-
-  return null;
-};
-
 // ✅ Redirect to login with correct callback
 const LoginRedirect = () => {
   useEffect(() => {
-    const callbackUrl = encodeURIComponent(window.location.origin + "/token/");
-    console.log("🔄 Redirecting to:", `${Configuration.loginApiUrl}/login?callback=${callbackUrl}`);
-    window.location.href = `${Configuration.loginApiUrl}/login?callback=${callbackUrl}`;
+    const callbackUrl = encodeURIComponent(`${window.location.origin}/auth/oidc-callback`);
+    // Use OIDC authorization endpoint
+    const authUrl = `${Configuration.oidcIssuer}/authorize?` + 
+      `client_id=${Configuration.clientId}&` +
+      `redirect_uri=${callbackUrl}&` +
+      `response_type=code&` +
+      `scope=openid`;
+
+    console.log("🔄 Redirecting to OIDC:", authUrl);
+    window.location.href = authUrl;
   }, []);
 
-  return <div></div>;
+  return <div>Redirecting to login...</div>;
+};
+
+// Add this new component
+const OIDCCallback = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+
+    if (code) {
+      console.log("🔑 Authorization Code Received:", code);
+      
+      axios.post('http://localhost:5000/api/auth/verify-token', { token: code })
+        .then(response => {
+          // Log the complete response data
+          console.log("📦 Complete response data:", response.data);
+          
+          // Store everything in localStorage
+          localStorage.setItem("token", code);
+          localStorage.setItem("data", JSON.stringify(response.data));
+          
+          // Log what was stored
+          console.log("💾 Stored data:", {
+            token: code,
+            userData: response.data
+          });
+          
+          navigate("/", { replace: true });
+        })
+        .catch(error => {
+          console.error("❌ Token verification failed:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("data");
+          navigate("/login", { replace: true });
+        });
+    } else {
+      console.error("❌ No code received in callback");
+      navigate("/login", { replace: true });
+    }
+  }, [location, navigate]);
+
+  return <div>Verifying login...</div>;
 };
 
 // ✅ Logout handler
