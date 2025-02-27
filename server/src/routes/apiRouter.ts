@@ -29,7 +29,7 @@ apiRouter.get('/status', async (req, res) => {
         const result = await client.query('SELECT NOW()');
         res.status(200).json({ message: 'Authorized access', status: 'API is running', time: result.rows[0].now });
     } catch (err: any) {
-        console.error('Error executing query', err.stack);
+        console.error('❌ Error executing query 📁', err.stack);
         res.status(500).send('Internal Server Error');
     } finally {
         if (client) {

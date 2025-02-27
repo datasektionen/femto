@@ -22,7 +22,7 @@ redirectRouter.get('/:slug', async (req, res) => {
             const redirectUrl = result.rows[0].url;
 
             // Logga klicket i url_clicks-tabellen
-            console.log(`Logging click for URL ID: ${urlId}`);
+            console.log(`✅ Logging click for URL ID: ${urlId} 📁`);
             await client.query('INSERT INTO url_clicks (url_id) VALUES ($1)', [urlId]);
 
             // Omdirigera
@@ -31,7 +31,7 @@ redirectRouter.get('/:slug', async (req, res) => {
             res.status(404).send('Slug not found');
         }
     } catch (err: any) {
-        console.error('Error executing query', err.stack);
+        console.error('❌ Error executing query 📁', err.stack);
         res.status(500).send('Internal Server Error');
     } finally {
         if (client) {
