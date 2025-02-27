@@ -10,6 +10,7 @@ import {
 import Methone from "methone";
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
+
 import Links from "./views/Links.tsx";
 import Configuration from "./configuration.ts"; // Import the Configuration file
 import useAuthorization from "./hooks/Authorization.tsx";
