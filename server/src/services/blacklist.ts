@@ -1,14 +1,5 @@
 import fs from "fs";
-import { Pool } from "pg";
-
-// Initialize the pool
-const pool = new Pool({
-    user: 'db_user',
-    host: 'db_host',
-    database: 'db_name',
-    password: 'db_password',
-    port: 5432, // default PostgreSQL port
-});
+import pool from "../db";
 
 /*
 Copied from the existing Pico
@@ -59,3 +50,19 @@ const getBlackList2 = async () => {
 }
 
 getBlackList();
+
+/**
+ * Checks if link is blacklisted.
+ * 
+ * @param {string} link - The link to check.
+ * @returns {boolean} - True if the link is in the blacklist, false otherwise.
+ */
+export function isBlacklisted(link: string): boolean {
+    const host = new URL(link).host;
+    if (
+        blacklist[host] ||
+        blacklist[`www.${host}`] ||
+        blacklist[host.replace(/www[.]/, "")]
+    ) { return true; }
+    return false;
+}
