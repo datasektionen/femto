@@ -12,6 +12,17 @@ export async function addLinkBlacklist(req: Request, res: Response): Promise<voi
 };
 
 /**
+ * Retrieves all links from the blacklist.
+ * 
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} - A promise that resolves when the links are retrieved from the blacklist.
+ */
+export async function getBlacklist(req: Request, res: Response): Promise<void> {
+    // TODO: Implement function
+};
+
+/**
  * Removes a link from the blacklist.
  * 
  * @param {Request} req - Express request object.
@@ -23,12 +34,12 @@ export async function removeLinkBlacklist(req: Request, res: Response): Promise<
 };
 
 /**
- * Retrieves all links from the blacklist.
+ * Checks if a link is in the blacklist.
  * 
  * @param {Request} req - Express request object.
  * @param {Response} res - Express response object.
- * @returns {Promise<void>} - A promise that resolves when the links are retrieved from the blacklist.
+ * @returns {Promise<void>} - A promise that resolves when the link is checked against the blacklist.
  */
-export async function getBlacklist(req: Request, res: Response): Promise<void> {
+export async function checkLinkBlacklist(req: Request, res: Response): Promise<void> {
     // TODO: Implement function
 };
