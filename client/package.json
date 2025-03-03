@@ -1,47 +1,39 @@
 {
-  "name": "client",
-  "version": "0.1.0",
+  "name": "my-app",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3000",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "@mantine/core": "^4.2.2",
     "@mantine/form": "^4.2.2",
     "@mantine/hooks": "^4.2.2",
-    "axios": "^0.22.0",
-    "cra-template-typescript": "1.2.0",
-    "methone": "github:datasektionen/Methone#master",
-    "moment": "^2.29.1",
-    "qrcode.react": "^4.2.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-moment": "^1.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-qrcode-logo": "^2.9.0",
+    "axios": "^0.22.0",
+    "methone": "github:datasektionen/Methone#master",
+    "qrcode.react": "^4.2.0",
     "react-router-dom": "^6.x.x",
-    "react-scripts": "5.0.1",
     "recharts": "^2.15.1",
     "web-vitals": "^4.2.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
   }
 }
