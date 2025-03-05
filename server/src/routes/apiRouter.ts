@@ -1,14 +1,13 @@
 import { Router } from 'express';
-import pool from '../db';
-import { getLinkStats, getAllLinks, getLink, insertLink } from '../utils/link'; // Importera statistik-funktionen
-import { apiKeyAuth } from '../middleware/auth';
-import { checkToken } from '../utils/token';
+import { getLinkStats, getAllLinks, getLink, insertLink } from '../controllers/linkController'; // Importera statistik-funktionen
+import { apiKeyAuth } from '../middlewares/authMiddleware';
+import { verifyCode } from '../controllers/authController';
+import { getAPIStatus } from '../controllers/statusController';
+import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
 
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
- * 
- * TODO: Add authentication and authorization to the API routes.
  */
 const apiRouter = Router();
 
@@ -21,28 +20,14 @@ apiRouter.use(apiKeyAuth);
  * Endpoint to check the status of the API.
  * Queries the database for the current time and returns it.
  */
-apiRouter.get('/status', async (req, res) => {
-    // Query the database for the current time
-    let client;
-    try {
-        client = await pool.connect();
-        const result = await client.query('SELECT NOW()');
-        res.status(200).json({ message: 'Authorized access', status: 'API is running', time: result.rows[0].now });
-    } catch (err: any) {
-        console.error('Error executing query', err.stack);
-        res.status(500).send('Internal Server Error');
-    } finally {
-        if (client) {
-            client.release();
-        }
-    }
-});
+apiRouter.get('/status', async (req, res) => { getAPIStatus(req, res);});
 
 /**
- * POST /api/auth/verify-token
- * Endpoint to verify a user's token.
+ * POST /api/auth/verify-code
+ * Endpoint to verify the authentication code.
+ * Delegates the request handling to the verifyCode utility function.
  */
-apiRouter.post("/auth/verify-token", async (req, res) => { checkToken(req, res); });
+apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); });
 
 /**
  * GET /api/stats
@@ -71,5 +56,33 @@ apiRouter.get('/links', async (req, res) => { getAllLinks(req, res); });
  * Delegates the request handling to the getLink utility function.
  */
 apiRouter.get('/links/:slug', async (req, res) => { getLink(req, res); });
+
+/**
+ * POST /api/blacklist
+ * Adds a link to the blacklist.
+ * Delegates the request handling to the addLinkBlacklist utility function.
+ */
+apiRouter.post('/blacklist', async (req, res) => { addLinkBlacklist(req, res); });
+
+/**
+ * GET /api/blacklist
+ * Retrieves all links from the blacklist.
+ * Delegates the request handling to the getBlacklist utility function.
+ */
+apiRouter.get('/blacklist', async (req, res) => { getBlacklist(req, res); });
+
+/**
+ * DELETE /api/blacklist/:url
+ * Removes a link from the blacklist.
+ * Delegates the request handling to the removeLinkBlacklist utility function.
+ */
+apiRouter.delete('/blacklist/:url', async (req, res) => { removeLinkBlacklist(req, res); });
+
+/**
+ * POST /api/blacklist/:url
+ * Checks if a link is in the blacklist.
+ * Delegates the request handling to the checkLinkBlacklist utility function.
+ */
+apiRouter.post('/blacklist/:url', async (req, res) => { checkLinkBlacklist(req, res); });
 
 export default apiRouter;

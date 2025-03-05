@@ -1,16 +1,17 @@
 const VALID_API_KEYS = new Set([process.env.API_KEY]); // Expand if storing in DB
 
 /**
- * Middleware function to authenticate requests using an API key.
- *
- * This function checks for the presence of an API key in the "Authorization" header of the request.
- * The API key should be provided in the format "Bearer <API_KEY>".
- * If the API key is missing or invalid, a 401 Unauthorized response is sent.
- * Otherwise, the request is allowed to proceed to the next middleware or route handler.
- *
- * @param req - The request object.
- * @param res - The response object.
- * @param next - The next middleware function.
+ * Middleware to authenticate requests using an API key.
+ * 
+ * Validates the API key from the "Authorization" header (format: "Bearer <API_KEY>").
+ * Returns 401 Unauthorized if missing or invalid, otherwise proceeds to next handler.
+ * 
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ * 
+ * @remarks
+ * The function types for `req`, `res`, and `next` are set to `any` to avoid type errors.
  */
 export const apiKeyAuth = (req: any, res: any, next: any) => {
     // Extract the API key from the "Authorization" header

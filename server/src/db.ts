@@ -31,9 +31,9 @@ const insertStatement = fs.readFileSync(insertPath, 'utf8');
 async function createTables() {
     try {
         await pool.query(schemaStatement);
-        console.log('Tables created or already exist');
-    } catch (err) {
-        console.error('Error creating tables', err);
+        console.log('✅ Tables created or already exist 📁');
+    } catch (err: any) {
+        console.error('❌ Error creating tables 📁', err.stack);
     }
 }
 
@@ -46,9 +46,9 @@ async function insertData() {
     try {
         client = await pool.connect();
         await client.query(insertStatement);
-        console.log('Data inserted or already exist');
-    } catch (err) {
-        console.error('Error inserting data', err);
+        console.log('✅ Data inserted or already exist 📁');
+    } catch (err: any) {
+        console.error('❌ Error inserting data 📁', err.stack);
     } finally {
         if (client) {
             client.release();
@@ -67,17 +67,17 @@ async function connectWithRetry(maxRetries: number = 5, delay: number = 2000) {
     while (retries < maxRetries) {
         try {
             await pool.connect();
-            console.log('Connected to the database');
+            console.log('✅ Connected to the database 📁');
             await createTables();
             await insertData();
             return; // Exit the function if connection is successful
         } catch (err: any) {
-            console.error(`Attempt ${retries + 1} failed to connect to the database:`, err.message);
+            console.error(`⛔ Attempt ${retries + 1} failed to connect to the database 📁`, err.stack);
             retries++;
             await new Promise(resolve => setTimeout(resolve, delay)); // Wait before retrying
         }
     }
-    console.error('Failed to connect to the database after multiple retries.');
+    console.error('❌ Failed to connect to the database after multiple retries 📁');
     process.exit(1); // Exit the process if connection fails after all retries
 }
 
