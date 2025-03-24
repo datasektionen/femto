@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../auth/useAuth.ts';
+import { useAuth } from '../../autherization/useAuth.ts';
 import React from 'react';
 
 interface ProtectedRouteProps {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth/useAuth.ts';
+import { useAuth } from '../../autherization/useAuth.ts';
 
 export const Logout = () => {
   const navigate = useNavigate();
