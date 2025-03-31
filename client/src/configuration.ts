@@ -1,5 +1,5 @@
-const CLIENT_ID = process.env.REACT_APP_CLIENT_ID || "";
-const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET || "";
+const CLIENT_ID = import.meta.env.VITE_API_CLIENT_ID || "";
+const CLIENT_SECRET = import.meta.env.VITE_API_CLIENT_SECRET || "";
 
 interface AppConfig {
   loginApiUrl: string;

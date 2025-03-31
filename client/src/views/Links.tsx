@@ -19,8 +19,8 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-const API_KEY = process.env.REACT_APP_API_KEY || null;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_KEY = import.meta.env.VITE_API_KEY || null;
 
 // Skapa en instans av axios med vår API‑URL och API‑nyckel
 const api = axios.create({

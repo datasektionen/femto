@@ -4,12 +4,14 @@ import Methone from "methone";
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
+
 import { AuthProvider } from "./autherization/AuthContext.tsx";
 import { useAuth } from "./autherization/useAuth.ts";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
 import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
+
 
 const AppContent = () => {
   const { hasToken } = useAuth();

@@ -15,7 +15,7 @@ import {
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
 
-const API_KEY = process.env.REACT_APP_API_KEY || null;  // Get API key from environment variables
+const API_KEY = import.meta.env.VITE_API_KEY || null;  // Get API key from environment variables
 
 /**
  * LinkCreator contains UI components used for link creation on the Homepage
