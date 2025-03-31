@@ -47,6 +47,20 @@ job "femto" {
       template {
         data        = <<ENV
 PORT={{ env "NOMAD_PORT_backend" }}
+POSTGRES_HOST=postgres.dsekt.internal
+POSTGRES_PORT=5432
+POSTGRES_DB=femto-dev
+POSTGRES_USER=femto-dev
+{{ with nomadVar "nomad/jobs/femto" }}
+POSTGRES_PASSWORD={{ .db_password }}
+CLIENT_ID={{ .oidc_client_id }} # rename to OIDC_
+CLIENT_SECRET={{ .oidc_client_secret }} # rename to OIDC_
+{{ end }}
+OIDC_ISSUER=https://sso.datasektionen.se
+REDIRECT_URI=https://admin.${var.domain_name}/auth/oidc-callback # delete this, should be calc'd
+API_KEY=4798016ff562e7b008d2ea3dcc0158687b53a247092d9317dc74a3f569aae48a # delete this(?!)
+API_URL=https://${var.domain_name}
+CLIENT_URL=https://admin.${var.domain_name}
 ENV
         destination = "local/.env"
         env         = true
