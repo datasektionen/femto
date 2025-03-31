@@ -1,0 +1,27 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../autherization/useAuth.ts';
+import React from 'react';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const { hasToken } = useAuth();
+
+  if (!hasToken) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'Lato' 
+      }}>
+        Hoppsan, verkar som att du inte loggat in
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
