@@ -37,6 +37,7 @@ interface Group {
 }
 
 const App = () => {
+  console.log("App bootstrapping...")
   const [hasToken, setHasToken] = useState<boolean>(false);
 
   useEffect(() => {
