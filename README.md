@@ -15,7 +15,7 @@ A simple **link-shortening** service built with **TypeScript**, **React**, and *
 
 ## Prerequisites
 
-1. [Node.js](https://nodejs.org/) (for local development).
+1. [Node.js](https://nodejs.org/), version must be 22 or higher. (for local development).
 2. [Docker](https://www.docker.com/) (for containerized deployment).
 3. [Docker Compose](https://docs.docker.com/compose/) (to orchestrate multiple containers).
 
@@ -187,6 +187,9 @@ npm test
 1. **Branch off `dev`** for new features or bug fixes.  
 2. **Open a Pull Request** to merge into `dev` once changes are ready.  
 3. **Keep changes minimal and well-described**.
+
+## FAQ
+- Why is the client just showing a blank page? You may need to provide the right environment variables in `.env`, this goes for both the client respectively the server.
 
 ---
 
