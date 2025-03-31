@@ -141,7 +141,7 @@ You can also run the client and server locally:
    ```bash
    cd client
    npm install
-   npm start
+   npm run dev
    ```
    The app should start on [http://localhost:3000/](http://localhost:3000/).
 
