@@ -1,3 +1,5 @@
+// Links.tsx (Komplett Översiktsvy - Vite + Axios Instance)
+
 import React, { useEffect, useState } from "react";
 import {
     Button,
@@ -5,137 +7,104 @@ import {
     Table,
     Select,
     Pagination,
-    Modal,
     Text,
-} from "@mantine/core";
+    Group,
+} from "@mantine/core"; // Använder Mantine v4-komponenter
 import { Header } from "methone";
 import axios from "axios";
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
+import { useNavigate } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Hämta från Vite environment variables
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"; // Anpassa port om nödvändigt
 const API_KEY = import.meta.env.VITE_API_KEY || null;
 
-// Skapa en instans av axios med vår API‑URL och API‑nyckel
+// Skapa en instans av axios med bas-URL och eventuell API-nyckel
 const api = axios.create({
     baseURL: API_URL,
-    headers: { "Authorization": `Bearer ${API_KEY}` },
+    headers: API_KEY ? { "Authorization": `Bearer ${API_KEY}` } : {},
 });
 
-// Definiera interface för Link (basinfo om länkarna)
+// Interface för Link
 interface Link {
     id: string;
     slug: string;
     url: string;
     description: string;
-    date: string;
-    expires: string | null;
+    date: string; // ISO String
+    expires: string | null; // ISO String or null
     clicks: number;
     user_id: string | null;
     mandate: string | null;
 }
 
-// Interface för statistikdata
-interface StatsData {
-    date: string;   // ex: "2025-01-01T09:00:00.000Z"
-    clicks: number;
-}
-
+// Anpassa efter din autentiseringslogik om nödvändigt
 const hasToken = true;
 
 const Links: React.FC = () => {
-    // Länkar (grundinfo)
+    // --- State ---
     const [linksData, setLinksData] = useState<Link[]>([]);
-    // Laddning/fel
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Sorteringsstate, pagination
     const [filter, setFilter] = useState<string>("newest-oldest");
     const [activePage, setActivePage] = useState(1);
     const itemsPerPage = 5;
 
-    // Modal och statistikstate
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedLink, setSelectedLink] = useState<Link | null>(null);
+    const navigate = useNavigate();
 
-    const [statsData, setStatsData] = useState<StatsData[]>([]);
-    const [statsLoading, setStatsLoading] = useState(false);
-    const [statsError, setStatsError] = useState<string | null>(null);
-
-    // Här väljer vi vilken granularitet vi vill hämta: "hour" eller "day"
-    const [granularity, setGranularity] = useState("day");
-
-    // Hämta länkar
+    // --- Effects ---
+    // Hämta länkar vid mount
     useEffect(() => {
+        setLoading(true);
+        setError(null);
         api
-            .get<Link[]>("/api/links")
+            .get<Link[]>("/api/links") 
             .then((res) => {
                 setLinksData(res.data);
                 setLoading(false);
             })
             .catch((err) => {
-                console.error(err);
-                setError("Kunde inte hämta länkar");
+                console.error("Fel vid hämtning av länkar:", err);
+                if (axios.isAxiosError(err)) {
+                     if (err.response?.status === 401 || err.response?.status === 403) {
+                        setError("Åtkomst nekad. Kontrollera din API-nyckel eller inloggning.");
+                    } else {
+                        setError("Kunde inte hämta länkar. Nätverks- eller serverfel.");
+                    }
+                } else {
+                     setError("Ett okänt fel inträffade vid hämtning av länkar.");
+                }
                 setLoading(false);
             });
-    }, []);
+    }, []); 
 
-    // Hämta statistikdata när en länk eller granularitet ändras
-    useEffect(() => {
-        if (selectedLink) {
-            setStatsLoading(true);
-            setStatsError(null);
-
-            api
-                .get<StatsData[]>(`/api/links/${selectedLink.slug}/stats`, {
-                    // Skicka med granularity som query‑parameter
-                    params: { granularity },
-                })
-                .then((res) => {
-                    setStatsData(res.data);
-                    setStatsLoading(false);
-                })
-                .catch((err) => {
-                    console.error(err);
-                    setStatsError("Kunde inte hämta statistik");
-                    setStatsLoading(false);
-                });
-        } else {
-            // Om ingen länk är vald, töm statistiken
-            setStatsData([]);
-        }
-    }, [selectedLink, granularity]);
-
-    // Öppna statistik-modal
-    const handleOpenStats = (link: Link) => {
-        setSelectedLink(link);
-        setModalOpen(true);
+    const copyToClipboard = (slug: string) => {
+        const shortUrl = `${window.location.origin}/${slug}`;
+        navigator.clipboard.writeText(shortUrl)
+            .then(() => console.log("Kopierad kort länk:", shortUrl))
+            .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
     };
 
-    // Kopiera länk till klippbordet
-    const copyToClipboard = (url: string) => {
-        navigator.clipboard.writeText(url).then(
-            () => console.log("Copied to clipboard:", url),
-            (err) => console.error("Failed to copy:", err)
-        );
+    const handleShowDetails = (slug: string) => {
+        navigate(`/links/${slug}/stats`);
     };
 
-    // Hantera laddning/fel för grundlänkar
+     
     if (loading) {
-        return <Text>Laddar...</Text>;
+        return <div id="content"><Text>Laddar länkar...</Text></div>;
     }
     if (error) {
-        return <Alert color="red">{error}</Alert>;
+        
+        return (
+            <>
+                <Header title="Fel" />
+                <div id="content">
+                    <Alert color="red" title="Fel">{error}</Alert>
+                </div>
+            </>
+        );
     }
 
-    // Sortera och pagina länkarna
+   
     const sortedLinks = [...linksData].sort((a, b) => {
         switch (filter) {
             case "newest-oldest":
@@ -155,161 +124,101 @@ const Links: React.FC = () => {
         }
     });
 
+    const totalPages = Math.ceil(sortedLinks.length / itemsPerPage);
     const paginatedLinks = sortedLinks.slice(
         (activePage - 1) * itemsPerPage,
         activePage * itemsPerPage
     );
 
+   
     return (
         <>
-            <Header title="Länkar" />
+            <Header title="Länkar - Översikt" />
             <div id="content">
                 {!hasToken && (
-                    <Alert title="Du är inte inloggad" color="blue">
-                        Logga in för att förkorta länkar
-                    </Alert>
-                )}
-
-                {/* Filtermeny för sortering */}
-                <div
-                    style={{
-                        marginBottom: "25px",
-                        display: "flex",
-                        flexDirection: "column",
-                    }}
-                >
-                    <Select
-                        label="Sort by"
-                        value={filter}
-                        onChange={(value) => setFilter(value || "newest-oldest")}
-                        data={[
-                            { value: "newest-oldest", label: "Newest to Oldest" },
-                            { value: "oldest-newest", label: "Oldest to Newest" },
-                            { value: "clicks-ascending", label: "Clicks (Ascending)" },
-                            { value: "clicks-descending", label: "Clicks (Descending)" },
-                            { value: "slug-a-z", label: "Slug (A-Ö)" },
-                            { value: "slug-z-a", label: "Slug (Ö-A)" },
-                        ]}
-                    />
+                     <Alert title="Du är inte inloggad" color="blue" mb="md">
+                         Logga in för att förkorta länkar
+                     </Alert>
+                 )}
+                <div style={{ marginBottom: "25px", maxWidth: "300px" }}> 
+                     <Select
+                          label="Sortera efter" 
+                          value={filter}
+                          onChange={(value) => { setFilter(value || "newest-oldest"); setActivePage(1); }} 
+                          data={[
+                              { value: "newest-oldest", label: "Nyast först" },
+                              { value: "oldest-newest", label: "Äldst först" },
+                              { value: "clicks-descending", label: "Mest klick (fallande)" },
+                              { value: "clicks-ascending", label: "Minst klick (stigande)" },
+                              { value: "slug-a-z", label: "Slug (A-Ö)" },
+                              { value: "slug-z-a", label: "Slug (Ö-A)" },
+                          ]}
+                      />
                 </div>
 
-                {/* Tabell med länkar */}
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>Slug</th>
-                            <th>URL</th>
-                            <th>Description</th>
-                            <th>Created</th>
-                            <th>Expire</th>
-                            <th>Clicks</th>
-                            <th>User</th>
-                            <th>Mandate</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedLinks.map((link) => (
-                            <tr key={link.id}>
-                                <td>{link.slug}</td>
-                                <td>
-                                    <a href={link.url} target="_blank" rel="noopener noreferrer">
-                                        {link.url}
-                                    </a>
-                                </td>
-                                <td>{link.description}</td>
-                                <td>{link.date}</td>
-                                <td>{link.expires ? link.expires : "No expire"}</td>
-                                <td>{link.clicks}</td>
-                                <td>{link.user_id}</td>
-                                <td>{link.mandate}</td>
-                                <td>
-                                    <Button onClick={() => copyToClipboard(link.url)}>
-                                        Copy
-                                    </Button>
-                                    <Button
-                                        style={{ marginTop: "0.5rem" }}
-                                        onClick={() => handleOpenStats(link)}
-                                    >
-                                        Visa statistik
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
+               
+                <div style={{ overflowX: 'auto' }}> 
+                    <Table striped highlightOnHover >
+                        <thead>
+                             <tr>
+                                 <th>Slug</th>
+                                 <th>URL</th>
+                                 <th>Beskrivning</th>
+                                 <th>Skapad</th>
+                                 <th>Går ut</th>
+                                 <th>Klick</th>
+                                 <th>Användare</th>
+                                 <th>Mandat</th>
+                                 <th>Åtgärder</th>
+                             </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedLinks.length > 0 ? (
+                                paginatedLinks.map((link) => (
+                                    <tr key={link.id}>
+                                        <td><span style={{ fontFamily: 'monospace' }}>{link.slug}</span></td>
+                                        <td><a href={link.url} target="_blank" rel="noopener noreferrer" title={link.url} style={{ display: 'block', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link.url}</a></td>
+                                        <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={link.description}>{link.description || "-"}</td>
+                                        <td>{new Date(link.date).toLocaleDateString('sv-SE')}</td>
+                                        <td>{link.expires ? new Date(link.expires).toLocaleDateString('sv-SE') : "Aldrig"}</td>
+                                        <td>{link.clicks}</td>
+                                        <td>{link.user_id || "-"}</td>
+                                        <td>{link.mandate || "-"}</td>
+                                        <td>
+                                             <Group spacing="xs" noWrap>
+                                                <Button size="xs" variant="light" onClick={() => copyToClipboard(link.slug)}>
+                                                    Kopiera
+                                                </Button>
+                                                <Button
+                                                    size="xs"
+                                                    variant="outline"
+                                                    onClick={() => handleShowDetails(link.slug)}
+                                                >
+                                                    Mer info
+                                                </Button>
+                                             </Group>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={9}><Text align="center" color="dimmed">Inga länkar att visa.</Text></td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
 
-                {/* Pagination */}
-                <Pagination
-                    page={activePage}
-                    onChange={setActivePage}
-                    total={Math.ceil(sortedLinks.length / itemsPerPage)}
-                />
-            </div>
-
-            {/* Modal för statistik */}
-            <Modal
-                opened={modalOpen}
-                onClose={() => {
-                    setModalOpen(false);
-                    setSelectedLink(null);
-                    setGranularity("day"); // återställ om du vill
-                }}
-                title="Statistik"
-            >
-                {selectedLink && (
-                    <div>
-                        <Text>
-                            <strong>Slug:</strong> {selectedLink.slug}
-                        </Text>
-                        <Text>
-                            <strong>URL:</strong> {selectedLink.url}
-                        </Text>
-                        <Text>
-                            <strong>Description:</strong> {selectedLink.description}
-                        </Text>
-                        <Text>
-                            <strong>Created:</strong> {selectedLink.date}
-                        </Text>
-                        <Text>
-                            <strong>Expire:</strong>{" "}
-                            {selectedLink.expires ? selectedLink.expires : "No expire"}
-                        </Text>
-                        <Text>
-                            <strong>Totala klick:</strong> {selectedLink.clicks}
-                        </Text>
-
-                        {/* Välj granularitet (timme, dag) */}
-                        <div style={{ margin: "1rem 0" }}>
-                            <Select
-                                label="Visa statistik per"
-                                value={granularity}
-                                onChange={(value) => setGranularity(value!)}
-                                data={[
-                                    { value: "hour", label: "Timme" },
-                                    { value: "day", label: "Dag" },
-                                ]}
-                            />
-                        </div>
-
-                        {statsLoading && <Text>Laddar statistik...</Text>}
-                        {statsError && <Alert color="red">{statsError}</Alert>}
-                        {!statsLoading && !statsError && statsData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={statsData}>
-                                    <XAxis dataKey="date" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Line type="monotone" dataKey="clicks" stroke="#8884d8" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            !statsLoading &&
-                            !statsError && <Text>Ingen statistik tillgänglig.</Text>
-                        )}
-                    </div>
+                {/* Paginering */}
+                {totalPages > 1 && (
+                    <Pagination
+                        style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}
+                        page={activePage}
+                        onChange={setActivePage}
+                        total={totalPages}
+                    />
                 )}
-            </Modal>
+            </div>
         </>
     );
 };
