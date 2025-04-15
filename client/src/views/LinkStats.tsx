@@ -124,7 +124,7 @@ const fillMissingDays = (data: StatsData[], startDate: Date, endDate: Date): Sta
 
 // --- React Component ---
 const LinkStats: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   // --- State ---
@@ -139,7 +139,7 @@ const LinkStats: React.FC = () => {
 
   // Hämta länkdetaljer
   useEffect(() => {
-    if (!slug) {
+    if (!id) {
         setError("Ingen länk specificerad i URL:en.");
         setLoadingDetails(false);
         return;
@@ -147,7 +147,7 @@ const LinkStats: React.FC = () => {
     setLoadingDetails(true);
     setError(null);
     api
-      .get<Link>(`/api/links/${slug}`)
+      .get<Link>(`/api/links/${id}`)
       .then((res) => {
         setLinkDetails(res.data);
         setLoadingDetails(false);
@@ -155,16 +155,16 @@ const LinkStats: React.FC = () => {
       .catch((err) => {
         console.error("Fel vid hämtning av länkdetaljer:", err);
         if (axios.isAxiosError(err) && err.response?.status === 404) {
-             setError(`Länken med slug "${slug}" hittades inte.`);
+             setError(`Länken med id "${id}" hittades inte.`);
         } else if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)){
             setError("Åtkomst nekad att hämta länkdetaljer.");
         }
          else {
-            setError(`Kunde inte hämta detaljer för länken "${slug}".`);
+            setError(`Kunde inte hämta detaljer för länken "${id}".`);
         }
         setLoadingDetails(false);
       });
-  }, [slug]);
+  }, [id]);
 
   // Hämta statistikdata
   useEffect(() => {
