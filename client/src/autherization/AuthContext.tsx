@@ -12,21 +12,14 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasToken, setHasToken] = useState<boolean>(() => {
-    // Initialize hasToken from localStorage during first render
     const token = localStorage.getItem('token');
+    console.log("🏁 [9] AuthProvider init, token exists:", !!token);
     return !!token;
   });
 
-  // Update hasToken whenever localStorage changes
   useEffect(() => {
-    const handleStorageChange = () => {
-      const token = localStorage.getItem('token');
-      setHasToken(!!token);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    console.log("🔒 [10] Auth state changed:", { hasToken });
+  }, [hasToken]);
 
   return (
     <AuthContext.Provider value={{ hasToken, setHasToken }}>
