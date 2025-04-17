@@ -1,19 +1,15 @@
 import { Router } from 'express';
 import { getLinkStats, getAllLinks, getLink, insertLink } from '../controllers/linkController'; // Importera statistik-funktionen
-import { apiKeyAuth } from '../middlewares/authMiddleware';
 import { verifyCode } from '../controllers/authController';
 import { getAPIStatus } from '../controllers/statusController';
 import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
+import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
 
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
  */
 const apiRouter = Router();
-
-// Apply the apiKeyAuth middleware to all routes under the apiRouter.
-// This ensures that any request to the /api/* endpoints must include a valid API key in the Authorization header.
-apiRouter.use(apiKeyAuth);
 
 /**
  * GET /api/status
@@ -35,6 +31,9 @@ apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); 
  */
 // GET /api/links/:slug/stats
 apiRouter.get('/links/:slug/stats', getLinkStats);
+
+// Apply jwtAuth middleware to protect the /api/links routes
+apiRouter.use('/links', jwtAuth);
 
 /**
  * POST /api/links
