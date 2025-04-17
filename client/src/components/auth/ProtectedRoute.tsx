@@ -1,4 +1,3 @@
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../autherization/useAuth.ts';
 import React from 'react';
 
