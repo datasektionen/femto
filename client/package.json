@@ -17,7 +17,7 @@
     "@tabler/icons-react": "^3.31.0",
     "@types/qrcode.react": "^1.0.5",
     "axios": "^1.8.4",
-    "methone": "github:datasektionen/Methone#master",
+    "methone": "github:datasektionen/Methone",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-qrcode-logo": "^3.0.0",

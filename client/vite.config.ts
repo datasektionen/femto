@@ -10,8 +10,6 @@ export default defineConfig({
     // host: true,
   },
   build: {
-    // Ensure this isn't set to false or 'hidden' for production
-    sourcemap: true,
-    // If sourcemap is set here, it might override the command-line flag.
+    sourcemap: true // Enable source maps for easier debugging
   },
 })
