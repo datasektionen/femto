@@ -1,7 +1,10 @@
 # Build the React app
-FROM node:22 AS build
+FROM node:23-slim AS build
 
 WORKDIR /app
+
+# Install git
+RUN apt-get update && apt-get install -y git
 
 # Copy only package.json first to leverage Docker cache
 COPY package.json ./
@@ -16,6 +19,8 @@ COPY . .
 # Run the build script (ensure this is the correct command)
 # 'npm run build' is typically correct for creating a production image.
 RUN npm run build
+
+RUN ls -la /app/dist
 
 # Serve the app with custom Nginx config
 FROM nginx:alpine
