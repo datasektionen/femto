@@ -1,11 +1,20 @@
 # Build the React app
-FROM node:23 AS build
+FROM node:22 AS build
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy only package.json first to leverage Docker cache
+COPY package.json ./
+
+# Install dependencies based on package.json, generating a lock file appropriate for the container env
+# This avoids issues with lock files generated on different OS/architectures.
 RUN npm install
+
+# Copy the rest of the application code
 COPY . .
+
+# Run the build script (ensure this is the correct command)
+# 'npm run build' is typically correct for creating a production image.
 RUN npm run build
 
 # Serve the app with custom Nginx config

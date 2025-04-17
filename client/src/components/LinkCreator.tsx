@@ -47,6 +47,14 @@ interface LinkCreatorProps {
     userMandates?: { id: string; role: string }[]; // Optional mandates for linking
 }
 
+// Define the type for the form values
+interface FormValues {
+  url: string;
+  short?: string; // Optional based on 'custom' prop
+  expire?: string; // Optional based on radio button
+  mandate?: string; // Optional based on userMandates
+}
+
 // Main functional component
 const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled, userMandates = [] }) => {
     const { classes } = useStyles(); // Using styles defined above
@@ -75,7 +83,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
     });
 
     // Function to handle form submission
-    const submit = async (values) => {
+    const submit = async (values: FormValues) => {
         if (fetching) return;
         setFetching(true);
         setResult("");
@@ -112,7 +120,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
     
             setResult(shortUrl);
             form.reset();
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error submitting form:", err);
             setError({ title: "Error", message: err.message || "Something went wrong" });
         } finally {
@@ -203,7 +211,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
                     </Center>
                     <br />
                     <Center>
-                        <QRCode value={constructShortUrl(result)} size={240} level="H" renderAs="canvas" logoImage="/logo.svg" logoWidth={52} />
+                        <QRCode value={constructShortUrl(result)} size={240} ecLevel="H" logoImage="/logo.svg" logoWidth={52} />
                     </Center>
                 </>
             )}
