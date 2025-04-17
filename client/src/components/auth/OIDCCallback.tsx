@@ -25,34 +25,48 @@ export const OIDCCallback = () => {
       sessionStorage.setItem("processingAuth", "true");
 
       axios
-        .post<{ token: string; userData: any }>(
+        .post<{ token: string; userData: any; userPermissions: any; userMandates: any }>(
           "http://localhost:5000/api/auth/verify-code",
           { code: code }
         )
         .then((response) => {
-          console.log("✅ [4] Token received from backend");
+          console.log("✅ [4] Token and user data received from backend");
           const token = response.data.token;
           const userData = response.data.userData;
+          const userPermissions = response.data.userPermissions;
+          const userMandates = response.data.userMandates;
+          
+          // Store all data in localStorage
           localStorage.setItem("token", token);
           localStorage.setItem("userData", JSON.stringify(userData));
+          localStorage.setItem("userPermissions", JSON.stringify(userPermissions));
+          localStorage.setItem("userMandates", JSON.stringify(userMandates));
+          
+          // Add detailed console logs to display user information
+          console.log("📧 User Email:", userData.email || "No email found");
+          console.log("👤 Username:", userData.sub || userData.username || userData.user || "No username found");
+          console.log("🔐 User Permissions:", userPermissions);
+          console.log("🏢 User Mandates (Groups):", userMandates);
+          
           setHasToken(true);
           sessionStorage.removeItem("processingAuth");
           navigate("/", { replace: true });
         })
         .catch((error) => {
           console.error(
-            "❌ [7] Auth error:",
+            "❌ [5] Auth error:",
             error.response?.data || error.message
           );
           localStorage.removeItem("token");
           localStorage.removeItem("userData");
+          localStorage.removeItem("userPermissions");
           localStorage.removeItem("userMandates");
           sessionStorage.removeItem("processingAuth");
           setHasToken(false);
           navigate("/login", { replace: true });
         });
     } else {
-      console.log("❌ [8] No code received in callback");
+      console.log("❌ [6] No code received in callback");
       navigate("/login", { replace: true });
     }
   }, []);
