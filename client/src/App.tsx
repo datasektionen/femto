@@ -1,9 +1,9 @@
-import React from "react";
 import { BrowserRouter, Route, Routes, Link } from "react-router-dom";
 import Methone from "methone";
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
+import LinkStats from "./views/LinkStats.tsx";
 
 import { AuthProvider } from "./autherization/AuthContext.tsx";
 import { useAuth } from "./autherization/useAuth.ts";
@@ -43,6 +43,7 @@ const AppContent = () => {
             </ProtectedRoute>
           } 
         />
+        <Route path="/links/:id/stats" element={<ProtectedRoute><LinkStats /></ProtectedRoute>} />
         <Route path="/auth/oidc-callback" element={<OIDCCallback />} />
       </Routes>
     </div>

@@ -1,3 +1,5 @@
+
+
 // Import necessary libraries and hooks from React
 import React, { useState, useEffect, useRef } from "react";
 // Import the QRCode component from the 'qrcode.react' library
@@ -127,3 +129,5 @@ export default QRCodeGenerator;
  * 3. Add the new component to your routes if needed:
  *    <Route path="/another" element={<AnotherComponent />} />
  */
+
+

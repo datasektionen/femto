@@ -221,6 +221,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             logoImage="/logo.svg"
             logoWidth={52}
           />
+
         </div>
       )}
     </Box>
