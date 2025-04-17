@@ -2,25 +2,49 @@ import React, { useState } from "react";
 import { Button, Title, Text, TextInput, Alert, Radio, RadioGroup, Select, Center, Tooltip, Box, Loader } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
-import '@mantine/core/styles.css';  // Import Mantine core styles first
+import '@mantine/core/styles.css';
+import type { CSSProperties, ReactNode } from 'react'; // Import ReactNode
 
 const API_KEY = import.meta.env.VITE_API_KEY || null;
 
 // Placeholder utility functions
-const constructShortUrl = (url: string) => `shortened-example.com/${url}`;
+//const constructShortUrl = (url: string) => `shortened-example.com/${url}`;
 const constructShortUrlWithProtocol = (url: string) => `https://${url}`;
 const copyShortUrlToClipboard = (url: string) => navigator.clipboard.writeText(url);
 
-// Inline styles instead of createStyles
+// Define type for form values
+interface FormValues {
+  url: string;
+  short: string;
+  expire: string;
+  mandate: string | null; // Keep mandate value as string (e.g., mandate ID)
+}
+
+// Define type for API Error response
+interface ApiError {
+  title: string;
+  message: string;
+}
+
+// Define the structure for a Mandate object (matching Home.tsx)
+interface Mandate {
+    id: string;
+    role: string;
+    // Add other properties if they exist in Home.tsx's mandate objects
+}
+
+
+// Inline styles
 const styles = {
+  // ... (keep existing styles) ...
   root: {
     padding: "20px",
     maxWidth: "600px",
-    margin: "0 auto",
+    margin: "20px auto", // Added margin for spacing between creators
     backgroundColor: "#f9f9f9",
     borderRadius: "8px",
     boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-    minHeight: "50vh", // Ensure the container has a minimum height
+    minHeight: "50vh",
   },
   input: {
     marginBottom: "10px",
@@ -36,39 +60,36 @@ const styles = {
   },
   resultContainer: {
     marginTop: "30px",
-    textAlign: "center",
+    textAlign: "center" as CSSProperties['textAlign'],
   },
 };
 
 interface LinkCreatorProps {
-  title: string;
-  desc: string | React.ReactNode;
+  title?: string;
+  desc?: ReactNode; // Changed from string to ReactNode
   custom?: boolean;
   disabled?: boolean;
-  userMandates?: { id: string; role: string }[];
+  userMandates?: Mandate[]; // Changed from string[] to Mandate[]
 }
 
 const LinkCreator: React.FC<LinkCreatorProps> = ({
-  title,
-  desc,
-  custom,
-  disabled,
-  userMandates = [],
+  title = "Förkorta en länk",
+  desc = "Klistra in en länk för att förkorta den.", // Default desc remains a string
+  custom = true,
+  disabled = false,
+  userMandates = [], // Default remains empty array
 }) => {
-  // State management
-  const [radio, setRadio] = useState("no");
   const [fetching, setFetching] = useState(false);
-  const [error, setError] = useState<{ title: string; message: string } | null>(null);
   const [result, setResult] = useState("");
+  const [error, setError] = useState<ApiError | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Form handling using Mantine's useForm
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
       url: "",
       short: "",
       expire: "",
-      mandate: "",
+      mandate: null,
     },
     validate: {
       url: (value) =>
@@ -77,7 +98,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   });
 
   // Function to handle form submission
-  const submit = async (values) => {
+  const submit = async (values: FormValues) => {
     if (fetching) return;
     setFetching(true);
     setResult("");
@@ -86,9 +107,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     const data = {
       slug: values.short || "",
       url: values.url,
-      user_id: "yourUserIdHere", // Replace with actual user ID from state/context
+      user_id: "yourUserIdHere", // Replace with actual user ID logic
       expire: values.expire || null,
-      mandate: values.mandate || null,
+      mandate: values.mandate || null, // Mandate value is already the ID (string) from the form
     };
 
     try {
@@ -96,133 +117,163 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${API_KEY}`, // Include API key in the Authorization header
+          Authorization: `Bearer ${API_KEY}`, // Make sure API_KEY is handled securely
         },
         body: JSON.stringify(data),
       });
 
       const resData = await response.json();
-      console.log("API Response:", resData); // Debugging output
 
       if (!response.ok) {
-        throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
+        throw new Error(resData.message || `HTTP error! status: ${response.status}`);
       }
 
-      // Check available keys and set result
-      const shortUrl = resData.slug || resData.short || resData.url;
-      if (!shortUrl) throw new Error("No valid short URL returned");
-
-      setResult(shortUrl);
+      setResult(resData.slug);
       form.reset();
+
     } catch (err) {
-      console.error("Error submitting form:", err);
-      setError({ title: "Error", message: err.message || "Something went wrong" });
+      let errorMessage = "Something went wrong";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      setError({ title: "Error", message: errorMessage });
     } finally {
       setFetching(false);
     }
   };
 
+  const handleCopy = () => {
+    copyShortUrlToClipboard(constructShortUrlWithProtocol(result));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Prepare data for the Select component from the Mandate objects
+  const mandateSelectData = userMandates.map((m) => ({
+      label: m.role, // Use role for display
+      value: m.id,   // Use id as the value
+  }));
+
+
   return (
     <Box style={styles.root}>
       <Title order={2}>{title}</Title>
-      <Text>{desc}</Text>
-
-      {error && (
-        <Alert title={error.title} color="red">
-          {error.message}
-        </Alert>
-      )}
+      {/* Render desc directly as it can now be JSX */}
+      <Box mb="md">{desc}</Box>
 
       <form onSubmit={form.onSubmit(submit)}>
-        <TextInput
+        {/* ... TextInput for url ... */}
+         <TextInput
           style={styles.input}
-          placeholder="Lång jävla länk"
+          placeholder="Lång länk (inkl. https://)"
+          label="URL att förkorta"
+          required
           {...form.getInputProps("url")}
           disabled={fetching || disabled}
         />
 
+
         {custom && (
           <TextInput
             style={styles.input}
-            placeholder="Önskad förkortad länk, till exempel 'sm-handlingar'"
+            placeholder="Önskad kortlänk (t.ex. sm-handlingar)"
+            label="Anpassad kortlänk (valfritt)"
             {...form.getInputProps("short")}
             disabled={fetching || disabled}
           />
         )}
 
-        <div style={styles.formControl}>
-          <RadioGroup label="Utgångsdatum" value={radio} onChange={setRadio}>
+        {/* ... RadioGroup for expire ... */}
+        <RadioGroup
+            label="Sätt utgångsdatum (valfritt)"
+            value={form.values.expire ? "yes" : "no"}
+            onChange={(value) => {
+                if (value === 'no') {
+                    form.setFieldValue('expire', ''); // Clear expire date if 'No' is selected
+                } else {
+                    // Optionally set a default date or leave it for the input
+                    // form.setFieldValue('expire', new Date().toISOString().slice(0, 16));
+                }
+            }}
+            style={styles.formControl}
+            >
             <Radio value="yes" label="Ja" disabled={fetching || disabled} />
             <Radio value="no" label="Nej" disabled={fetching || disabled} />
-          </RadioGroup>
-        </div>
+        </RadioGroup>
 
-        {radio === "yes" && (
-          <div style={styles.dateInput}>
-            <TextInput
-              type="datetime-local"
-              {...form.getInputProps("expire")}
-              disabled={fetching || disabled}
+
+        {/* Conditionally render date input based on RadioGroup, not form value */}
+        {form.getInputProps('expire').value !== '' || (form.values.expire && form.getInputProps('expire').value === '') && ( // Show if 'yes' is selected OR if there's an initial value
+             <TextInput
+                type="datetime-local"
+                label="Utgångsdatum och tid"
+                style={styles.dateInput}
+                required={form.getInputProps('expire').value !== ''} // Make required only if 'yes' is selected
+                {...form.getInputProps("expire")}
+                disabled={fetching || disabled}
             />
-          </div>
         )}
 
-        {userMandates.length > 0 && (
-          <div style={styles.formControl}>
-            <Text>Koppla länken till ett mandat eller grupp?</Text>
-            <Select
-              label="Framtida funktionärer på posten blir ägare av länken"
-              data={userMandates.map((m) => ({ label: m.role, value: m.id }))}
-              searchable
-              allowDeselect
-              {...form.getInputProps("mandate")}
-              disabled={fetching || disabled}
-            />
-          </div>
+
+        {/* Check if userMandates array has items */}
+        {userMandates && userMandates.length > 0 && (
+          <Select
+            label="Koppla till mandat (valfritt)"
+            placeholder="Välj mandat"
+            data={mandateSelectData} // Use the mapped data
+            searchable
+            clearable // Replaces allowDeselect in newer Mantine versions
+            style={styles.formControl}
+            {...form.getInputProps("mandate")} // This binds the selected mandate ID (string)
+            disabled={fetching || disabled}
+          />
         )}
 
-        <Button style={styles.button} type="submit" disabled={!form.values.url || fetching || disabled}>
+        <Button type="submit" loading={fetching} disabled={disabled} style={styles.button} fullWidth>
           Förkorta
         </Button>
       </form>
 
-      {fetching && (
-        <Center mt="xl">
-          <Loader />
-        </Center>
+      {/* ... Error, Loader, Result sections ... */}
+       {error && (
+        <Alert title={error.title} color="red" withCloseButton onClose={() => setError(null)} mt="md">
+          {error.message}
+        </Alert>
       )}
 
-      {result && (
-        <div style={styles.resultContainer}>
-          <h3>
-            <a href={constructShortUrlWithProtocol(result)} target="_blank" rel="noopener noreferrer">
-              {constructShortUrl(result)}
-            </a>
-          </h3>
+      {fetching && <Center mt="md"><Loader /></Center>}
 
-          <Tooltip label="Kopierat" opened={copied} transition="fade">
+      {result && (
+        <Box style={styles.resultContainer}>
+          <Title order={3}>Din förkortade länk:</Title>
+          <Text size="lg" fw={500} mb="md">
+            {constructShortUrlWithProtocol(result)}
+          </Text>
+
+          <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 150 }}>
             <Button
-              onClick={() => {
-                copyShortUrlToClipboard(result);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 3000);
-              }}
-              disabled={fetching}
+              onClick={handleCopy}
+              variant="light"
+              mb="lg"
             >
               Kopiera länk
             </Button>
           </Tooltip>
 
-          <QRCode
-            value={constructShortUrl(result)}
-            size={240}
-            level="H"
-            renderAs="canvas"
-            logoImage="/logo.svg"
-            logoWidth={52}
-          />
+          <Center>
+             <QRCode
+                value={constructShortUrlWithProtocol(result)}
+                size={180} // Slightly smaller QR code
+                ecLevel="H"
+                logoImage="/logo.svg" // Ensure this path is correct
+                logoWidth={40}
+                logoPadding={5}
+             />
+          </Center>
 
-        </div>
+        </Box>
       )}
     </Box>
   );

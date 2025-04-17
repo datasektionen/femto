@@ -9,10 +9,13 @@ import {
     Pagination,
     Text,
     Group,
+    ActionIcon,
+    Container,
 } from "@mantine/core"; // Använder Mantine v4-komponenter
 import { Header } from "methone";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { IconChartBar } from "@tabler/icons-react";
 
 // Hämta från Vite environment variables
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"; // Anpassa port om nödvändigt
@@ -134,7 +137,7 @@ const Links: React.FC = () => {
     return (
         <>
             <Header title="Länkar - Översikt" />
-            <div id="content">
+            <Container>
                 {!hasToken && (
                      <Alert title="Du är inte inloggad" color="blue" mb="md">
                          Logga in för att förkorta länkar
@@ -185,7 +188,7 @@ const Links: React.FC = () => {
                                         <td>{link.user_id || "-"}</td>
                                         <td>{link.mandate || "-"}</td>
                                         <td>
-                                             <Group spacing="xs" noWrap>
+                                             <Group gap="xs" wrap="nowrap">
                                                 <Button size="xs" variant="light" onClick={() => copyToClipboard(link.slug)}>
                                                     Kopiera
                                                 </Button>
@@ -196,29 +199,32 @@ const Links: React.FC = () => {
                                                 >
                                                     Mer info
                                                 </Button>
+                                                <ActionIcon component={Link} to={`/links/${link.id}/stats`} variant="subtle" color="gray" title="Visa statistik">
+                                                    <IconChartBar size={16} />
+                                                </ActionIcon>
+                                                {/* Add other actions like edit/delete here */}
                                              </Group>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={9}><Text align="center" color="dimmed">Inga länkar att visa.</Text></td>
+                                    <td colSpan={9}><Text ta="center" color="dimmed">Inga länkar att visa.</Text></td>
                                 </tr>
                             )}
                         </tbody>
                     </Table>
-                </div>
 
-                {/* Paginering */}
-                {totalPages > 1 && (
-                    <Pagination
-                        style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}
-                        page={activePage}
-                        onChange={setActivePage}
-                        total={totalPages}
-                    />
-                )}
-            </div>
+                    {totalPages > 1 && (
+                        <Pagination
+                            style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}
+                            value={activePage}
+                            onChange={setActivePage}
+                            total={totalPages}
+                        />
+                    )}
+                </div>
+            </Container>
         </>
     );
 };
