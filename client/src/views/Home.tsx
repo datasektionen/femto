@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+
+import React from "react";
+
 import { Alert } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
@@ -15,12 +17,7 @@ const hasPermissionsOr = (userPermissions: string[], requiredPermissions: string
 
 const Home = () => {
   // Placeholder data
-  const [hasToken, setHasToken] = useState<boolean>(false);
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setHasToken(!!token);
-  }, []);
-
+  const hasToken = true;
   const userMandates = [{ id: "1", role: "user" }];  // Mock user mandates
   const pls = ["admin", "user"];  // Placeholder permissions
   

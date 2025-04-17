@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mantine/core": "^4.2.2",
-    "@mantine/form": "^4.2.2",
-    "@mantine/hooks": "^4.2.2",
+    "@mantine/core": "^7.17.3",
+    "@mantine/form": "^7.17.3",
+    "@mantine/hooks": "^7.17.3",
+    "@mantine/notifications": "^7.17.3",
     "@types/qrcode.react": "^1.0.5",
     "axios": "^1.8.4",
     "methone": "github:datasektionen/Methone#master",
