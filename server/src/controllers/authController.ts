@@ -115,6 +115,8 @@ export { fetchUserPermissions, fetchUserMemberships };
  * @param {Response} res - Express response object.
  * @returns {Promise<void>} - A promise that resolves when the code is verified and the response is sent.
  */
+// Tar koden vi får från sso och verifierar den, skickar tillbaka en jwt token till frontend
+// och hämtar permissions och mandates från hive
 export async function verifyCode(req: Request, res: Response): Promise<void> {
     // Check if the OIDC client is initialized
     if (!client) {
