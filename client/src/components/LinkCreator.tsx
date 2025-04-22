@@ -1,214 +1,282 @@
 import React, { useState } from "react";
-import {
-    Button,
-    createStyles,
-    Title,
-    Text,
-    TextInput,
-    Alert,
-    Radio,
-    RadioGroup,
-    Select,
-    Center,
-    Tooltip,
-} from "@mantine/core";
+import { Button, Title, Text, TextInput, Alert, Radio, RadioGroup, Select, Center, Tooltip, Box, Loader } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
+import '@mantine/core/styles.css';
+import type { CSSProperties, ReactNode } from 'react'; // Import ReactNode
 
-const API_KEY = import.meta.env.VITE_API_KEY || null;  // Get API key from environment variables
+const API_KEY = import.meta.env.VITE_API_KEY || null;
 
-/**
- * LinkCreator contains UI components used for link creation on the Homepage
- * Current version implements interactable UI components, 
- * however we use placeholder functions, as these functions are not yet implemented
- */
+// Placeholder utility functions
+//const constructShortUrl = (url: string) => `shortened-example.com/${url}`;
+const constructShortUrlWithProtocol = (url: string) => `https://${url}`;
+const copyShortUrlToClipboard = (url: string) => navigator.clipboard.writeText(url);
 
-// PLACEHOLDERS, Utility functions for URL formatting and copying 
-const constructShortUrl = (url: string) => `shortened-example.com/${url}`; // Constructs a shortened URL
-const constructShortUrlWithProtocol = (url: string) => `https://${url}`; // Adds HTTPS protocol to the shortened URL
-const copyShortUrlToClipboard = (url: string) => navigator.clipboard.writeText(url); // Copies the URL to clipboard
-
-// Styles for the component
-const useStyles = createStyles(() => ({
-    root: {
-        "input[type=radio]": { margin: 0 },
-        label: { marginBottom: 0 },
-    },
-    input: { margin: "10px 0" },
-    date: { margin: "20px 0" },
-}));
-
-// TypeScript interface defining the expected props for the component
-interface LinkCreatorProps {
-    title: string; // Title of the link creator section
-    desc: string | React.ReactNode; // Description text or JSX element
-    custom?: boolean; // Determines if users can specify a custom short URL
-    disabled?: boolean; // Whether the form is disabled
-    userMandates?: { id: string; role: string }[]; // Optional mandates for linking
+// Define type for form values
+interface FormValues {
+  url: string;
+  short: string;
+  expire: string;
+  mandate: string | null; // Keep mandate value as string (e.g., mandate ID)
 }
 
-// Main functional component
-const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled, userMandates = [] }) => {
-    const { classes } = useStyles(); // Using styles defined above
-    
-    // State management
-    const [radio, setRadio] = useState("no"); // State for radio button (expiry option)
-    const [fetching, setFetching] = useState(false); // State to track API request status
-    const [error, setError] = useState<{ title: string; message: string } | null>(null); // Error state
-    const [result, setResult] = useState(""); // Stores the generated short URL
-    const [copied, setCopied] = useState(false); // Tracks clipboard copy status
+// Define type for API Error response
+interface ApiError {
+  title: string;
+  message: string;
+}
 
-    // Form handling using Mantine's useForm
-    const form = useForm({
-        initialValues: {
-            url: "", // Original URL input
-            short: "", // Custom short URL (if enabled)
-            expire: "", // Expiry date (if enabled)
-            mandate: "", // Selected mandate (if applicable)
-        },
-        validate: {
-            url: (value) =>
-                /^https?:\/\/.*$/.test(value) // Ensures the URL starts with http:// or https://
-                    ? null
-                    : "Invalid URL. Should include http:// or https://",
-        },
-    });
+// Define the structure for a Mandate object (matching Home.tsx)
+interface Mandate {
+    id: string;
+    role: string;
+    // Add other properties if they exist in Home.tsx's mandate objects
+}
 
-    // Function to handle form submission
-    const submit = async (values) => {
-        if (fetching) return;
-        setFetching(true);
-        setResult("");
-        setError(null);
-    
-        const data = {
-            slug: values.short || "",
-            url: values.url,
-            user_id: "yourUserIdHere",  // Replace this with actual user ID from state/context
-            expire: values.expire || null, // Include expiry date if available
-            mandate: values.mandate || null, // Include mandate if selected
-        };
-    
-        try {
-            const response = await fetch("http://localhost:5000/api/links", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${API_KEY}`,  // Include API key in the Authorization header
-                },
-                body: JSON.stringify(data),
-            });
-    
-            const resData = await response.json();
-            console.log("API Response:", resData);  // Debugging output
-    
-            if (!response.ok) {
-                throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
-            }
-    
-            // Check available keys and set result
-            const shortUrl = resData.slug || resData.short || resData.url;
-            if (!shortUrl) throw new Error("No valid short URL returned");
-    
-            setResult(shortUrl);
-            form.reset();
-        } catch (err) {
-            console.error("Error submitting form:", err);
-            setError({ title: "Error", message: err.message || "Something went wrong" });
-        } finally {
-            setFetching(false);
-        }
+
+// Inline styles
+const styles = {
+  // ... (keep existing styles) ...
+  root: {
+    padding: "20px",
+    maxWidth: "600px",
+    margin: "20px auto", // Added margin for spacing between creators
+    backgroundColor: "#f9f9f9",
+    borderRadius: "8px",
+    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+    minHeight: "50vh",
+  },
+  input: {
+    marginBottom: "10px",
+  },
+  dateInput: {
+    marginBottom: "10px",
+  },
+  formControl: {
+    marginBottom: "20px",
+  },
+  button: {
+    marginTop: "30px",
+  },
+  resultContainer: {
+    marginTop: "30px",
+    textAlign: "center" as CSSProperties['textAlign'],
+  },
+};
+
+interface LinkCreatorProps {
+  title?: string;
+  desc?: ReactNode; // Changed from string to ReactNode
+  custom?: boolean;
+  disabled?: boolean;
+  userMandates?: Mandate[]; // Changed from string[] to Mandate[]
+}
+
+const LinkCreator: React.FC<LinkCreatorProps> = ({
+  title = "Förkorta en länk",
+  desc = "Klistra in en länk för att förkorta den.", // Default desc remains a string
+  custom = true,
+  disabled = false,
+  userMandates = [], // Default remains empty array
+}) => {
+  const [fetching, setFetching] = useState(false);
+  const [result, setResult] = useState("");
+  const [error, setError] = useState<ApiError | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const form = useForm<FormValues>({
+    initialValues: {
+      url: "",
+      short: "",
+      expire: "",
+      mandate: null,
+    },
+    validate: {
+      url: (value) =>
+        /^https?:\/\/.*$/.test(value) ? null : "Invalid URL. Should include http:// or https://",
+    },
+  });
+
+  // Function to handle form submission
+  const submit = async (values: FormValues) => {
+    if (fetching) return;
+    setFetching(true);
+    setResult("");
+    setError(null);
+
+    const data = {
+      slug: values.short || "",
+      url: values.url,
+      user_id: "yourUserIdHere", // Replace with actual user ID logic
+      expire: values.expire || null,
+      mandate: values.mandate || null, // Mandate value is already the ID (string) from the form
     };
-    
-    
 
-    return (
-        <div className={classes.root}>
-            <Title order={2}>{title}</Title>
-            <Text>{desc}</Text>
+    try {
+      const response = await fetch("http://localhost:5000/api/links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_KEY}`, // Make sure API_KEY is handled securely
+        },
+        body: JSON.stringify(data),
+      });
 
-            {error && (
-                <Alert title={error.title} color="red">
-                    {error.message}
-                </Alert>
-            )}
+      const resData = await response.json();
 
-            <form onSubmit={form.onSubmit(submit)}>
-                <TextInput className={classes.input} placeholder="Lång jävla länk" {...form.getInputProps("url")} disabled={fetching || disabled} />
-                
-                {custom && (
-                    <TextInput
-                        className={classes.input}
-                        placeholder="Önskad förkortad länk, till exempel 'sm-handlingar'"
-                        {...form.getInputProps("short")}
-                        disabled={fetching || disabled}
-                    />
-                )}
+      if (!response.ok) {
+        throw new Error(resData.message || `HTTP error! status: ${response.status}`);
+      }
 
-                <RadioGroup label="Utgångsdatum" value={radio} onChange={setRadio}>
-                    <Radio value="yes" label="Ja" disabled={fetching || disabled} />
-                    <Radio value="no" label="Nej" disabled={fetching || disabled} />
-                </RadioGroup>
+      setResult(resData.slug);
+      form.reset();
 
-                {radio === "yes" && (
-                    <div className={classes.date}>
-                        <input id="expire-time" type="datetime-local" {...form.getInputProps("expire")} disabled={fetching || disabled} />
-                    </div>
-                )}
+    } catch (err) {
+      let errorMessage = "Something went wrong";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      setError({ title: "Error", message: errorMessage });
+    } finally {
+      setFetching(false);
+    }
+  };
 
-                {userMandates.length > 0 && (
-                    <div className={classes.date}>
-                        <Text>Koppla länken till ett mandat eller grupp?</Text>
-                        <Select
-                            label="Framtida funktionärer på posten blir ägare av länken"
-                            data={userMandates.map((m) => ({ label: m.role, value: m.id }))}
-                            searchable
-                            allowDeselect
-                            {...form.getInputProps("mandate")}
-                            disabled={fetching || disabled}
-                            autoComplete="off"
-                        />
-                    </div>
-                )}
+  const handleCopy = () => {
+    copyShortUrlToClipboard(constructShortUrlWithProtocol(result));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-                <Button type="submit" disabled={!form.values.url || fetching || disabled}>
-                    Förkorta
-                </Button>
-            </form>
+  // Prepare data for the Select component from the Mandate objects
+  const mandateSelectData = userMandates.map((m) => ({
+      label: m.role, // Use role for display
+      value: m.id,   // Use id as the value
+  }));
 
-            {result && (
-                <>
-                    <Center>
-                        <div>
-                            <h3>
-                                <a href={constructShortUrlWithProtocol(result)} target="_blank" rel="noopener noreferrer">
-                                    {constructShortUrl(result)}
-                                </a>
-                            </h3>
-                        </div>
-                    </Center>
-                    <Center>
-                        <Tooltip label="Kopierat" opened={copied} transition="fade">
-                            <Button
-                                onClick={() => {
-                                    copyShortUrlToClipboard(result);
-                                    setCopied(true);
-                                    setTimeout(() => setCopied(false), 3000);
-                                }}
-                                disabled={fetching}
-                            >
-                                Kopiera länk
-                            </Button>
-                        </Tooltip>
-                    </Center>
-                    <br />
-                    <Center>
-                        <QRCode value={constructShortUrl(result)} size={240} level="H" renderAs="canvas" logoImage="/logo.svg" logoWidth={52} />
-                    </Center>
-                </>
-            )}
-        </div>
-    );
+
+  return (
+    <Box style={styles.root}>
+      <Title order={2}>{title}</Title>
+      {/* Render desc directly as it can now be JSX */}
+      <Box mb="md">{desc}</Box>
+
+      <form onSubmit={form.onSubmit(submit)}>
+        {/* ... TextInput for url ... */}
+         <TextInput
+          style={styles.input}
+          placeholder="Lång länk (inkl. https://)"
+          label="URL att förkorta"
+          required
+          {...form.getInputProps("url")}
+          disabled={fetching || disabled}
+        />
+
+
+        {custom && (
+          <TextInput
+            style={styles.input}
+            placeholder="Önskad kortlänk (t.ex. sm-handlingar)"
+            label="Anpassad kortlänk (valfritt)"
+            {...form.getInputProps("short")}
+            disabled={fetching || disabled}
+          />
+        )}
+
+        {/* ... RadioGroup for expire ... */}
+        <RadioGroup
+            label="Sätt utgångsdatum (valfritt)"
+            value={form.values.expire ? "yes" : "no"}
+            onChange={(value) => {
+                if (value === 'no') {
+                    form.setFieldValue('expire', ''); // Clear expire date if 'No' is selected
+                } else {
+                    // Optionally set a default date or leave it for the input
+                    // form.setFieldValue('expire', new Date().toISOString().slice(0, 16));
+                }
+            }}
+            style={styles.formControl}
+            >
+            <Radio value="yes" label="Ja" disabled={fetching || disabled} />
+            <Radio value="no" label="Nej" disabled={fetching || disabled} />
+        </RadioGroup>
+
+
+        {/* Conditionally render date input based on RadioGroup, not form value */}
+        {form.getInputProps('expire').value !== '' || (form.values.expire && form.getInputProps('expire').value === '') && ( // Show if 'yes' is selected OR if there's an initial value
+             <TextInput
+                type="datetime-local"
+                label="Utgångsdatum och tid"
+                style={styles.dateInput}
+                required={form.getInputProps('expire').value !== ''} // Make required only if 'yes' is selected
+                {...form.getInputProps("expire")}
+                disabled={fetching || disabled}
+            />
+        )}
+
+
+        {/* Check if userMandates array has items */}
+        {userMandates && userMandates.length > 0 && (
+          <Select
+            label="Koppla till mandat (valfritt)"
+            placeholder="Välj mandat"
+            data={mandateSelectData} // Use the mapped data
+            searchable
+            clearable // Replaces allowDeselect in newer Mantine versions
+            style={styles.formControl}
+            {...form.getInputProps("mandate")} // This binds the selected mandate ID (string)
+            disabled={fetching || disabled}
+          />
+        )}
+
+        <Button type="submit" loading={fetching} disabled={disabled} style={styles.button} fullWidth>
+          Förkorta
+        </Button>
+      </form>
+
+      {/* ... Error, Loader, Result sections ... */}
+       {error && (
+        <Alert title={error.title} color="red" withCloseButton onClose={() => setError(null)} mt="md">
+          {error.message}
+        </Alert>
+      )}
+
+      {fetching && <Center mt="md"><Loader /></Center>}
+
+      {result && (
+        <Box style={styles.resultContainer}>
+          <Title order={3}>Din förkortade länk:</Title>
+          <Text size="lg" fw={500} mb="md">
+            {constructShortUrlWithProtocol(result)}
+          </Text>
+
+          <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 150 }}>
+            <Button
+              onClick={handleCopy}
+              variant="light"
+              mb="lg"
+            >
+              Kopiera länk
+            </Button>
+          </Tooltip>
+
+          <Center>
+             <QRCode
+                value={constructShortUrlWithProtocol(result)}
+                size={180} // Slightly smaller QR code
+                ecLevel="H"
+                logoImage="/logo.svg" // Ensure this path is correct
+                logoWidth={40}
+                logoPadding={5}
+             />
+          </Center>
+
+        </Box>
+      )}
+    </Box>
+  );
 };
 
 export default LinkCreator;
