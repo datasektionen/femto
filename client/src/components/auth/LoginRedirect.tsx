@@ -4,9 +4,13 @@ import React from 'react';
 
 export const LoginRedirect = () => {
   useEffect(() => {
+    // Use the OIDC issuer base URL
+    const oidcIssuer = Configuration.loginApiUrl || 'https://sso.datasektionen.se';
+    
+    // Add the /op/ path segment which is missing
     const callbackUrl = encodeURIComponent(`${window.location.origin}/auth/oidc-callback`);
-    const authUrl = `${Configuration.oidcIssuer}/authorize?` + 
-      `client_id=${Configuration.clientId}&` +
+    const authUrl = `${oidcIssuer}/op/authorize?` + 
+      `client_id=${Configuration.clientId || 'femto-dev'}&` +
       `redirect_uri=${callbackUrl}&` +
       `response_type=code&` +
       `scope=openid profile email pls_*`;
@@ -15,5 +19,5 @@ export const LoginRedirect = () => {
     window.location.href = authUrl;
   }, []);
 
-  return <div></div>;
+  return <div>Redirecting to login...</div>;
 };

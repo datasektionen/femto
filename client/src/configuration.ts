@@ -1,5 +1,5 @@
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID || "";
-const CLIENT_SECRET = import.meta.env.VITE_CLIENT_SECRET || "";
+const loginApiUrl = import.meta.env.VITE_LOGIN_API_URL || "https://sso.datasektionen.se";
 
 interface AppConfig {
   loginApiUrl: string;
@@ -7,7 +7,7 @@ interface AppConfig {
 }
 
 const Configuration: AppConfig = {
-  loginApiUrl: "https://sso.datasektionen.se",
+  loginApiUrl: loginApiUrl,
   clientId: CLIENT_ID,  
 };
 

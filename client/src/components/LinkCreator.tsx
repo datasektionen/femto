@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Button,
     createStyles,
@@ -15,18 +15,10 @@ import {
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
 
-const API_KEY = import.meta.env.VITE_API_KEY || null;  // Get API key from environment variables
-
-/**
- * LinkCreator contains UI components used for link creation on the Homepage
- * Current version implements interactable UI components, 
- * however we use placeholder functions, as these functions are not yet implemented
- */
-
 // PLACEHOLDERS, Utility functions for URL formatting and copying 
-const constructShortUrl = (url: string) => `shortened-example.com/${url}`; // Constructs a shortened URL
-const constructShortUrlWithProtocol = (url: string) => `https://${url}`; // Adds HTTPS protocol to the shortened URL
-const copyShortUrlToClipboard = (url: string) => navigator.clipboard.writeText(url); // Copies the URL to clipboard
+const constructShortUrl = (url: string) => `shortened-example.com/${url}`;
+const constructShortUrlWithProtocol = (url: string) => `https://${url}`;
+const copyShortUrlToClipboard = (url: string) => navigator.clipboard.writeText(url);
 
 // Styles for the component
 const useStyles = createStyles(() => ({
@@ -40,35 +32,35 @@ const useStyles = createStyles(() => ({
 
 // TypeScript interface defining the expected props for the component
 interface LinkCreatorProps {
-    title: string; // Title of the link creator section
-    desc: string | React.ReactNode; // Description text or JSX element
-    custom?: boolean; // Determines if users can specify a custom short URL
-    disabled?: boolean; // Whether the form is disabled
-    userMandates?: { id: string; role: string }[]; // Optional mandates for linking
+    title: string;
+    desc: string | React.ReactNode;
+    custom?: boolean;
+    disabled?: boolean;
+    userMandates?: { id: string; role: string }[];
 }
 
 // Main functional component
 const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled, userMandates = [] }) => {
-    const { classes } = useStyles(); // Using styles defined above
+    const { classes } = useStyles();
     
     // State management
-    const [radio, setRadio] = useState("no"); // State for radio button (expiry option)
-    const [fetching, setFetching] = useState(false); // State to track API request status
-    const [error, setError] = useState<{ title: string; message: string } | null>(null); // Error state
-    const [result, setResult] = useState(""); // Stores the generated short URL
-    const [copied, setCopied] = useState(false); // Tracks clipboard copy status
-
+    const [radio, setRadio] = useState("no");
+    const [fetching, setFetching] = useState(false);
+    const [error, setError] = useState<{ title: string; message: string } | null>(null);
+    const [result, setResult] = useState("");
+    const [copied, setCopied] = useState(false);
+    
     // Form handling using Mantine's useForm
     const form = useForm({
         initialValues: {
-            url: "", // Original URL input
-            short: "", // Custom short URL (if enabled)
-            expire: "", // Expiry date (if enabled)
-            mandate: "", // Selected mandate (if applicable)
+            url: "",
+            short: "",
+            expire: "",
+            mandate: "",
         },
         validate: {
             url: (value) =>
-                /^https?:\/\/.*$/.test(value) // Ensures the URL starts with http:// or https://
+                /^https?:\/\/.*$/.test(value)
                     ? null
                     : "Invalid URL. Should include http:// or https://",
         },
@@ -80,13 +72,35 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
         setFetching(true);
         setResult("");
         setError(null);
+        
+        // Get JWT token and user data from localStorage
+        const token = localStorage.getItem("token");
+        let userData = null;
+        try {
+            userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        } catch (e) {
+            console.error("Error parsing user data:", e);
+        }
+        
+        // If token doesn't exist, show error
+        if (!token) {
+            setError({ 
+                title: "Authentication Error", 
+                message: "You must be logged in to create links." 
+            });
+            setFetching(false);
+            return;
+        }
+        
+        // Get user ID from userData (use appropriate property based on your userData structure)
+        const userId = userData?.sub || userData?.user || userData?.username || "unknown";
     
         const data = {
             slug: values.short || "",
             url: values.url,
-            user_id: "yourUserIdHere",  // Replace this with actual user ID from state/context
-            expire: values.expire || null, // Include expiry date if available
-            mandate: values.mandate || null, // Include mandate if selected
+            user_id: userId,  // Use actual user ID from userData
+            expire: values.expire || null,
+            mandate: values.mandate || null,
         };
     
         try {
@@ -94,13 +108,13 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${API_KEY}`,  // Include API key in the Authorization header
+                    "Authorization": `Bearer ${token}`,  // Use JWT token instead of API key
                 },
                 body: JSON.stringify(data),
             });
     
             const resData = await response.json();
-            console.log("API Response:", resData);  // Debugging output
+            console.log("API Response:", resData);
     
             if (!response.ok) {
                 throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
@@ -119,8 +133,6 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({ title, desc, custom, disabled
             setFetching(false);
         }
     };
-    
-    
 
     return (
         <div className={classes.root}>
