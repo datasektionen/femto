@@ -106,10 +106,6 @@ CLIENT_SECRET=your_oidc_client_secret
 # OIDC Issuer URL provided by your SSO provider
 OIDC_ISSUER=https://your-sso-provider.com
 
-# Full URL where the SSO provider should redirect back after authentication
-# Should match the path handled by OIDCCallback.tsx in the client
-REDIRECT_URI=http://localhost:5173/auth/oidc-callback
-
 # Optional: API Key for external services (if needed)
 # HIVE_API_KEY=your_hive_api_key_if_needed
 ```
