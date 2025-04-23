@@ -16,15 +16,14 @@ import { Header } from "methone";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { IconChartBar } from "@tabler/icons-react";
+import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
 
 // Hämta från Vite environment variables
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"; // Anpassa port om nödvändigt
-const API_KEY = import.meta.env.VITE_API_KEY || null;
 
-// Skapa en instans av axios med bas-URL och eventuell API-nyckel
+// Create axios instance with base URL - we'll add the token dynamically in the requests
 const api = axios.create({
-    baseURL: API_URL,
-    headers: API_KEY ? { "Authorization": `Bearer ${API_KEY}` } : {},
+    baseURL: API_URL
 });
 
 // Interface för Link
@@ -40,9 +39,6 @@ interface Link {
     mandate: string | null;
 }
 
-// Anpassa efter din autentiseringslogik om nödvändigt
-const hasToken = true;
-
 const Links: React.FC = () => {
     // --- State ---
     const [linksData, setLinksData] = useState<Link[]>([]);
@@ -51,16 +47,30 @@ const Links: React.FC = () => {
     const [filter, setFilter] = useState<string>("newest-oldest");
     const [activePage, setActivePage] = useState(1);
     const itemsPerPage = 5;
+    const { hasToken } = useAuth(); // Get authentication state from your auth context
 
     const navigate = useNavigate();
 
     // --- Effects ---
     // Hämta länkar vid mount
     useEffect(() => {
+        if (!hasToken) {
+            navigate('/login'); // Redirect to login if not authenticated
+            return;
+        }
+
         setLoading(true);
         setError(null);
+
+        // Get the JWT token from localStorage
+        const token = localStorage.getItem('token');
+        
         api
-            .get<Link[]>("/api/links") 
+            .get<Link[]>("/api/links", {
+                headers: {
+                    Authorization: `Bearer ${token}` // Use the JWT token from login
+                }
+            }) 
             .then((res) => {
                 setLinksData(res.data);
                 setLoading(false);
@@ -69,7 +79,8 @@ const Links: React.FC = () => {
                 console.error("Fel vid hämtning av länkar:", err);
                 if (axios.isAxiosError(err)) {
                      if (err.response?.status === 401 || err.response?.status === 403) {
-                        setError("Åtkomst nekad. Kontrollera din API-nyckel eller inloggning.");
+                        setError("Åtkomst nekad. Du behöver logga in igen.");
+                        navigate('/login'); // Redirect to login on auth error
                     } else {
                         setError("Kunde inte hämta länkar. Nätverks- eller serverfel.");
                     }
@@ -78,7 +89,7 @@ const Links: React.FC = () => {
                 }
                 setLoading(false);
             });
-    }, []); 
+    }, [hasToken, navigate]); // Added dependencies
 
     const copyToClipboard = (slug: string) => {
         const shortUrl = `${window.location.origin}/${slug}`;

@@ -1,19 +1,16 @@
 import { Router } from 'express';
 import { getLinkStats, getAllLinks, getLink, insertLink } from '../controllers/linkController'; // Importera statistik-funktionen
-import { apiKeyAuth } from '../middlewares/authMiddleware';
 import { verifyCode } from '../controllers/authController';
 import { getAPIStatus } from '../controllers/statusController';
 import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
+import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
+import axios from 'axios';
 
 /**
  * Router for API endpoints.
  * Handles requests to /api/* routes.
  */
 const apiRouter = Router();
-
-// Apply the apiKeyAuth middleware to all routes under the apiRouter.
-// This ensures that any request to the /api/* endpoints must include a valid API key in the Authorization header.
-apiRouter.use(apiKeyAuth);
 
 /**
  * GET /api/status
@@ -35,6 +32,9 @@ apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); 
  */
 // GET /api/links/:slug/stats
 apiRouter.get('/links/:slug/stats', getLinkStats);
+
+// Apply jwtAuth middleware to protect the /api/links routes
+apiRouter.use('/links', jwtAuth);
 
 /**
  * POST /api/links
@@ -84,5 +84,201 @@ apiRouter.delete('/blacklist/:url', async (req, res) => { removeLinkBlacklist(re
  * Delegates the request handling to the checkLinkBlacklist utility function.
  */
 apiRouter.post('/blacklist/:url', async (req, res) => { checkLinkBlacklist(req, res); });
+
+/**
+ * GET /api/test-hive
+ * Test endpoint to diagnose Hive API connection issues
+ */
+apiRouter.get('/test-hive/:username', async (req, res) => {
+  const username = req.params.username;
+  const apiKey = process.env.HIVE_API_KEY;
+  
+  console.log(`🧪 Testing Hive API connection for user: ${username}`);
+  console.log(`🔑 Using API key with Bearer authentication`);
+  
+  try {
+    // Test permissions endpoint with Bearer token
+    console.log("🔍 Testing permissions endpoint...");
+    const permissionsResponse = await axios.get(
+      `https://hive.datasektionen.se/api/v1/user/${username}/permissions`,
+      {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`
+        }
+      }
+    );
+    
+    // Test memberships endpoint with Bearer token
+    console.log("🔍 Testing memberships endpoint...");
+    const membershipsResponse = await axios.get(
+      `https://hive.datasektionen.se/api/v1/tagged/link-manager/memberships/${username}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`
+        }
+      }
+    );
+    
+    // Return both responses for analysis
+    res.json({
+      success: true,
+      permissions: {
+        status: permissionsResponse.status,
+        data: permissionsResponse.data
+      },
+      memberships: {
+        status: membershipsResponse.status,
+        data: membershipsResponse.data
+      }
+    });
+  } catch (error: any) {
+    // Return detailed error information
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      responseData: error.response?.data,
+      responseStatus: error.response?.status,
+      responseHeaders: error.response?.headers,
+      requestHeaders: error.request?._header
+    });
+  }
+});
+
+/**
+ * GET /api/test-hive-alt
+ * Alternative test endpoint with different authentication methods
+ */
+apiRouter.get('/test-hive-alt/:username', async (req, res) => {
+  const username = req.params.username;
+  const apiKey = process.env.HIVE_API_KEY;
+  
+  console.log(`🧪 Testing alternative Hive API authentication methods for user: ${username}`);
+  
+  // Try multiple authentication methods
+  const authMethods = [
+    // Method 1: Original X-API-Key
+    {
+      name: "X-API-Key header",
+      headers: { "X-API-Key": apiKey }
+    },
+    // Method 2: Bearer token in Authorization header
+    {
+      name: "Bearer token",
+      headers: { "Authorization": `Bearer ${apiKey}` }
+    },
+    // Method 3: Token in Authorization header
+    {
+      name: "Token in Authorization",
+      headers: { "Authorization": `Token ${apiKey}` }
+    },
+    // Method 4: API key in Authorization header
+    {
+      name: "API Key in Authorization",
+      headers: { "Authorization": `ApiKey ${apiKey}` }
+    },
+    // Method 5: Lowercase x-api-key
+    {
+      name: "Lowercase x-api-key",
+      headers: { "x-api-key": apiKey }
+    }
+  ];
+  
+  // Results array for storing responses from each attempt
+  const results = [];
+  
+  // Try each authentication method
+  for (const method of authMethods) {
+    try {
+      console.log(`🔍 Testing permissions with ${method.name}...`);
+      
+      const response = await axios.get(
+        `https://hive.datasektionen.se/api/v1/user/${username}/permissions?system=femto`,
+        { headers: method.headers }
+      );
+      
+      results.push({
+        method: method.name,
+        success: true,
+        status: response.status,
+        data: response.data
+      });
+      
+      console.log(`✅ Success with ${method.name}`);
+      
+      // If we found a working method, we can stop and return early
+      break;
+    } catch (error: any) {
+      results.push({
+        method: method.name,
+        success: false,
+        status: error.response?.status,
+        error: error.message,
+        data: error.response?.data
+      });
+      console.log(`❌ Failed with ${method.name}: ${error.response?.status}`);
+    }
+  }
+  
+  // Also try a different endpoint format to see if we're using the correct URL structure
+  try {
+    console.log("🔍 Testing alternative endpoint URL format...");
+    const alternativeResponse = await axios.get(
+      `https://hive.datasektionen.se/api/v1/permissions/${username}?system=femto`,
+      { headers: { "X-API-Key": apiKey } }
+    );
+    
+    results.push({
+      method: "Alternative URL format",
+      success: true,
+      status: alternativeResponse.status,
+      data: alternativeResponse.data
+    });
+  } catch (error: any) {
+    results.push({
+      method: "Alternative URL format",
+      success: false,
+      status: error.response?.status,
+      error: error.message,
+      data: error.response?.data
+    });
+  }
+  
+  // Return all results
+  res.json({
+    success: results.some(r => r.success), // True if any method worked
+    results: results
+  });
+});
+
+/**
+ * GET /api/test-hive-user/:username
+ * Direct test of the updated Hive authentication methods
+ */
+apiRouter.get('/test-hive-user/:username', async (req, res) => {
+  const username = req.params.username;
+  
+  try {
+    console.log(`🧪 Testing updated Hive API functions for user: ${username}`);
+    
+    // Import the functions from authController
+    const { fetchUserPermissions, fetchUserMemberships } = require('../controllers/authController');
+    
+    // Call both functions with the username
+    const permissions = await fetchUserPermissions(username);
+    const mandates = await fetchUserMemberships(username);
+    
+    // Return the results
+    res.json({
+      success: true,
+      permissions: permissions,
+      mandates: mandates
+    });
+  } catch (error: any) { // Add type annotation to error
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Unknown error occurred'
+    });
+  }
+});
 
 export default apiRouter;

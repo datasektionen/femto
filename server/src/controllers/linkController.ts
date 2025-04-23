@@ -99,33 +99,40 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Retrieves all links from the database.
- *
- * @param {any} req - Express request object.
- * @param {any} res - Express response object.
- * @returns {Promise<void>} - A promise that resolves when the links are retrieved and the response is sent.
+ * Get all links created by the currently authenticated user.
+ * @param req The Express request object
+ * @param res The Express response object
  */
 export async function getAllLinks(req: Request, res: Response): Promise<void> {
-    let client;
-    try {
-        // Connect to the database
-        client = await pool.connect();
+  try {
+    // Get user ID from the JWT token (attached by the jwtAuth middleware)
+    // This is the 'sub' field from your JWT token which should contain the username
+    const userId = req.user?.sub;
 
-        // Execute the query to retrieve all links
-        const result = await client.query('SELECT * FROM urls');
+    console.log(`🔍 Fetching links for user: ${userId || 'unknown'}`);
 
-        // Send the retrieved links as a JSON response
-        res.status(200).json(result.rows);
-    } catch (err: any) {
-        // Log the error and send a 500 status code if an error occurs
-        console.error('❌ Error getting links 📁', err.stack);
-        res.status(500).send('Internal Server Error');
-    } finally {
-        // Release the client back to the pool
-        if (client) {
-            client.release();
-        }
+    if (!userId) {
+      console.error('❌ User ID not found in token');
+      res.status(400).json({ error: 'User ID not found in token' });
+      return;
     }
+
+    // Use the correct table name 'urls' instead of 'links'
+    const query = `
+      SELECT * FROM urls 
+      WHERE user_id = $1
+      ORDER BY expires DESC
+    `;
+    
+    const result = await pool.query(query, [userId]);
+    const links = result.rows;
+
+    console.log(`✅ Found ${links.length} links for user ${userId}`);
+    res.status(200).json(links);
+  } catch (error) {
+    console.error('❌ Error getting links:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 /**
