@@ -18,7 +18,7 @@ const AppContent = () => {
   // Define the configuration for Methone, as per the documentation
   const config = {
     system_name: "link-shortener",
-    color_scheme: 'lightBlue', // Make sure this color scheme is valid in Methone
+    color_scheme: 'light-blue', // Make sure this color scheme is valid in Methone
     login_href: hasToken ? "/logout" : "/login",
     login_text: hasToken ? "Logga ut" : "Logga in",
     links: [
@@ -32,7 +32,7 @@ const AppContent = () => {
   return (
     // This div wraps Methone and the page content.
     // The className should match the color_scheme for styling.
-    <div id="application" className='lightBlue'>
+    <div id="application" className='light-blue'>
       {/* Render the Methone component with the config */}
       <Methone config={config} />
 

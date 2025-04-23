@@ -10,6 +10,6 @@ export default defineConfig({
     // host: true,
   },
   build: {
-    sourcemap: true // Enable source maps for easier debugging
+    sourcemap: false // Enable source maps for easier debugging
   },
 })
