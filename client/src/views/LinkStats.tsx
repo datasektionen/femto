@@ -341,14 +341,9 @@ const LinkStats: React.FC = () => {
             <Select
                 label="Visa statistik per"
                 value={granularity}
-                onChange={(value: 'day' | 'hour' | 'week' | null) => setGranularity(value || "day")}
-                disabled={loadingStats}
-                data={[
-                  { value: "hour", label: "Timme (idag)" },
-                  { value: "day", label: "Dag (all historik)" },
-                  { value: "week", label: "Vecka (senaste 7 dagarna)" },
-                ]}
-                style={{ maxWidth: '250px' }}
+                onChange={(value) => setGranularity((value as 'day' | 'hour' | 'week' | null) || "day")} // Adjust onChange handler type/assertion
+                data={['day', 'hour', 'week']}
+                style={{ marginBottom: '20px' }}
             />
            </Box>
 
