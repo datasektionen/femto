@@ -9,7 +9,7 @@ import axios from 'axios';
 const OIDC_ISSUER = process.env.OIDC_ISSUER || 'https://sso.datasektionen.se';
 const CLIENT_ID = process.env.CLIENT_ID || 'client-id';
 const CLIENT_SECRET = process.env.CLIENT_SECRET || 'client-secret';
-const REDIRECT_URI = process.env.REDIRECT_URI || 'http://localhost:3000/auth/oidc-callback';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET;
 const HIVE_API_KEY = process.env.HIVE_API_KEY;
 
@@ -33,7 +33,7 @@ async function initializeClient() {
         client = new issuer.Client({
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
-            redirect_uris: [REDIRECT_URI],
+            redirect_uris: [`${CLIENT_URL}/auth/oidc-callback`],
             response_types: ['code'],
         });
         console.log('✅ OIDC client initialized 🔒');
@@ -130,7 +130,7 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
 
     // Verify the code and send the access token in the response
     try {
-        const tokenSet = await client.callback(REDIRECT_URI, { code });
+        const tokenSet = await client.callback(`${CLIENT_URL}/auth/oidc-callback`, { code });
         
         // Add a non-null assertion operator to accessToken
         const accessToken = tokenSet.access_token!;
