@@ -11,6 +11,21 @@ import pool from '../db';
 export async function insertLink(req: Request, res: Response): Promise<void> {
     const { slug, url, user_id, description, mandate, expires } = req.body;
 
+    const userId = req.user?.sub;
+
+    console.log(`🔍 Fetching links for user: ${userId || 'unknown'}`);
+
+    if (!userId) {
+      console.error('❌ User ID not found in token');
+      res.status(400).json({ error: 'User ID not found in token' });
+      return;
+    }
+    if (userId !== user_id) {
+        console.error('❌ User ID mismatch');
+        res.status(403).json({ error: 'User ID mismatch' });
+        return;
+    }
+
     //Generates a base62 slug from a given number.
     function generateBase62(id: number) {
         // Characters used for base62 encoding
