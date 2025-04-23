@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../autherization/useAuth.ts";
-import { TokenSet, UserInfo, DfunktUser } from "../../autherization/types.ts";
 
 export const OIDCCallback = () => {
   const navigate = useNavigate();
