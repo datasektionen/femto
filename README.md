@@ -1,23 +1,31 @@
 # Femto - Link Shortener
 
-A simple **link-shortening** service built with **TypeScript**, **React**, and **Express**. Enter a long URL, and Femto generates a shorter, more memorable link. This system is intended for section-related purposes (e.g., linking forms, events, or other resources).
+A simple **link-shortening** service built with **TypeScript**, **React (Vite)**, **Mantine UI**, and **Express**. It uses **OIDC** for authentication and **JWT** for API authorization. Enter a long URL, and Femto generates a shorter, more memorable link. This system is intended for internal use (e.g., linking forms, events, or other resources).
 
 ---
 
 ## Features
 
-- **Shorten URLs** quickly and easily.  
-- **Automatic Slug Generation** if none is provided.  
-- **Custom Slug Support** (if slug is available).  
-- **Database-Backed** with PostgreSQL.  
+- **Shorten URLs** quickly and easily via a web interface.
+- **OIDC Authentication** for user login.
+- **JWT Authorization** for protected API endpoints.
+- **View/Manage** created links (for authenticated users).
+- **View Link Statistics** (click counts, timestamps).
+- **Automatic Slug Generation** if none is provided.
+- **Custom Slug Support** (if slug is available).
+- **Optional Expiry Dates** for links.
+- **Optional Mandate Association** for links.
+- **QR Code Generation** for shortened links.
+- **Database-Backed** with PostgreSQL.
 
 ---
 
 ## Prerequisites
 
-1. [Node.js](https://nodejs.org/), version must be 22 or higher. (for local development).
-2. [Docker](https://www.docker.com/) (for containerized deployment).
-3. [Docker Compose](https://docs.docker.com/compose/) (to orchestrate multiple containers).
+1.  [Node.js](https://nodejs.org/) v22 or higher (for local development).
+2.  [Docker](https://www.docker.com/) (for containerized deployment).
+3.  [Docker Compose](https://docs.docker.com/compose/) (to orchestrate multiple containers).
+4.  Access to an **OIDC Provider** (like Keycloak, Auth0, or a custom one like `sso.datasektionen.se`) for authentication.
 
 ---
 
@@ -28,39 +36,35 @@ femto/
 ├── .github/
 │   └── workflows/
 │       └── deploy-dual.yml         # GitHub Actions CI/CD configuration
-├── client/                          # Frontend React application
-│   ├── public/                      # Public assets (index.html, icons, robots.txt, etc.)
+├── client/                          # Frontend React (Vite) application
+│   ├── public/                      # Static assets (index.html, icons, etc.)
 │   ├── src/                         # Source code
-│   │   ├── App.css
-│   │   ├── App.test.tsx
-│   │   ├── App.tsx
-│   │   ├── index.css
-│   │   ├── index.tsx
-│   │   ├── reportWebVitals.ts
-│   │   ├── setupTests.ts
-│   │   └── views/                  # React views (Home, Login, etc.)
-│   ├── Dockerfile.client           # Dockerfile for building/serving the client
-│   ├── nginx.conf                  # Configuration for Nginx
-│   └── package.json                # Dependencies and scripts for the client
+│   │   ├── autherization/           # Auth context, hooks, OIDC logic
+│   │   ├── components/              # Reusable React components (LinkCreator, auth components)
+│   │   ├── views/                   # Page components (Home, Links, LinkStats)
+│   │   ├── App.tsx                  # Main application component, routing
+│   │   └── main.tsx                 # Application entry point (replaces index.tsx)
+│   ├── Dockerfile                   # Dockerfile for building/serving the client
+│   ├── nginx.conf                   # Configuration for Nginx (used in Docker)
+│   ├── vite.config.ts               # Vite configuration
+│   ├── tsconfig.json                # TypeScript configuration
+│   ├── package.json                 # Dependencies and scripts
+│   └── .env.example                 # Example environment variables for client
 ├── server/                          # Backend Express application
-│   ├── database/                   # Database schema and test data
-│   │   ├── insert.sql
-│   │   └── schema.sql
 │   ├── src/
-│   │   ├── db.ts                   # Database connection setup
-│   │   ├── index.ts                # Server entry point
-│   │   ├── routes/
-│   │   │   ├── apiRouter.ts        # /api/* endpoints
-│   │   │   └── redirectRouter.ts   # Catch-all redirect router
-│   │   └── utils/                  # Helper functions (insertLink, getLink, etc.)
-│   ├── Dockerfile.server           # Dockerfile for building the server
-│   ├── package.json                # Dependencies and scripts for the server
-│   ├── tsconfig.json               # TypeScript compiler configuration
+│   │   ├── db/                      # Database schema, setup, queries
+│   │   ├── middleware/              # Express middleware (auth, error handling)
+│   │   ├── routes/                  # API and redirect route definitions
+│   │   ├── types/                   # Shared TypeScript types
+│   │   └── index.ts                 # Server entry point
+│   ├── Dockerfile                   # Dockerfile for building the server
+│   ├── package.json                 # Dependencies and scripts
+│   ├── tsconfig.json                # TypeScript configuration
+│   ├── .env.example                 # Example environment variables for server
 │   └── .gitignore
-├── job.nomad.hcl                   # Nomad job specification
-├── docker-compose.yml              # Docker Compose configuration (client, server, db)
-├── .env                             # Environment variables (ignored by git)
-└── README.md                       # Project documentation
+├── job.nomad.hcl                    # Nomad job specification
+├── docker-compose.yml               # Docker Compose configuration (client, server, db)
+└── README.md                        # This file
 ```
 
 ---
@@ -76,123 +80,163 @@ cd femto
 
 ### 2. Environment Variables
 
-Create a `.env` file in the root (or inside `server`), and define:
+This project requires separate environment variables for the client and server.
 
-```
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=mydatabase
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-SERVER_PORT=5000
-CLIENT_PORT=3000
+**A. Server Environment (`server/.env`)**
+
+Copy `server/.env.example` to `server/.env` and fill in the values:
+
+```bash
+# Database credentials
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_DB=your_db_name
+# POSTGRES_HOST=localhost # Use 'postgres' if using docker-compose
+
+# Secret key for signing JWT tokens (generate a strong random key)
+JWT_SECRET=your_strong_random_jwt_secret
+
+# Base URL where the frontend client will run (for CORS and redirects)
+CLIENT_URL=http://localhost:5173 # Default Vite port
+
+# OIDC/OAuth2 Client Credentials provided by your SSO provider
+CLIENT_ID=your_oidc_client_id
+CLIENT_SECRET=your_oidc_client_secret
+
+# OIDC Issuer URL provided by your SSO provider
+OIDC_ISSUER=https://your-sso-provider.com
+
+# Full URL where the SSO provider should redirect back after authentication
+# Should match the path handled by OIDCCallback.tsx in the client
+REDIRECT_URI=http://localhost:5173/auth/oidc-callback
+
+# Optional: API Key for external services (if needed)
+# HIVE_API_KEY=your_hive_api_key_if_needed
 ```
 
-- **Note**: If using Docker Compose, these variables are passed to each container through `docker-compose.yml`.  
-- **Important**: Never commit your `.env` file to source control.
+**B. Client Environment (`client/.env`)**
+
+Copy `client/.env.example` to `client/.env` and fill in the values:
+
+```bash
+# Base URL for the backend API server
+VITE_API_URL=http://localhost:5000 # Default server port
+
+# Base URL for the Single Sign-On (SSO) provider's authorization endpoint
+VITE_LOGIN_API_URL=https://your-sso-provider.com
+
+# Client ID provided by your authentication provider (must match server's CLIENT_ID)
+VITE_CLIENT_ID=your_oidc_client_id
+```
+
+-   **Important**: Never commit your actual `.env` files to source control. The `.gitignore` files should prevent this.
 
 ---
 
-### 3. Running with Docker
+### 3. Running with Docker (Recommended)
 
-Build and start the containers:
+This is the easiest way to get all services (client, server, database) running together.
 
-```bash
-docker-compose up --build
-```
+1.  Ensure your `server/.env` file has `POSTGRES_HOST=postgres`.
+2.  Build and start the containers:
+    ```bash
+    docker-compose up --build -d
+    ```
+    *   `-d` runs the containers in the background.
 
 This will:
-- Launch the **client** React app on [http://localhost:3000/](http://localhost:3000/).  
-- Launch the **server** Express app on port `SERVER_PORT` (default: 5000).  
-- Launch a **PostgreSQL** database container on port `POSTGRES_PORT` (default: 5432).
 
-#### Connecting to the Database
+-   Launch the **client** React app, accessible at [http://localhost:5173/](http://localhost:5173/) (or your `CLIENT_PORT`).
+-   Launch the **server** Express app on port `5000` (or your `SERVER_PORT`).
+-   Launch a **PostgreSQL** database container, accessible to the server via the hostname `postgres`.
 
-1. List running containers:
+#### Connecting to the Database (Docker)
 
-   ```bash
-   docker ps
-   ```
-
-2. Find the `postgres:15` container ID and run:
-
-   ```bash
-   docker exec -it [container-ID] psql -U postgres -d mydatabase
-   ```
-
-3. You can manually run SQL commands there. By default, the `schema.sql` and `insert.sql` files are automatically run at startup (see `server/src/db.ts`).
+1.  List running containers: `docker ps`
+2.  Find the container ID for the `postgres` image.
+3.  Connect using psql:
+    ```bash
+    docker exec -it [container-ID] psql -U your_db_user -d your_db_name
+    ```
+    (Use the `POSTGRES_USER` and `POSTGRES_DB` from your `server/.env`).
 
 ---
 
 ## Local Development (Without Docker)
 
-You can also run the client and server locally:
+You can also run the client and server directly on your machine. Make sure you have a separate PostgreSQL instance running and accessible.
 
-1. **Server**  
-   ```bash
-   cd server
-   npm install
-   npm run build
-   npm start
-   ```
-   Make sure the `.env` variables are correct, or the database connection may fail.
+1.  **Server**
+    *   Ensure `server/.env` is configured correctly (especially database connection details like `POSTGRES_HOST=localhost`).
+    ```bash
+    cd server
+    npm install
+    npm run dev # Runs server with nodemon for auto-restarts
+    # OR
+    # npm run build
+    # npm start # Runs the compiled version
+    ```
 
-2. **Client**  
-   ```bash
-   cd client
-   npm install
-   npm run dev
-   ```
-   The app should start on [http://localhost:3000/](http://localhost:3000/).
+2.  **Client**
+    *   Ensure `client/.env` is configured correctly.
+    ```bash
+    cd client
+    npm install
+    npm run dev
+    ```
+    The client app should start, typically on [http://localhost:5173/](http://localhost:5173/).
 
 ---
 
 ## Testing
 
-- **Jest** (backend tests) can be integrated to test the server and database queries.  
-- **React Testing Library** (already included) is used for frontend tests.
+Test commands can be run from within the respective `client` or `server` directories:
 
-Run tests with:
 ```bash
 # From the "server" folder:
-npm test
+npm test # (If Jest or another test runner is configured)
 
 # From the "client" folder:
-npm test
+npm test # (Runs Vitest tests, if configured)
 ```
 
 ---
 
 ## Usage
 
-1. **Shorten a Link**:  
-   - Go to the frontend at [http://localhost:3000/](http://localhost:3000/)  
-   - Enter your link and click **Förkorta** (if integrated in the UI).
-2. **Retrieve Shortened Links**:  
-   - Access `<HOST>/api/links` (this returns all shortened links).
-3. **Redirect by Slug**:  
-   - Navigate to `<HOST>/<slug>` to be redirected to the original URL.
+1.  **Login**: Access the client URL (e.g., [http://localhost:5173/](http://localhost:5173/)). Click the login button, which will redirect you to your OIDC provider.
+2.  **Shorten a Link**: Once logged in, use the form on the homepage to enter a long URL. You can optionally provide a custom slug, expiry date, or associate a mandate.
+3.  **View Links**: Navigate to the "Länkar" (Links) page (if logged in) to see links you have created.
+4.  **View Stats**: Click the stats icon next to a link on the "Länkar" page.
+5.  **Redirect**: Navigate to `<SERVER_URL>/<slug>` (e.g., `http://localhost:5000/myslug`) to be redirected to the original long URL.
 
 ---
 
 ## Deployment
 
-- The project includes a **Nomad** configuration (`job.nomad.hcl`), **GitHub Actions** for CI/CD (`.github/workflows/deploy-dual.yml`), and a **Dockerfile** for each service.  
-- Adjust environment variables and server settings as needed for your production environment.
+-   The project includes a **Nomad** configuration (`job.nomad.hcl`) which uses Nomad variables for secrets management.
+-   **GitHub Actions** are configured for CI/CD (`.github/workflows/deploy-dual.yml`).
+-   **Dockerfiles** are provided for containerizing the client and server.
+-   Ensure all necessary environment variables (database credentials, OIDC secrets, JWT secret, URLs) are correctly configured in your deployment environment (e.g., Nomad variables, Kubernetes secrets).
 
 ---
 
 ## Contributing
 
-1. **Branch off `dev`** for new features or bug fixes.  
-2. **Open a Pull Request** to merge into `dev` once changes are ready.  
-3. **Keep changes minimal and well-described**.
+1.  Branch off `main` (or `dev` if used) for new features or bug fixes.
+2.  Open a Pull Request towards the main development branch.
+3.  Keep changes focused and provide clear descriptions.
 
 ## FAQ
-- Why is the client just showing a blank page? You may need to provide the right environment variables in `.env`, this goes for both the client respectively the server.
+
+-   **Why is the client showing a blank page or login errors?**
+    *   Ensure both `client/.env` and `server/.env` files exist and are correctly configured with all necessary variables (API URLs, OIDC details, Client ID).
+    *   Verify the `CLIENT_URL` in `server/.env` and `REDIRECT_URI` match where your client is running and the callback path it uses.
+    *   Check the browser console and network tab for specific errors.
+    *   Ensure the backend server is running and accessible from the client at the specified `VITE_API_URL`.
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License**. See the `LICENSE` or [the MIT License text](https://opensource.org/licenses/MIT) for more details.
+This project is licensed under the **MIT License**. See the `LICENSE` file or [the MIT License text](https://opensource.org/licenses/MIT) for more details.
