@@ -22,13 +22,11 @@ import {
     ResponsiveContainer,
     CartesianGrid,
 } from "recharts";
-
-// Hämta från Vite environment variables
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"; // Anpassa port
+import Configuration from "../configuration.ts";
 
 // Create API instance with JWT token instead of environment API key
 const api = axios.create({
-    baseURL: API_URL
+    baseURL: Configuration.backendApiUrl
 });
 
 // Add request interceptor to include the JWT token from localStorage on each request

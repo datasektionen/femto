@@ -3,6 +3,7 @@ import { Button, Title, Text, TextInput, Alert, Radio, RadioGroup, Select, Cente
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
+import Configuration from "../configuration.ts";
 import type { CSSProperties, ReactNode } from 'react';
 
 // Utility functions
@@ -131,7 +132,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/links", {
+      const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
