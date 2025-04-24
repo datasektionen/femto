@@ -55,10 +55,13 @@ POSTGRES_USER=femto-dev
 POSTGRES_PASSWORD={{ .db_password }}
 CLIENT_ID={{ .oidc_client_id }} # rename to OIDC_
 CLIENT_SECRET={{ .oidc_client_secret }} # rename to OIDC_
+# add these two
+# JWT_SECRET={{generate your own}}
+# HIVE_API_KEY={{ .whatever }}
 {{ end }}
 OIDC_ISSUER=https://sso.datasektionen.se
-REDIRECT_URI=https://admin.${var.domain_name}/auth/oidc-callback # delete this, should be calc'd
-API_KEY=4798016ff562e7b008d2ea3dcc0158687b53a247092d9317dc74a3f569aae48a # delete this(?!)
+REDIRECT_URI=https://admin.${var.domain_name}/auth/oidc-callback # no longer used
+API_KEY=4798016ff562e7b008d2ea3dcc0158687b53a247092d9317dc74a3f569aae48a # no longer used
 API_URL=https://${var.domain_name}
 CLIENT_URL=https://admin.${var.domain_name}
 ENV
