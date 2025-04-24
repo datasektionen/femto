@@ -3,12 +3,12 @@ import { Button, Title, Text, TextInput, Alert, Radio, RadioGroup, Select, Cente
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
+import Configuration from "../configuration.ts";
 import type { CSSProperties, ReactNode } from 'react';
 
 // Utility functions
-//const constructShortUrl = (url: string) => `shortened-example.com/${url}`;
-const constructShortUrlWithProtocol = (url: string) => `https://${url}`;
-const copyShortUrlToClipboard = (url: string) => navigator.clipboard.writeText(url);
+const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
+const copyShortUrlToClipboard = (slug: string) => navigator.clipboard.writeText(`${Configuration.backendApiUrl}/${slug}`);
 
 // Define types
 interface FormValues {
@@ -33,10 +33,10 @@ interface Mandate {
 const styles = {
   root: {
     padding: "20px",
-    maxWidth: "600px",
+    //maxWidth: "600px",
     margin: "20px auto",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "8px",
+    backgroundColor: "#fff",
+    borderRadius: "20px",
     boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
     minHeight: "50vh",
   },
@@ -131,7 +131,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/links", {
+      const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,10 +147,10 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       }
 
       // Check available keys and set result
-      const shortUrl = resData.slug || resData.short || resData.url;
-      if (!shortUrl) throw new Error("No valid short URL returned");
+      const slug = resData.slug || resData.short || resData.url;
+      if (!slug) throw new Error("No valid slug returned");
 
-      setResult(shortUrl);
+      setResult(slug);
       form.reset();
     } catch (err) {
       console.error("Error submitting form:", err);
@@ -167,7 +167,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   };
 
   const handleCopy = () => {
-    copyShortUrlToClipboard(constructShortUrlWithProtocol(result));
+    copyShortUrlToClipboard(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -271,8 +271,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         <Box style={styles.resultContainer}>
           <Title order={3}>Din förkortade länk:</Title>
           <Text size="lg" fw={500} mb="md">
-            <a href={constructShortUrlWithProtocol(result)} target="_blank" rel="noopener noreferrer">
-              {constructShortUrlWithProtocol(result)}
+            <a href={constructShortUrl(result)} target="_blank" rel="noopener noreferrer">
+              {constructShortUrl(result)}
             </a>
           </Text>
 
@@ -292,7 +292,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
           <Center>
             <QRCode
-              value={constructShortUrlWithProtocol(result)}
+              value={constructShortUrl(result)}
               size={180}
               ecLevel="H"
               logoImage="/logo.svg"

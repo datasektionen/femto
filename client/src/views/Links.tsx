@@ -17,13 +17,11 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { IconChartBar } from "@tabler/icons-react";
 import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
-
-// Hämta från Vite environment variables
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"; // Anpassa port om nödvändigt
+import Configuration from "../configuration.ts";
 
 // Create axios instance with base URL - we'll add the token dynamically in the requests
 const api = axios.create({
-    baseURL: API_URL
+    baseURL: Configuration.backendApiUrl
 });
 
 // Interface för Link
@@ -92,7 +90,7 @@ const Links: React.FC = () => {
     }, [hasToken, navigate]); // Added dependencies
 
     const copyToClipboard = (slug: string) => {
-        const shortUrl = `${window.location.origin}/${slug}`;
+        const shortUrl = `${Configuration.backendApiUrl}/${slug}`;
         navigator.clipboard.writeText(shortUrl)
             .then(() => console.log("Kopierad kort länk:", shortUrl))
             .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
@@ -210,7 +208,7 @@ const Links: React.FC = () => {
                                                 >
                                                     Mer info
                                                 </Button>
-                                                <ActionIcon component={Link} to={`/links/${link.id}/stats`} variant="subtle" color="gray" title="Visa statistik">
+                                                <ActionIcon component={Link} to={`/links/${link.slug}/stats`} variant="subtle" color="gray" title="Visa statistik">
                                                     <IconChartBar size={16} />
                                                 </ActionIcon>
                                                 {/* Add other actions like edit/delete here */}
