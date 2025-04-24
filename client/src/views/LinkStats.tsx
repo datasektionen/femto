@@ -245,7 +245,7 @@ const LinkStats: React.FC = () => {
   // --- Event Handlers ---
   const copyShortLink = () => {
     if(linkDetails) {
-        const shortUrl = `${window.location.origin}/${linkDetails.slug}`;
+        const shortUrl = `${Configuration.backendApiUrl}/${linkDetails.slug}`;
         navigator.clipboard.writeText(shortUrl)
           .then(() => console.log('Kopierade kort länk:', shortUrl))
           .catch(err => console.error('Kunde inte kopiera kort länk:', err));
@@ -318,7 +318,7 @@ const LinkStats: React.FC = () => {
         {/* Länkdetaljer Paper */}
         <Paper shadow="xs" p="md" mb="lg">
            <Title order={3} mb="sm">Länkdetaljer</Title>
-          <Text size="sm"><strong>Kortlänk:</strong> <span style={{fontFamily: 'monospace'}}>{`${window.location.origin}/${linkDetails.slug}`}</span></Text>
+          <Text size="sm"><strong>Kortlänk:</strong> <span style={{fontFamily: 'monospace'}}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
           <Text size="sm" style={{ wordBreak: 'break-all' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
           <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "-"}</Text>
           <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
