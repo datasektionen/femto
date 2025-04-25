@@ -27,7 +27,7 @@ export const OIDCCallback = () => {
       // ska hämta userdata och permissions och mandates från verify code
       // skickar koden vi får från sso till vår backend
         .post<{ token: string; userData: any; userPermissions: any; userMandates: any }>(
-          "http://localhost:5000/api/auth/verify-code",
+          "http://localhost:5001/api/auth/verify-code",
           { code: code }
         )
         .then((response) => {

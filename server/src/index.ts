@@ -9,8 +9,9 @@ app.use(cors()); // Middleware to enable CORS
 app.use(express.json()); // Middleware to parse JSON request bodies
 
 // Routes
-app.use("/api", apiRouter);
 app.use("/", redirectRouter);
+app.use("/api", apiRouter);
+
 
 app.listen(PORT, () => {
     console.log(`✅ Server is running on port ${PORT} 🚀`);

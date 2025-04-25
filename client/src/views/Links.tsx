@@ -19,7 +19,7 @@ import { IconChartBar } from "@tabler/icons-react";
 import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
 
 // Hämta från Vite environment variables
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"; // Anpassa port om nödvändigt
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001"; // Anpassa port om nödvändigt
 
 // Create axios instance with base URL - we'll add the token dynamically in the requests
 const api = axios.create({

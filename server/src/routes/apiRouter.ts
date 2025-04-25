@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getLinkStats, getAllLinks, getLink, insertLink } from '../controllers/linkController'; // Importera statistik-funktionen
+import { getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController'; // Importera statistik-funktionen
 import { verifyCode } from '../controllers/authController';
 import { getAPIStatus } from '../controllers/statusController';
 import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
@@ -33,8 +33,14 @@ apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); 
 // GET /api/links/:slug/stats
 apiRouter.get('/links/:slug/stats', getLinkStats);
 
+
+
+apiRouter.get('/links/:slug/lang-stats', jwtAuth, getLangstats);
+
 // Apply jwtAuth middleware to protect the /api/links routes
+
 apiRouter.use('/links', jwtAuth);
+//apiRouter.use('/links', getAllLinks);
 
 /**
  * POST /api/links

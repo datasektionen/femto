@@ -11,6 +11,7 @@ redirectRouter.get('/', (req, res) => {
 // GET /:slug => Hämta länk, logga klick och omdirigera
 redirectRouter.get('/:slug', async (req, res) => {
     const slug = req.params.slug;
+    const acceptLanguage = (req.headers['accept-language'] as string | undefined)?.split(',')[0] ?? 'unknown';
     let client;
     try {
         client = await pool.connect();
@@ -22,8 +23,8 @@ redirectRouter.get('/:slug', async (req, res) => {
             const redirectUrl = result.rows[0].url;
 
             // Logga klicket i url_clicks-tabellen
-            console.log(`✅ Logging click for URL ID: ${urlId} 📁`);
-            await client.query('INSERT INTO url_clicks (url_id) VALUES ($1)', [urlId]);
+            console.log(`✅ Logging click and language for URL ID: ${urlId} 📁`);
+            await client.query('INSERT INTO url_clicks (url_id, language) VALUES ($1, $2)', [urlId, acceptLanguage]);
 
             // Omdirigera
             res.status(302).location(redirectUrl).end();
