@@ -114,41 +114,24 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Get all links created by the currently authenticated user.
- * @param req The Express request object
- * @param res The Express response object
+ * GET /api/links
+ * Returnerar alla länkar i tabellen 'urls'.
+ * Om du vill skydda den här vägen kan du lägga
+ * till t.ex. requireRole('admin')-middleware.
  */
 export async function getAllLinks(req: Request, res: Response): Promise<void> {
-  try {
-    // Get user ID from the JWT token (attached by the jwtAuth middleware)
-    // This is the 'sub' field from your JWT token which should contain the username
-    const userId = req.user?.sub;
-
-    console.log(`🔍 Fetching links for user: ${userId || 'unknown'}`);
-
-    if (!userId) {
-      console.error('❌ User ID not found in token');
-      res.status(400).json({ error: 'User ID not found in token' });
-      return;
+    try {
+      const result = await pool.query(
+        `SELECT * FROM urls`
+      );
+      res.status(200).json(result.rows);   // <─ ingen WHERE-klausul
+    } catch (err) {
+      console.error('❌ Error fetching all links:', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    // Use the correct table name 'urls' instead of 'links'
-    const query = `
-      SELECT * FROM urls 
-      WHERE user_id = $1
-      ORDER BY expires DESC
-    `;
-    
-    const result = await pool.query(query, [userId]);
-    const links = result.rows;
-
-    console.log(`✅ Found ${links.length} links for user ${userId}`);
-    res.status(200).json(links);
-  } catch (error) {
-    console.error('❌ Error getting links:', error);
-    res.status(500).json({ error: 'Internal server error' });
   }
-}
+    
+
 
 /**
  * Retrieves a single link from the database based on the provided slug.
@@ -240,5 +223,44 @@ export async function getLinkStats(req: Request, res: Response): Promise<void> {
         if (client) {
             client.release();
         }
+    }
+
+
+}
+
+export async function getLangstats(req: Request, res: Response): Promise<void> {
+    const { slug } = req.params;
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        // 1. Verifiera att länken finns
+        const linkResult = await client.query('SELECT id FROM urls WHERE slug = $1', [slug]);
+        if (linkResult.rows.length === 0) {
+            res.status(404).json({ error: 'Link not found' });
+            return;
+        }
+        const urlId = linkResult.rows[0].id;
+
+        // 2. Hämta språkstatistik
+        const langRes = await client.query(
+            `SELECT language, COUNT(*) AS clicks
+            FROM url_clicks
+            WHERE url_id = $1
+            GROUP BY language
+            ORDER BY clicks DESC`,
+            [urlId]
+        );
+
+        res.json(langRes.rows.map((r: any) => ({
+            language: r.language,
+            clicks: Number(r.clicks),
+        })));
+    } catch (err: any) {
+        console.error('❌ Error retrieving language stats 📁:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+    } finally {
+        client?.release();
     }
 }

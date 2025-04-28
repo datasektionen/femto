@@ -20,6 +20,8 @@ declare global {
 }
 
 export const jwtAuth = (req: Request, res: Response, next: NextFunction): void => {
+
+    
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {

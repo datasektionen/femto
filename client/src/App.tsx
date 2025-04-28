@@ -11,6 +11,7 @@ import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
 
+
 // This component renders the main application content, including Methone bar and routes
 const AppContent = () => {
   const { hasToken } = useAuth(); // Get authentication status
