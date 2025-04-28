@@ -1,68 +1,82 @@
 import fs from "fs";
 import pool from "../db";
 
-/*
-Copied from the existing Pico
+/**
+* Quries databae for given link and returns true if it is blacklisted.
+* 
+* @param {string} link - The link to check.
+* @returns {boolean} - True if the link is in the blacklist, false otherwise.
+* @async
 */
-export const blacklist: Record<string, boolean> = {};
+export async function isBlacklistedDB(link: string): Promise<boolean> {
+   const host = new URL(link).host;
+   const linkVariants = [host, `www.${host}`, host.replace(/www[.]/, "")];
 
-const getBlackList = () => {
-    // Read blacklist from file
-    (async () => {
-        console.log("Start read");
-        //File used temporarily to store the blacklist, will be replaced by the database.
-        const file = fs.readFileSync('./everything.txt');
-        const lines = file.toString().split("\n");
-        for (const line of lines) {
-            if (line.startsWith("#")) continue;
-            blacklist[line] = true;
-        }
-        console.log("Read file");
-    })();
-};
+   let client;
+   client = await pool.connect();
+   for (const linkVariant of linkVariants) {
+       try {
+           const result = await client.query('SELECT * FROM blockedurls WHERE url = $1', [linkVariant]);
+           if ( result.rowCount !== null && result.rowCount > 0) {
+               //console.log(`Link ${linkVariant} is blacklisted`);  //Testing
+               client.release();
+               return true;
+           }
 
-//Work in progress function to call the postgresql database
-const getBlackList2 = async () => {
+       } catch (err: any) {
+           console.error('Error retrieving links', err.stack);
+       }
+   };
+   //console.log(`Link ${host} is not blacklisted`); //Testing
+   client.release();
+   return false;
+}
+
+
+
+/**
+ * Adds given links to the database blacklist "blockedurls",
+ * if it does not already exist within the table.
+ * @param {string[]} links - The links to add to the blacklist.
+ */
+export async function databaseInsertBlacklist(links: string[]) {
+
+
     let client;
-    try {
-        // Connect to the database
-        client = await pool.connect();
+    client = await pool.connect();
+    console.log(links); //Testing
 
-        // Execute the query to retrieve all links
-        const result = await client.query('SELECT * FROM urls');
+    //Create table if it doesn't exist.
+    await client.query(`CREATE TABLE IF NOT EXISTS blockedurls (url varchar(255) PRIMARY KEY);`);
 
-        //for every link in result.rows, add it to the blacklist
-        for (const link of result.rows) {
-            blacklist[link] = true;
+    //Add each of the links to the blacklist if they do not already exist.
+    let addedLinks = 0;
+    let existingLinks = 0;
+    let totalLinksTried = 0;
+    for (const link of links) {
+        try {
+            const result = await client.query('SELECT * FROM blockedurls WHERE url = $1;', [link.trim()]);
+            if (result.rowCount !== null && result.rowCount > 0) {
+                //console.log(`Link '${link.trim()}' already exists in the blacklist`); //Testing
+                existingLinks++;
+                totalLinksTried++;
+            } else {
+                await client.query('INSERT INTO blockedurls (url) VALUES ($1);', [link.trim()]);
+                //console.log(`Link '${link.trim()}' added to the blacklist`); //Testing
+                addedLinks++;
+                totalLinksTried++;
+            }
+
+        } catch (err: any) {
+
+            console.error('Error adding links', err.stack); 
         }
-
-    } catch (err: any) {
-        //Error getting the links
-        console.error('Error retrieving links', err.stack);
-
-    } finally {
-        // Release the client back to the pool
-        if (client) {
-            client.release();
+        if (totalLinksTried % 5000 === 0) {
+            console.log(`Processed ${totalLinksTried} links`); //Testing
+            console.log(`Added ${addedLinks} links to the blacklist`); //Testing
+            console.log(`Existing ${existingLinks} links in the blacklist`); //Testing
         }
     }
 
-}
-
-getBlackList();
-
-/**
- * Checks if link is blacklisted.
- * 
- * @param {string} link - The link to check.
- * @returns {boolean} - True if the link is in the blacklist, false otherwise.
- */
-export function isBlacklisted(link: string): boolean {
-    const host = new URL(link).host;
-    if (
-        blacklist[host] ||
-        blacklist[`www.${host}`] ||
-        blacklist[host.replace(/www[.]/, "")]
-    ) { return true; }
-    return false;
+    client.release();
 }
