@@ -50,18 +50,31 @@ export async function databaseInsertBlacklist(links: string[]) {
     await client.query(`CREATE TABLE IF NOT EXISTS blockedurls (url varchar(255) PRIMARY KEY);`);
 
     //Add each of the links to the blacklist if they do not already exist.
+    let addedLinks = 0;
+    let existingLinks = 0;
+    let totalLinksTried = 0;
     for (const link of links) {
         try {
             const result = await client.query('SELECT * FROM blockedurls WHERE url = $1;', [link.trim()]);
             if (result.rowCount !== null && result.rowCount > 0) {
-                console.log(`Link '${link.trim()}' already exists in the blacklist`); //Testing
+                //console.log(`Link '${link.trim()}' already exists in the blacklist`); //Testing
+                existingLinks++;
+                totalLinksTried++;
             } else {
                 await client.query('INSERT INTO blockedurls (url) VALUES ($1);', [link.trim()]);
-                console.log(`Link '${link.trim()}' added to the blacklist`); //Testing
+                //console.log(`Link '${link.trim()}' added to the blacklist`); //Testing
+                addedLinks++;
+                totalLinksTried++;
             }
+
         } catch (err: any) {
 
             console.error('Error adding links', err.stack); 
+        }
+        if (totalLinksTried % 5000 === 0) {
+            console.log(`Processed ${totalLinksTried} links`); //Testing
+            console.log(`Added ${addedLinks} links to the blacklist`); //Testing
+            console.log(`Existing ${existingLinks} links in the blacklist`); //Testing
         }
     }
 
