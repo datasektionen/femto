@@ -11,12 +11,12 @@ export const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [hasToken, setHasToken] = useState<boolean>(true);
-  // ÄNDRA SEN GLENN  
-  //  const token = localStorage.getItem('token');
-  //  console.log("🏁 [9] AuthProvider init, token exists:", !!token);
-  //  return !!token;
- // });
+  const [hasToken, setHasToken] = useState<boolean>(() => {
+
+    const token = localStorage.getItem('token');
+    console.log("🏁 [9] AuthProvider init, token exists:", !!token);
+    return !!token;
+  });
 
   useEffect(() => {
     console.log("🔒 [10] Auth state changed:", { hasToken });

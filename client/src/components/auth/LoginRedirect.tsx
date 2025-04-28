@@ -18,5 +18,5 @@ export const LoginRedirect = () => {
     window.location.href = authUrl;
   }, []);
 
-  return <div>Redirecting to login...</div>;
+  return <div></div>;
 };

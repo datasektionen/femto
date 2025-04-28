@@ -73,5 +73,5 @@ export const OIDCCallback = () => {
     }
   }, []);
 
-  return <div>Authenticating...</div>;
+  return <div></div>;
 };
