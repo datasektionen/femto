@@ -72,6 +72,7 @@ const App = () => {
       {/* MantineProvider for UI components */}
       <MantineProvider
         theme={{
+          scale: 1.5, // Adjust the scale for all components
           fontFamily: "Lato",
           headings: { fontFamily: "Lato" },
           primaryColor: "blue", // Adjust Mantine theme as needed

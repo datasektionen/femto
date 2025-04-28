@@ -24,13 +24,11 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-
-// Hämta från Vite environment variables
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+import Configuration from "../configuration.ts";
 
 // Create API instance with JWT token instead of environment API key
 const api = axios.create({
-  baseURL: API_URL,
+    baseURL: Configuration.backendApiUrl
 });
 
 api.interceptors.request.use(
@@ -255,10 +253,12 @@ const LinkStats: React.FC = () => {
 
   // Copy handlers
   const copyShortLink = () => {
-    if (!linkDetails) return;
-    navigator.clipboard.writeText(
-      `${window.location.origin}/${linkDetails.slug}`
-    );
+    if(linkDetails) {
+        const shortUrl = `${Configuration.backendApiUrl}/${linkDetails.slug}`;
+        navigator.clipboard.writeText(shortUrl)
+          .then(() => console.log('Kopierade kort länk:', shortUrl))
+          .catch(err => console.error('Kunde inte kopiera kort länk:', err));
+    }
   };
   const copyOriginalLink = () => {
     if (!linkDetails) return;
@@ -320,47 +320,15 @@ const LinkStats: React.FC = () => {
         </Button>
 
         <Paper shadow="xs" p="md" mb="lg">
-          <Title order={3} mb="sm">
-            Länkdetaljer
-          </Title>
-          <Text size="sm" style={{ wordBreak: "break-all" }}>
-            <strong>Kortlänk:</strong>{" "}
-            <span style={{ fontFamily: "monospace" }}>
-              {`${window.location.origin}/${linkDetails.slug}`}
-            </span>
-          </Text>
-          <Text size="sm">
-            <strong>Ursprunglig URL:</strong>{" "}
-            <a
-              href={linkDetails.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {linkDetails.url}
-            </a>
-          </Text>
-          <Text size="sm">
-            <strong>Beskrivning:</strong> {linkDetails.description || "-"}
-          </Text>
-          <Text size="sm">
-            <strong>Skapad:</strong>{" "}
-            {new Date(linkDetails.date).toLocaleString("sv-SE")}
-          </Text>
-          <Text size="sm">
-            <strong>Upphör:</strong>{" "}
-            {linkDetails.expires
-              ? new Date(linkDetails.expires).toLocaleString("sv-SE")
-              : "Aldrig"}
-          </Text>
-          <Text size="sm">
-            <strong>Totala klick:</strong> {linkDetails.clicks}
-          </Text>
-          <Text size="sm">
-            <strong>Användare:</strong> {linkDetails.user_id || "-"}
-          </Text>
-          <Text size="sm">
-            <strong>Mandat:</strong> {linkDetails.mandate || "-"}
-          </Text>
+           <Title order={3} mb="sm">Länkdetaljer</Title>
+          <Text size="sm"><strong>Kortlänk:</strong> <span style={{fontFamily: 'monospace'}}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
+          <Text size="sm" style={{ wordBreak: 'break-all' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
+          <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "-"}</Text>
+          <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
+          <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
+          <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
+          <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "-"}</Text>
+          <Text size="sm"><strong>Mandat:</strong> {linkDetails.mandate || "-"}</Text>
           <Group mt="sm">
             <Button size="xs" onClick={copyShortLink}>
               Kopiera kortlänk

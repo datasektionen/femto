@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../autherization/useAuth.ts";
+import Configuration from "../../configuration.ts";
 
 export const OIDCCallback = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export const OIDCCallback = () => {
       // ska hämta userdata och permissions och mandates från verify code
       // skickar koden vi får från sso till vår backend
         .post<{ token: string; userData: any; userPermissions: any; userMandates: any }>(
-          "http://localhost:5001/api/auth/verify-code",
+          `${Configuration.backendApiUrl}/api/auth/verify-code`,
           { code: code }
         )
         .then((response) => {
