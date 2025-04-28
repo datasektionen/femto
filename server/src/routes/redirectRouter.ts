@@ -1,7 +1,32 @@
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import pool from '../db';
 
 const redirectRouter = Router();
+
+// Lista över kända botar
+// Denna lista kan utökas med fler botar vid behov
+const knownBots = [
+    'bot',
+    'crawler',
+    'spider',
+    'discord',
+    'slack',
+    'google',
+    'bing',
+    'yahoo',
+    'facebook',
+    'twitter',
+    'embed'
+];
+
+// Funktion för att kontrollera om en begäran kommer från en bot
+// Om User-Agent inte finns, antas det vara en bot
+function isBotRequest(userAgent: string | undefined): boolean {
+    if (!userAgent) return true; // Ingen User-Agent, antas vara en bot
+    const lowerUserAgent = userAgent.toLowerCase();
+    return knownBots.some(bot => lowerUserAgent.includes(bot));
+}
 
 // Rot-omdirigering till datasektionen.se
 redirectRouter.get('/', (req, res) => {
@@ -9,8 +34,16 @@ redirectRouter.get('/', (req, res) => {
 });
 
 // GET /:slug => Hämta länk, logga klick och omdirigera
-redirectRouter.get('/:slug', async (req, res) => {
+redirectRouter.get('/:slug', async (req: any, res: any) => { // Använd any för att undvika typfel, kan förbättras senare (detta är korkat eftersom vi har en typ för req och res i express)
     const slug = req.params.slug;
+    const userAgent = req.get('User-Agent');
+
+    // Kolla om request är från en bot
+    if (isBotRequest(userAgent)) {
+        console.log(`🤖 Bot detected: ${userAgent}`);
+        return res.status(403).send('Bots are not allowed');
+    }
+
     let client;
     try {
         client = await pool.connect();
