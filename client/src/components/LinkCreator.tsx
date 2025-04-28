@@ -160,7 +160,14 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
   return (
     <Center py="xl">
-      <Card shadow="lg" radius="lg" withBorder w={{ base: "100%", sm: 500 }} p="xl">
+      <Card
+        shadow="lg"
+        radius="lg"
+        withBorder
+        w="100%"
+        maw={1000} // max width of 1000px
+        p="xl"
+      >
         <Stack spacing="lg">
           <Box>
             <Title order={2}>{title}</Title>
