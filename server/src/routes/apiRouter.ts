@@ -303,7 +303,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Endpoint to upload a blacklist file
-apiRouter.get('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { 
+apiRouter.post('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { 
 
   console.log('blacklistFile called');
     const multerReq = req as Request; // Explicitly cast req to MulterRequest
