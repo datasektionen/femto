@@ -11,6 +11,7 @@ import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
 
+import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
 
 // This component renders the main application content, including Methone bar and routes
 const AppContent = () => {
@@ -47,6 +48,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shorten" element={<Home />} />
+        <Route path="/blacklist" element={<Blacklist />} />
         <Route path="/login" element={<LoginRedirect />} />
         <Route path="/logout" element={<Logout />} />
         <Route

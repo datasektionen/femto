@@ -40,43 +40,62 @@ export async function isBlacklistedDB(link: string): Promise<boolean> {
  * @param {string[]} links - The links to add to the blacklist.
  */
 export async function databaseInsertBlacklist(links: string[]) {
-
+    const batchedInsertionSize = 100; // Number of links to insert at once
 
     let client;
     client = await pool.connect();
-    console.log(links); //Testing
 
-    //Create table if it doesn't exist.
     await client.query(`CREATE TABLE IF NOT EXISTS blockedurls (url varchar(255) PRIMARY KEY);`);
 
-    //Add each of the links to the blacklist if they do not already exist.
-    let addedLinks = 0;
-    let existingLinks = 0;
-    let totalLinksTried = 0;
-    for (const link of links) {
-        try {
-            const result = await client.query('SELECT * FROM blockedurls WHERE url = $1;', [link.trim()]);
-            if (result.rowCount !== null && result.rowCount > 0) {
-                //console.log(`Link '${link.trim()}' already exists in the blacklist`); //Testing
-                existingLinks++;
-                totalLinksTried++;
-            } else {
-                await client.query('INSERT INTO blockedurls (url) VALUES ($1);', [link.trim()]);
-                //console.log(`Link '${link.trim()}' added to the blacklist`); //Testing
-                addedLinks++;
-                totalLinksTried++;
-            }
+    let queryBase = `INSERT INTO blockedurls (url) VALUES `;
+    let queryBaseCopy = queryBase;
+    let queryCounter = 0;
 
-        } catch (err: any) {
+    let internalLinkCounter = 0;
+    let totalLinks = links.length;
 
-            console.error('Error adding links', err.stack); 
-        }
-        if (totalLinksTried % 5000 === 0) {
-            console.log(`Processed ${totalLinksTried} links`); //Testing
-            console.log(`Added ${addedLinks} links to the blacklist`); //Testing
-            console.log(`Existing ${existingLinks} links in the blacklist`); //Testing
-        }
+    if (totalLinks === 0) {
+        console.log("No links to add to the blacklist.");
+        client.release();
+        return;
     }
+
+
+    for (const link of links) {
+        if (queryCounter === 0) {
+            queryBaseCopy += `('${link}')`;
+            queryCounter++;
+        } else if (queryCounter < batchedInsertionSize) {
+            queryBaseCopy += `, ('${link}')`;
+            queryCounter++;
+        } else {
+            queryBaseCopy += ` ON CONFLICT DO NOTHING;`;
+            try {
+                await client.query(queryBaseCopy);
+                internalLinkCounter += queryCounter;
+
+            } catch (err: any) {
+                console.error('Error inserting links', err.stack);
+            }
+            queryBaseCopy = queryBase;
+            queryCounter = 0;
+
+            if (internalLinkCounter % 200000 === 0) {
+                console.log(`Inserted ${internalLinkCounter} links out of ${totalLinks} into the blacklist.
+                    Progress: ${Math.round((internalLinkCounter / totalLinks) * 100)}%`);
+        
+            }
+        }
+
+    }
+    if (queryBaseCopy !== queryBase) {
+        queryBaseCopy += ` ON CONFLICT DO NOTHING;`;
+        await client.query(queryBaseCopy);
+        internalLinkCounter += queryCounter;
+    }
+    console.log(`Link insertion progress: 100%`);
+
 
     client.release();
 }
+
