@@ -56,8 +56,8 @@ POSTGRES_PASSWORD={{ .db_password }}
 CLIENT_ID={{ .oidc_client_id }} # rename to OIDC_
 CLIENT_SECRET={{ .oidc_client_secret }} # rename to OIDC_
 # add these two
-# JWT_SECRET={{generate your own}}
-# HIVE_API_KEY={{ .whatever }}
+# JWT_SECRET=generate your own
+# HIVE_API_KEY=whatever
 {{ end }}
 OIDC_ISSUER=https://sso.datasektionen.se
 REDIRECT_URI=https://admin.${var.domain_name}/auth/oidc-callback # no longer used
