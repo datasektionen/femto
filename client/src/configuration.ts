@@ -1,16 +1,18 @@
-const CLIENT_ID = import.meta.env.CLIENT_ID || "";
-const loginApiUrl = import.meta.env.OIDC_ISSUER || "https://sso.datasektionen.se";
-const backendApiUrl = import.meta.env.API_URL || "http://localhost:5000";
+const backendApiUrl = import.meta.env.VITE_BACKEND_ROOT || "http://localhost:5000";
 
+/**
+ * This file contains the configuration for the application.
+ * It is used to set the backend API URL.
+ * Add any other configuration settings here as needed.
+ */
+
+// Define the AppConfig interface
 interface AppConfig {
-  loginApiUrl: string;
-  clientId: string;
   backendApiUrl: string;
 }
 
+// Create a configuration object
 const Configuration: AppConfig = {
-  loginApiUrl: loginApiUrl,
-  clientId: CLIENT_ID,  
   backendApiUrl: backendApiUrl,
 };
 

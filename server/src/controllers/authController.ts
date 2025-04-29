@@ -7,8 +7,8 @@ import axios from 'axios';
 
 // Load environment variables
 const OIDC_ISSUER = process.env.OIDC_ISSUER || 'https://sso.datasektionen.se';
-const CLIENT_ID = process.env.CLIENT_ID || 'client-id';
-const CLIENT_SECRET = process.env.CLIENT_SECRET || 'client-secret';
+const CLIENT_ID = process.env.OIDC_CLIENT_ID || 'client-id';
+const CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET || 'client-secret';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET;
 const HIVE_API_KEY = process.env.HIVE_API_KEY;

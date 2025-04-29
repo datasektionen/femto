@@ -35,7 +35,7 @@ apiRouter.get('/status', async (req, res) => { getAPIStatus(req, res);});
 apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); });
 
 
-apiRouter.use(jwtAuth);
+apiRouter.use(jwtAuth); // Apply JWT authentication middleware to all routes below this line
 /**
  * GET /api/stats
  * Hämtar statistik för länkar: totalt antal länkar och sammanlagda klick.
@@ -44,9 +44,9 @@ apiRouter.use(jwtAuth);
 apiRouter.get('/links/:slug/stats', getLinkStats);
 
 // arman test
-apiRouter.get('/auth/user-data',getUserData);
+apiRouter.get('/auth/user-data', getUserData);
 
-apiRouter.get('/links/:slug/lang-stats',getLangstats);
+apiRouter.get('/links/:slug/lang-stats', getLangstats);
 
 // Apply jwtAuth middleware to protect the /api/links routes
 
