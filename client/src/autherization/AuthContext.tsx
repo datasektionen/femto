@@ -20,6 +20,7 @@ interface AuthContextType {
   hasMandateRole: (roleIdentifier: string) => boolean;
   refreshAuthData: () => Promise<void>;
   isLoading: boolean;
+  customLinks: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -32,7 +33,8 @@ export const AuthContext = createContext<AuthContextType>({
   hasPermission: () => false,
   hasMandateRole: () => false,
   refreshAuthData: async () => {},
-  isLoading: false
+  isLoading: false,
+  customLinks: false
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -91,9 +93,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Derived state for common permission check
   const isAdmin = Boolean(
-    userPermissions?.includes('femto.admin') ||
-    userData?.pls_admin
+    userPermissions?.includes('femto.admin')
   );
+
+  // kanske göra såhär
+  /** const customLinks = Boolean(
+    userPermissions?.includes('femto.customlinks')
+  );
+  */
+  
 
   // Check if user has a specific permission
   const hasPermission = (permission: string): boolean => {
