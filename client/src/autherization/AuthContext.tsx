@@ -20,7 +20,7 @@ interface AuthContextType {
   hasMandateRole: (roleIdentifier: string) => boolean;
   refreshAuthData: () => Promise<void>;
   isLoading: boolean;
-  customLinks: boolean;
+  //customLinks: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -34,7 +34,7 @@ export const AuthContext = createContext<AuthContextType>({
   hasMandateRole: () => false,
   refreshAuthData: async () => {},
   isLoading: false,
-  customLinks: false
+  //customLinks: false
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
