@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../autherization/useAuth.ts";
 import Configuration from "../../configuration.ts";
+import { Center, Loader } from "@mantine/core";
 
 export const OIDCCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setHasToken } = useAuth();
+  const { setHasToken, refreshAuthData } = useAuth();
 
   useEffect(() => {
     console.log("🔄 [1] OIDCCallback mounted");
@@ -25,8 +26,6 @@ export const OIDCCallback = () => {
       sessionStorage.setItem("processingAuth", "true");
 
       axios
-      // ska hämta userdata och permissions och mandates från verify code
-      // skickar koden vi får från sso till vår backend
         .post<{ token: string; userData: any; userPermissions: any; userMandates: any }>(
           `${Configuration.backendApiUrl}/api/auth/verify-code`,
           { code: code }
@@ -44,15 +43,22 @@ export const OIDCCallback = () => {
           localStorage.setItem("userPermissions", JSON.stringify(userPermissions));
           localStorage.setItem("userMandates", JSON.stringify(userMandates));
           
-          // Add detailed console logs to display user information
+          // Log user details
           console.log("📧 User Email:", userData.email || "No email found");
           console.log("👤 Username:", userData.sub || userData.username || userData.user || "No username found");
           console.log("🔐 User Permissions:", userPermissions);
           console.log("🏢 User Mandates (Groups):", userMandates);
           
+          // First update the token state
           setHasToken(true);
-          sessionStorage.removeItem("processingAuth");
+          
+          // Then refresh all auth data directly from localStorage
+          refreshAuthData();
+          
+          // Now navigate home
           navigate("/", { replace: true });
+          
+          sessionStorage.removeItem("processingAuth");
         })
         .catch((error) => {
           console.error(
@@ -73,5 +79,9 @@ export const OIDCCallback = () => {
     }
   }, []);
 
-  return <div></div>;
+  return (
+    <Center style={{ height: '100vh' }}>
+      <Loader size="xl" />
+    </Center>
+  );
 };
