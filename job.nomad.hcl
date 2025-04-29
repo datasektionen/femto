@@ -53,8 +53,8 @@ POSTGRES_DB=femto-dev
 POSTGRES_USER=femto-dev
 {{ with nomadVar "nomad/jobs/femto" }}
 POSTGRES_PASSWORD={{ .db_password }}
-CLIENT_ID={{ .oidc_client_id }} # rename to OIDC_
-CLIENT_SECRET={{ .oidc_client_secret }} # rename to OIDC_
+OIDC_CLIENT_ID={{ .oidc_client_id }}
+OIDC_CLIENT_SECRET={{ .oidc_client_secret }}
 JWT_SECRET={{ .jwt_secret }}
 HIVE_API_KEY={{ .hive_api_token_secret }}
 {{ end }}

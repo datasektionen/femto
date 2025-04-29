@@ -7,6 +7,8 @@ interface UserInfo {
     sub: string; // Subject (user ID)
     name: string;
     email: string;
+    permissions: string[]; // Add permissions
+    mandates: any[];       // Add mandates
     // Add other user properties as needed
 }
 

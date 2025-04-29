@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { raw, Request, Response } from "express";
 import pool from "../db";
 
 /**
@@ -12,6 +12,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
   const { slug, url, user_id, description, mandate, expires } = req.body;
 
   const userId = req.user?.sub;
+  
 
   console.log(`🔍 Fetching links for user: ${userId || "unknown"}`);
 

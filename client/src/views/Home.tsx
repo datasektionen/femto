@@ -1,23 +1,36 @@
-
+import { useEffect } from 'react';
 import { Alert } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
+import { useAuth } from "../autherization/useAuth.ts";
 
 /**
- * Homepage for Femto, using placeholder functions (not yet implemeted) 
- * hasPermissionsOr and LinkCreator component which also uses placeholder functions
+ * Homepage for Femto, using real authentication data from AuthContext
  */
 
- // Placeholder hasPermissionsOr
-const hasPermissionsOr = (userPermissions: string[], requiredPermissions: string[]) => {
-    return requiredPermissions.some(permission => userPermissions.includes(permission));
-};
-
 const Home = () => {
-  // Placeholder data
-  const hasToken = true;
-  const userMandates = [{ id: "1", role: "user" }];  // Mock user mandates
-  const pls = ["admin", "user"];  // Placeholder permissions
+  const { 
+    hasToken, 
+    userMandates, 
+    userPermissions, 
+    isAdmin,
+    refreshAuthData
+  } = useAuth();
+  
+  // Refresh auth data when component mounts
+  useEffect(() => {
+    refreshAuthData();
+  }, []);
+  
+  // Check if user can create custom links
+  const canCreateCustomLinks = 
+    isAdmin || 
+    (Array.isArray(userPermissions) && userPermissions.length > 0) ||
+    (Array.isArray(userMandates) && userMandates.some(mandate => mandate?.id && mandate?.role));
+  
+  console.log("Home render - Can create custom links:", canCreateCustomLinks);
+  console.log("User permissions:", userPermissions);
+  console.log("User mandates:", userMandates);
   
   return (
     <>
@@ -55,32 +68,22 @@ const Home = () => {
                 </p>
             </div>
             
-            {/* LinkCreator Component */}
-                <LinkCreator
-                    title="Autogenererad förkortad länk"
-                    disabled={!hasToken}
-                    desc={
-                        <>
-                            <p>Slumpa en fyra karaktärer lång sträng.</p>
-                        </>
-                    }
-                    userMandates={userMandates}
-                />
-
-                {/* Custom LinkCreator for Admins or Users with "custom-link" permission */}
-                {hasPermissionsOr(pls, ["admin", "custom-link"]) && (
-                    <LinkCreator
-                        title="Specificera förkortad länk"
-                        desc={
-                            <>
-                                <p>Önska en förkortad länk, exempelvis "ior". Giltiga tecken: a-z, 0-9, -, och _.</p>
-                                <p>Används för exempelvis rekryteringsformulär för nämnder. Du måste vara funktionär för att nyttja denna funktionalitet.</p>
-                            </>
-                        }
-                        custom
-                        userMandates={userMandates}
-                    />
-                )}
+            {/* Single LinkCreator Component with conditional features */}
+            <LinkCreator
+                title="Förkorta en länk"
+                disabled={!hasToken}
+                desc={
+                    <>
+                        <p>Slumpa en fyra karaktärer lång sträng.</p>
+                        {canCreateCustomLinks && (
+                            <p>Du kan också specificera en egen kort länk (t.ex. "ior").</p>
+                        )}
+                    </>
+                }
+                custom={canCreateCustomLinks} // Only show custom field if user has permission
+                userMandates={userMandates || []}
+                showAdvancedOptions={canCreateCustomLinks} // New prop to control visibility of advanced options
+            />
         </div>
     </>
   );

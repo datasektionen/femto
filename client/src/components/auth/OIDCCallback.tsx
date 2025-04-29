@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import { useAuth } from "../../autherization/useAuth.ts";
-import Configuration from "../../configuration.ts";
+import { loginWithCode } from "../../autherization/authApi.ts";
+import { Center, Loader } from "@mantine/core";
 
 export const OIDCCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setHasToken } = useAuth();
+  const { setHasToken, refreshAuthData } = useAuth();
 
   useEffect(() => {
     console.log("🔄 [1] OIDCCallback mounted");
@@ -24,48 +24,26 @@ export const OIDCCallback = () => {
       console.log("🔑 [3] Authorization Code Received:", code);
       sessionStorage.setItem("processingAuth", "true");
 
-      axios
-      // ska hämta userdata och permissions och mandates från verify code
-      // skickar koden vi får från sso till vår backend
-        .post<{ token: string; userData: any; userPermissions: any; userMandates: any }>(
-          `${Configuration.backendApiUrl}/api/auth/verify-code`,
-          { code: code }
-        )
-        .then((response) => {
-          console.log("✅ [4] Token and user data received from backend");
-          const token = response.data.token;
-          const userData = response.data.userData;
-          const userPermissions = response.data.userPermissions;
-          const userMandates = response.data.userMandates;
+      loginWithCode(code)
+        .then(() => {  // Remove the unused 'token' parameter
+          console.log("✅ [4] Login successful");
           
-          // Store all data in localStorage
-          localStorage.setItem("token", token);
-          localStorage.setItem("userData", JSON.stringify(userData));
-          localStorage.setItem("userPermissions", JSON.stringify(userPermissions));
-          localStorage.setItem("userMandates", JSON.stringify(userMandates));
-          
-          // Add detailed console logs to display user information
-          console.log("📧 User Email:", userData.email || "No email found");
-          console.log("👤 Username:", userData.sub || userData.username || userData.user || "No username found");
-          console.log("🔐 User Permissions:", userPermissions);
-          console.log("🏢 User Mandates (Groups):", userMandates);
-          
+          // Set token flag in context
           setHasToken(true);
-          sessionStorage.removeItem("processingAuth");
+          
+          // Fetch user data from backend
+          refreshAuthData();
+          
+          // Navigate home
           navigate("/", { replace: true });
         })
-        .catch((error) => {
-          console.error(
-            "❌ [5] Auth error:",
-            error.response?.data || error.message
-          );
-          localStorage.removeItem("token");
-          localStorage.removeItem("userData");
-          localStorage.removeItem("userPermissions");
-          localStorage.removeItem("userMandates");
-          sessionStorage.removeItem("processingAuth");
+        .catch(error => {
+          console.error("❌ [5] Auth error:", error);
           setHasToken(false);
           navigate("/login", { replace: true });
+        })
+        .finally(() => {
+          sessionStorage.removeItem("processingAuth");
         });
     } else {
       console.log("❌ [6] No code received in callback");
@@ -73,5 +51,9 @@ export const OIDCCallback = () => {
     }
   }, []);
 
-  return <div></div>;
+  return (
+    <Center style={{ height: '100vh' }}>
+      <Loader size="xl" />
+    </Center>
+  );
 };

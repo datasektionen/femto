@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Title, Text, TextInput, Alert, Radio, RadioGroup, Select, Center, Tooltip, Box, Loader } from "@mantine/core";
+import { Button, Title, Text, TextInput, Alert, Radio, RadioGroup, Select, Center, Tooltip, Box, Loader} from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
@@ -64,15 +64,26 @@ interface LinkCreatorProps {
   custom?: boolean;
   disabled?: boolean;
   userMandates?: Mandate[];
+  showAdvancedOptions?: boolean; // New prop to control visibility of advanced options
 }
 
 const LinkCreator: React.FC<LinkCreatorProps> = ({
   title = "Förkorta en länk",
   desc = "Klistra in en länk för att förkorta den.",
-  custom = true,
+  custom = false,
   disabled = false,
   userMandates = [],
+  showAdvancedOptions = false
 }) => {
+  // Add debugging
+  console.log("LinkCreator props:", { 
+    title,
+    custom, 
+    disabled,
+    showAdvancedOptions,
+    userMandatesLength: Array.isArray(userMandates) ? userMandates.length : 'not array'
+  });
+  
   // State management
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -173,10 +184,17 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   };
 
   // Prepare data for the Select component from the Mandate objects
-  const mandateSelectData = userMandates.map((m) => ({
-    label: m.role,
-    value: m.id,
-  }));
+  const mandateSelectData = Array.isArray(userMandates) 
+    ? userMandates
+        .filter(m => m && m.id && m.role) // Filter out any invalid mandates
+        .map((m) => ({
+          label: String(m.role), // Ensure label is a string
+          value: String(m.id),   // Ensure value is a string
+        }))
+    : [];
+
+  // Check if we should show the mandate selector
+  const hasValidMandates = mandateSelectData.length > 0;
 
   return (
     <Box style={styles.root}>
@@ -205,6 +223,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
           disabled={fetching || disabled}
         />
 
+        {/* Custom short URL input - only visible with permission */}
         {custom && (
           <TextInput
             style={styles.input}
@@ -215,6 +234,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
           />
         )}
 
+        {/* Expiration date - available to all users */}
         <RadioGroup
           label="Sätt utgångsdatum (valfritt)"
           value={form.values.expire ? "yes" : "no"}
@@ -241,17 +261,23 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
           />
         )}
 
-        {userMandates && userMandates.length > 0 && (
-          <Select
-            label="Koppla till mandat (valfritt)"
-            placeholder="Välj mandat"
-            data={mandateSelectData}
-            searchable
-            clearable
-            style={styles.formControl}
-            {...form.getInputProps("mandate")}
-            disabled={fetching || disabled}
-          />
+        {/* Advanced options section - only visible with permissions */}
+        {showAdvancedOptions && (
+          <>
+            {/* Mandate selector - only visible if user has mandates */}
+            {hasValidMandates && (
+              <Select
+                label="Koppla till mandat (valfritt)"
+                placeholder="Välj mandat"
+                data={mandateSelectData}
+                searchable
+                clearable
+                style={styles.formControl}
+                {...form.getInputProps("mandate")}
+                disabled={fetching || disabled}
+              />
+            )}
+          </>
         )}
 
         <Button 
