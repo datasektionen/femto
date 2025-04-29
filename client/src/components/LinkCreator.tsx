@@ -5,6 +5,7 @@ import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
 import Configuration from "../configuration.ts";
 import type { CSSProperties, ReactNode } from 'react';
+import { useAuth } from "../autherization/useAuth.ts";
 
 // Utility functions
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
@@ -75,6 +76,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   userMandates = [],
   showAdvancedOptions = false
 }) => {
+  // Get userData from auth context
+  const { userData } = useAuth();
+
   // Add debugging
   console.log("LinkCreator props:", { 
     title,
@@ -111,14 +115,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     setResult("");
     setError(null);
     
-    // Get JWT token and user data from localStorage
+    // Get JWT token 
     const token = localStorage.getItem("token");
-    let userData = null;
-    try {
-      userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    } catch (e) {
-      console.error("Error parsing user data:", e);
-    }
     
     // If token doesn't exist, show error
     if (!token) {
@@ -130,16 +128,28 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       return;
     }
     
-    // Get user ID from userData
-    const userId = userData?.sub || userData?.user || userData?.username || "unknown";
+    // Get user ID from auth context instead of localStorage
+    const userId = userData?.sub;
+    
+    if (!userId) {
+      setError({
+        title: "Authentication Error",
+        message: "Could not determine user ID. Please try logging in again."
+      });
+      setFetching(false);
+      return;
+    }
 
     const data = {
       slug: values.short || "",
       url: values.url,
       user_id: userId,
-      expire: values.expire || null,
+      expires: values.expire || null, // Make sure this matches the server-side field name 
       mandate: values.mandate || null,
+      description: ""  // Add this if your API requires it
     };
+
+    console.log("Submitting link with data:", data);
 
     try {
       const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
