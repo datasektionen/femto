@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController'; // Importera statistik-funktionen
-import { verifyCode } from '../controllers/authController';
+import { verifyCode, getUserData } from '../controllers/authController';
 import { getAPIStatus } from '../controllers/statusController';
 import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
 import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
@@ -34,6 +34,8 @@ apiRouter.get('/status', async (req, res) => { getAPIStatus(req, res);});
  */
 apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); });
 
+
+apiRouter.use(jwtAuth);
 /**
  * GET /api/stats
  * Hämtar statistik för länkar: totalt antal länkar och sammanlagda klick.
@@ -41,13 +43,14 @@ apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); 
 // GET /api/links/:slug/stats
 apiRouter.get('/links/:slug/stats', getLinkStats);
 
+// arman test
+apiRouter.get('/auth/user-data',getUserData);
 
-
-apiRouter.get('/links/:slug/lang-stats', jwtAuth, getLangstats);
+apiRouter.get('/links/:slug/lang-stats',getLangstats);
 
 // Apply jwtAuth middleware to protect the /api/links routes
 
-apiRouter.use('/links', jwtAuth);
+// apiRouter.use('/links');
 //apiRouter.use('/links', getAllLinks);
 
 /**
