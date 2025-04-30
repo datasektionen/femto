@@ -19,7 +19,7 @@ const AppContent = () => {
   // Define the configuration for Methone, as per the documentation
   const config = {
     system_name: "link-shortener",
-    color_scheme: 'light-blue', // Make sure this color scheme is valid in Methone
+    color_scheme: 'light-green', // Switched to light-green to make Raf happy
     login_href: hasToken ? "/logout" : "/login",
     login_text: hasToken ? "Logga ut" : "Logga in",
     links: [
@@ -33,7 +33,7 @@ const AppContent = () => {
   return (
     // This div wraps Methone and the page content.
     // The className should match the color_scheme for styling.
-    <div id="application" className='light-blue'>
+    <div id="application" className='light-green'>
       {/* Render the Methone component with the config */}
       <Methone config={config} />
 
@@ -75,7 +75,7 @@ const App = () => {
           scale: 1.5, // Adjust the scale for all components
           fontFamily: "Lato",
           headings: { fontFamily: "Lato" },
-          primaryColor: "blue", // Adjust Mantine theme as needed
+          primaryColor: "green", // Adjust Mantine theme as needed
         }}
       >
         {/* BrowserRouter wraps the application content that uses routing */}
