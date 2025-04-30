@@ -43,7 +43,10 @@ export async function isBlacklistedDB(link: string): Promise<boolean> {
  * @param {string[]} links - The links to add to the blacklist.
  */
 export async function databaseInsertBlacklist(links: string[]) {
-    const batchedInsertionSize = 100; // Number of links to insert at once
+    
+    //Progress will only be displayed if linksPerProgressMarker % linksPerBatch === 0
+    const linksPerBatch = 100; // Number of links to insert at once
+    const linksPerProgressMarker = 200000; // Number of links to insert before logging progress
 
     let client;
     client = await pool.connect();
@@ -52,8 +55,8 @@ export async function databaseInsertBlacklist(links: string[]) {
 
     let queryBase = `INSERT INTO blockedurls (url) VALUES `;
     let queryBaseCopy = queryBase;
-    let insertCounter = 0;
 
+    let insertCounter = 0;
     let internalLinkCounter = 0;
     let totalLinks = links.length;
 
@@ -63,14 +66,15 @@ export async function databaseInsertBlacklist(links: string[]) {
         return;
     }
 
-
     for (const link of links) {
         if (insertCounter === 0) {
             queryBaseCopy += `('${link}')`;
             insertCounter++;
-        } else if (insertCounter < batchedInsertionSize) {
+
+        } else if (insertCounter < linksPerBatch) {
             queryBaseCopy += `, ('${link}')`;
             insertCounter++;
+
         } else {
             try {
                 queryBaseCopy += ` ON CONFLICT DO NOTHING;`;
@@ -84,9 +88,9 @@ export async function databaseInsertBlacklist(links: string[]) {
                 console.error('Error inserting links', err.stack);
             }
 
-            if (internalLinkCounter % 200000 === 0) {
+            if (internalLinkCounter % linksPerProgressMarker === 0) {
                 console.log(`Inserted ${internalLinkCounter} links out of ${totalLinks} into the blacklist.
-                    Progress: ${Math.round((internalLinkCounter / totalLinks) * 100)}%`);
+                    Progress: ${Math.round((internalLinkCounter / totalLinks) * 100)}%\n`);
         
             }
         }
@@ -96,9 +100,10 @@ export async function databaseInsertBlacklist(links: string[]) {
         queryBaseCopy += ` ON CONFLICT DO NOTHING;`;
         await client.query(queryBaseCopy);
         internalLinkCounter += insertCounter;
-    }
-    console.log(`Link insertion progress: 100%`);
 
+    }
+    console.log(`Inserted ${internalLinkCounter} links out of ${totalLinks} into the blacklist.
+        Progress: 100%\n`);
 
     client.release();
 }
@@ -117,8 +122,8 @@ interface MulterRequest extends Request {
  */
 export async function blacklistFile(req: MulterRequest, res: Response): Promise<void> {
   console.log('blacklistFile called');
-
   const multerReq = req as Request; // Explicitly cast req to MulterRequest
+
   try {
       if (!multerReq.file) {
         res.status(400).send('No file uploaded');
