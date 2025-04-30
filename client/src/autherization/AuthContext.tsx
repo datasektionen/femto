@@ -9,18 +9,23 @@ interface UserInfo {
   [key: string]: any;
 }
 
+interface PermissionObject {
+  id: string;
+  scope: string | null;
+}
+
 interface AuthContextType {
   hasToken: boolean;
   setHasToken: (value: boolean) => void;
   userData: UserInfo | null;
-  userPermissions: string[] | null;
+  userPermissions: PermissionObject[] | null;
   userMandates: any[] | null;
-  isAdmin: boolean;
-  hasPermission: (permission: string) => boolean;
-  hasMandateRole: (roleIdentifier: string) => boolean;
+  mandateGroups: string[]; // New property for mandate group names
+  hasMandateGroup: (groupName: string) => boolean; // New helper function
   refreshAuthData: () => Promise<void>;
   isLoading: boolean;
-  //customLinks: boolean;
+  customLinks: boolean;
+  manageLinks: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -29,18 +34,18 @@ export const AuthContext = createContext<AuthContextType>({
   userData: null,
   userPermissions: null,
   userMandates: null,
-  isAdmin: false,
-  hasPermission: () => false,
-  hasMandateRole: () => false,
+  mandateGroups: [], // Initialize empty array
+  hasMandateGroup: () => false, // Initialize helper function
   refreshAuthData: async () => {},
   isLoading: false,
-  //customLinks: false
+  customLinks: false,
+  manageLinks: false
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasToken, setHasToken] = useState<boolean>(isAuthenticated());
   const [userData, setUserData] = useState<UserInfo | null>(null);
-  const [userPermissions, setUserPermissions] = useState<string[] | null>(null);
+  const [userPermissions, setUserPermissions] = useState<PermissionObject[] | null>(null);
   const [userMandates, setUserMandates] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -90,43 +95,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       refreshAuthData();
     }
   }, [hasToken]);
-
-  // Derived state for common permission check
-  const isAdmin = Boolean(
-    userPermissions?.includes('femto.admin')
-  );
-
-  // kanske göra såhär
-  /** const customLinks = Boolean(
-    userPermissions?.includes('femto.customlinks')
-  );
-  */
   
+  enum Permission {
+    CREATE_CUSTOM_LINKS = 'custom-links',
+    VIEW_ALL_LINKS = 'manage-all',
+  }
 
-  // Check if user has a specific permission
-  const hasPermission = (permission: string): boolean => {
-    if (!userPermissions) return false;
-    if (userPermissions.includes('femto.admin')) return true;
-    if (userPermissions.includes(permission)) return true;
-    
-    // Handle wildcard permissions
-    const parts = permission.split('.');
-    for (let i = parts.length; i > 0; i--) {
-      const wildcardPerm = [...parts.slice(0, i), '*'].join('.');
-      if (userPermissions.includes(wildcardPerm)) return true;
-    }
-    
-    return false;
+  // Extract just the group names from userMandates
+  const mandateGroups = userMandates 
+    ? userMandates
+        .filter(mandate => mandate && mandate.group_name) // Filter out null or undefined values
+        .map(mandate => mandate.group_name)               // Extract just the group_name
+    : [];
+
+  // Log mandate groups for debugging
+  useEffect(() => {
+    console.log("Available groups:", mandateGroups);
+  }, [mandateGroups]);
+
+  // Check if user has a specific mandate group
+  const hasMandateGroup = (groupName: string): boolean => {
+    return mandateGroups.includes(groupName);
   };
 
-  // Check if user has a specific mandate role
-  const hasMandateRole = (roleIdentifier: string): boolean => {
-    if (!userMandates || !Array.isArray(userMandates)) return false;
-    
-    return userMandates.some(mandate => 
-      mandate.role?.identifier === roleIdentifier
-    );
-  };
+  const customLinks = Boolean(
+    userPermissions?.some(permission => permission.id === Permission.CREATE_CUSTOM_LINKS)
+  );
+  
+  const manageLinks = Boolean(
+    userPermissions?.some(permission => permission.id === Permission.VIEW_ALL_LINKS)
+  );
+
 
   return (
     <AuthContext.Provider value={{
@@ -135,11 +134,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userData,
       userPermissions,
       userMandates,
-      isAdmin,
-      hasPermission,
-      hasMandateRole,
+      mandateGroups,           // Add the simple list of mandate groups
+      hasMandateGroup,         // Add the helper function
       refreshAuthData,
-      isLoading
+      isLoading,
+      customLinks,
+      manageLinks,
     }}>
       {children}
     </AuthContext.Provider>

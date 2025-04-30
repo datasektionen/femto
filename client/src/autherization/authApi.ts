@@ -3,19 +3,18 @@ import Configuration from '../configuration';
 
 // Base API URL
 const API_URL = Configuration.backendApiUrl;
-
-// Types
-interface UserInfo {
-  sub: string;
-  email?: string;
-  name?: string;
-  [key: string]: any;
+interface AuthData {
+    sub: string;
+    email?: string;
+    name?: string;
+    [key: string]: any;
+  userPermissions: PermissionObject[]; // Match the type in AuthContext
+  userMandates: any[];
 }
 
-interface AuthData {
-  userData: UserInfo;
-  userPermissions: string[];
-  userMandates: any[];
+interface PermissionObject {
+  id: string;
+  scope: string | null;
 }
 
 /**

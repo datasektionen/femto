@@ -24,12 +24,6 @@ interface ApiError {
   message: string;
 }
 
-interface Mandate {
-  id: string;
-  role: string;
-  // Add other properties if needed
-}
-
 // Styles
 const styles = {
   root: {
@@ -64,8 +58,8 @@ interface LinkCreatorProps {
   desc?: string | ReactNode;
   custom?: boolean;
   disabled?: boolean;
-  userMandates?: Mandate[];
-  showAdvancedOptions?: boolean; // New prop to control visibility of advanced options
+  userGroups?: string[]; // Changed from userMandates to userGroups which are strings
+  showAdvancedOptions?: boolean;
 }
 
 const LinkCreator: React.FC<LinkCreatorProps> = ({
@@ -73,7 +67,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   desc = "Klistra in en länk för att förkorta den.",
   custom = false,
   disabled = false,
-  userMandates = [],
+  userGroups = [], // Changed from userMandates
   showAdvancedOptions = false
 }) => {
   // Get userData from auth context
@@ -85,7 +79,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     custom, 
     disabled,
     showAdvancedOptions,
-    userMandatesLength: Array.isArray(userMandates) ? userMandates.length : 'not array'
+    userMandatesLength: Array.isArray(userGroups) ? userGroups.length : 'not array'
   });
   
   // State management
@@ -194,17 +188,13 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   };
 
   // Prepare data for the Select component from the Mandate objects
-  const mandateSelectData = Array.isArray(userMandates) 
-    ? userMandates
-        .filter(m => m && m.id && m.role) // Filter out any invalid mandates
-        .map((m) => ({
-          label: String(m.role), // Ensure label is a string
-          value: String(m.id),   // Ensure value is a string
-        }))
-    : [];
+  const groupSelectData = userGroups.map(group => ({
+    label: group,
+    value: group
+  }));
 
-  // Check if we should show the mandate selector
-  const hasValidMandates = mandateSelectData.length > 0;
+  // Check if we should show the group selector
+  const hasGroups = groupSelectData.length > 0;
 
   return (
     <Box style={styles.root}>
@@ -274,16 +264,16 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         {/* Advanced options section - only visible with permissions */}
         {showAdvancedOptions && (
           <>
-            {/* Mandate selector - only visible if user has mandates */}
-            {hasValidMandates && (
+            {/* Group selector - only visible if user has groups */}
+            {hasGroups && (
               <Select
-                label="Koppla till mandat (valfritt)"
-                placeholder="Välj mandat"
-                data={mandateSelectData}
+                label="Koppla till grupp (valfritt)"
+                placeholder="Välj grupp"
+                data={groupSelectData}
                 searchable
                 clearable
                 style={styles.formControl}
-                {...form.getInputProps("mandate")}
+                {...form.getInputProps("mandate")} // Reuse the mandate field for group
                 disabled={fetching || disabled}
               />
             )}
