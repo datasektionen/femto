@@ -1,6 +1,11 @@
 import { raw, Request, Response } from "express";
 import pool from "../db";
 
+interface PermissionObject {
+  id: string;
+  scope: string | null;
+}
+
 /**
  * Generates a short link, either using a provided slug or generating a new one.
  *
@@ -13,20 +18,53 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
   const userId = req.user?.sub;
   
+  // Simplified permission handling to handle strings
+  const userPermissions = Array.isArray(req.user?.permissions) 
+    ? req.user.permissions.map((perm: string | { id: string }) => 
+        typeof perm === 'string' ? perm : (perm as { id: string }).id
+      ) 
+    : [];
+  
+  const userMandates = req.user?.mandates || [];
 
-  console.log(`🔍 Fetching links for user: ${userId || "unknown"}`);
+  console.log(`🔍 Processing link creation for user: ${userId || "unknown"}`);
 
   if (!userId) {
     console.error("❌ User ID not found in token");
     res.status(400).json({ error: "User ID not found in token" });
     return;
   }
+  
   if (userId !== user_id) {
     console.error("❌ User ID mismatch");
     res.status(403).json({ error: "User ID mismatch" });
     return;
   }
 
+  // Custom slug permission check
+  if (slug) {
+    const hasCustomSlugPermission = userPermissions.includes('custom-links');
+    
+    if (!hasCustomSlugPermission) {
+      console.error("❌ User doesn't have permission to create custom slugs");
+      res.status(403).json({ error: "You don't have permission to create custom slugs" });
+      return;
+    }
+  }
+
+  // Mandate/group permission check
+  if (mandate) {
+    const userGroups = userMandates.map(m => m.group_name);
+    const belongsToGroup = userGroups.includes(mandate);
+    
+    if (!belongsToGroup) {
+      console.error(`❌ User doesn't belong to the group: ${mandate}`);
+      res.status(403).json({ error: `You don't belong to the group: ${mandate}` });
+      return;
+    }
+  }
+
+  // Rest of the original function remains the same...
   //Generates a base62 slug from a given number.
   function generateBase62(id: number) {
     // Characters used for base62 encoding
@@ -132,10 +170,17 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
  */
 export async function getAllLinks(req: Request, res: Response): Promise<void> {
   try {
-    // Get user ID from the JWT token (attached by the jwtAuth middleware)
-    // This is the 'sub' field from your JWT token which should contain the username
     const userId = req.user?.sub;
-
+    
+    // Simplified permission handling to handle strings
+    const userPermissions = Array.isArray(req.user?.permissions) 
+      ? req.user.permissions.map(perm => 
+          typeof perm === 'string' ? perm : (perm as { id: string }).id
+        ) 
+      : [];
+    
+    const userMandates = req.user?.mandates || [];
+    
     console.log(`🔍 Fetching links for user: ${userId || "unknown"}`);
 
     if (!userId) {
@@ -144,22 +189,52 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Use the correct table name 'urls' instead of 'links'
-    const query = `
+    // Check if user has manage-all permission
+    const canManageAllLinks = userPermissions.includes('manage-all');
+
+    let query;
+    let queryParams: any[] = [];
+
+    if (canManageAllLinks) {
+      // If user can manage all links, don't filter
+      console.log("🔑 User has manage-all permission - fetching all links");
+      query = `SELECT * FROM urls ORDER BY expires DESC NULLS LAST`;
+    } else {
+      // Extract user's mandate groups
+      const userGroups = userMandates.map(mandate => mandate.group_name);
+      
+      if (userGroups.length > 0) {
+        // Return links created by the user OR connected to a group they belong to
+        query = `
+          SELECT * FROM urls 
+          WHERE user_id = $1 
+          OR mandate = ANY($2::text[])
+          ORDER BY expires DESC NULLS LAST
+        `;
+        queryParams = [userId, userGroups];
+      } else {
+        // Return only links created by the user if they have no groups
+        query = `
           SELECT * FROM urls 
           WHERE user_id = $1
-          ORDER BY expires DESC
+          ORDER BY expires DESC NULLS LAST
         `;
+        queryParams = [userId];
+      }
+    }
 
-    const result = await pool.query(query, [userId]);
+    console.log("Executing query:", query);
+    console.log("With parameters:", queryParams);
+
+    const result = await pool.query(query, queryParams);
     const links = result.rows;
 
     console.log(`✅ Found ${links.length} links for user ${userId}`);
     res.status(200).json(links);
-    } catch (error) {
-        console.error("❌ Error getting links:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
+  } catch (error) {
+    console.error("❌ Error getting links:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 }
 
 /**
