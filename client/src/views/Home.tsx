@@ -11,9 +11,10 @@ import { useAuth } from "../autherization/useAuth.ts";
 const Home = () => {
   const { 
     hasToken, 
-    userMandates, 
-    userPermissions, 
-    isAdmin,
+    userPermissions,
+    customLinks,
+    manageLinks,
+    mandateGroups,
     refreshAuthData
   } = useAuth();
   
@@ -23,14 +24,15 @@ const Home = () => {
   }, []);
   
   // Check if user can create custom links
-  const canCreateCustomLinks = 
-    isAdmin || 
-    (Array.isArray(userPermissions) && userPermissions.length > 0) ||
-    (Array.isArray(userMandates) && userMandates.some(mandate => mandate?.id && mandate?.role));
+  const canCreateCustomLinks = customLinks;
+
+  const canManageLinks = manageLinks;
   
-  console.log("Home render - Can create custom links:", canCreateCustomLinks);
   console.log("User permissions:", userPermissions);
-  console.log("User mandates:", userMandates);
+  console.log("User groups:", mandateGroups);
+  console.log("User can create custom links:", customLinks);
+  console.log("User has token:", hasToken);
+  console.log("User can manage all links:", canManageLinks);
   
   return (
     <>
@@ -81,8 +83,8 @@ const Home = () => {
                     </>
                 }
                 custom={canCreateCustomLinks} // Only show custom field if user has permission
-                userMandates={userMandates || []}
-                showAdvancedOptions={canCreateCustomLinks} // New prop to control visibility of advanced options
+                userGroups={mandateGroups || []}
+                showAdvancedOptions={(mandateGroups && mandateGroups.length > 0) || canCreateCustomLinks} 
             />
         </div>
     </>
