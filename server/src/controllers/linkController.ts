@@ -41,6 +41,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     return;
   }
 
+
   // Custom slug permission check
   if (slug) {
     const hasCustomSlugPermission = userPermissions.includes('custom-links');
@@ -64,23 +65,15 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     }
   }
 
-  // Rest of the original function remains the same...
-  //Generates a base62 slug from a given number.
-  function generateBase62(id: number) {
-    // Characters used for base62 encoding
-    const characters =
-      "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const base = characters.length;
-    let slug = "";
-
-    // Convert the ID to a base62 string
-    while (id > 0) {
-      slug = characters[id % base] + slug;
-      id = Math.floor(id / base);
-    }
-
-    return slug;
+ //Generates a slug from a given number.
+  function base64UrlEncode(id: number): string {
+    return Buffer.from(id.toString())
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
   }
+  
 
   // Checks if a slug is already in the database.
   async function checkSlug(slug: string) {
@@ -140,8 +133,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         [url, user_id, description, mandate, expires]
       );
       const id = idResult.rows[0].id;
-      // Generate a base62 slug from the ID
-      const slug = generateBase62(id);
+      // Generate a a Slug from the ID
+      const slug = base64UrlEncode(id);
 
       // Update the link with the generated slug
       await client.query("UPDATE urls SET slug = $1 WHERE id = $2", [slug, id]);
