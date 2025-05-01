@@ -73,14 +73,6 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   // Get userData from auth context
   const { userData } = useAuth();
 
-  // Add debugging
-  console.log("LinkCreator props:", { 
-    title,
-    custom, 
-    disabled,
-    showAdvancedOptions,
-    userMandatesLength: Array.isArray(userGroups) ? userGroups.length : 'not array'
-  });
   
   // State management
   const [fetching, setFetching] = useState(false);
