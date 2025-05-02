@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController';
+import { deleteLink, updateLink, getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController';
 import { verifyCode, getUserData, fetchUserPermissions, fetchUserMemberships } from '../controllers/authController'; // Added missing imports
 import { getAPIStatus } from '../controllers/statusController';
 import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
@@ -73,6 +73,22 @@ apiRouter.get('/links', async (req, res) => { getAllLinks(req, res); });
  * Delegates the request handling to the getLink controller.
  */
 apiRouter.get('/links/:slug', async (req, res) => { getLink(req, res); });
+
+/**
+ * DELETE /api/links/:slug
+ * Deletes a specific link by its slug.
+ * Requires authentication.
+ * Delegates the request handling to the removeLink controller.
+ */
+apiRouter.delete('/links/:slug', async (req, res) => { deleteLink(req, res); });
+
+/**
+ * PATCH /api/links/:slug
+ * Updates a specific link by its slug.
+ * Requires authentication.
+ * Delegates the request handling to the updateLink controller.
+ */
+apiRouter.patch('/links/:slug', async (req, res) => { updateLink(req, res); });
 
 /**
  * GET /api/links/:slug/stats
