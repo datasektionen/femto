@@ -68,8 +68,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   const [error, setError] = useState<ApiError | null>(null);
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
-  
-  // Form handling using Mantine's useForm
+
+  // Mantine form setup with initial values and validation
   const form = useForm<FormValues>({
     initialValues: {
       url: "",
@@ -90,8 +90,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     setFetching(true);
     setResult("");
     setError(null);
-    
-    // Get JWT token and user data from localStorage
+
+    // Grab JWT token and user data from localStorage
     const token = localStorage.getItem("token");
     let userData = null;
     try {
@@ -99,8 +99,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     } catch (e) {
       console.error("Error parsing user data:", e);
     }
-    
-    // If token doesn't exist, show error
+
+    // If user is not authenticated, show an error
     if (!token) {
       setError({
         title: "Authentication Error",
@@ -109,8 +109,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       setFetching(false);
       return;
     }
-    
-    // Get user ID from userData
+
+    // Extract user ID from stored user data
     const userId = userData?.sub || userData?.user || userData?.username || "unknown";
 
     // Build request payload
@@ -134,6 +134,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
       const resData = await response.json();
 
+      // Handle any HTTP error responses
       if (!response.ok) {
         throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
       }
@@ -167,9 +168,13 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
   // Render the UI
   return (
-    <Box style={styles.root}>
-      <Title order={2}>{title}</Title>
-      <Box mb="md">{desc}</Box>
+    <Center py="xl">
+      <Card shadow="lg" radius="lg" withBorder w="100%" maw={1000} p="xl">
+        <Stack spacing="lg">
+          <Box>
+            <Title order={2}>{title}</Title>
+            <Text color="dimmed" size="sm">{desc}</Text>
+          </Box>
 
           {error && (
             <Alert color="red" title={error.title} withCloseButton onClose={() => setError(null)}>
@@ -177,114 +182,111 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             </Alert>
           )}
 
-      <form onSubmit={form.onSubmit(submit)}>
-        <TextInput
-          style={styles.input}
-          placeholder="Lång länk (inkl. https://)"
-          label="URL att förkorta"
-          required
-          {...form.getInputProps("url")}
-          disabled={fetching || disabled}
-        />
+          <form onSubmit={form.onSubmit(submit)}>
+            <Stack spacing="md">
+              {/* Input for long URL */}
+              <TextInput
+                placeholder="https://din-länk.se"
+                label="Lång länk"
+                required
+                {...form.getInputProps("url")}
+                disabled={fetching || disabled}
+              />
 
-        {custom && (
-          <TextInput
-            style={styles.input}
-            placeholder="Önskad kortlänk (t.ex. sm-handlingar)"
-            label="Anpassad kortlänk (valfritt)"
-            {...form.getInputProps("short")}
-            disabled={fetching || disabled}
-          />
-        )}
+              {/* Optional short link slug */}
+              {custom && (
+                <TextInput
+                  placeholder="Valfri kortlänk"
+                  label="Anpassad kortlänk"
+                  {...form.getInputProps("short")}
+                  disabled={fetching || disabled}
+                />
+              )}
 
-        <RadioGroup
-          label="Sätt utgångsdatum (valfritt)"
-          value={form.values.expire ? "yes" : "no"}
-          onChange={(value) => {
-            if (value === 'no') {
-              form.setFieldValue('expire', '');
-            }
-          }}
-          style={styles.formControl}
-        >
-          <Radio value="yes" label="Ja" disabled={fetching || disabled} />
-          <Radio value="no" label="Nej" disabled={fetching || disabled} />
-        </RadioGroup>
+              {/* Optional expiration toggle */}
+              <RadioGroup
+                label="Utgångsdatum (valfritt)"
+                value={form.values.expire ? "yes" : "no"}
+                onChange={(value) => {
+                  form.setFieldValue('expire', value === 'no' ? '' : 'yes');
+                }}
+              >
+                <Group gap="md">
+                  <Radio value="yes" label="Ja" disabled={fetching || disabled} />
+                  <Radio value="no" label="Nej" disabled={fetching || disabled} />
+                </Group>
+              </RadioGroup>
 
-        {(form.getInputProps('expire').value !== '' || 
-          (form.values.expire && form.getInputProps('expire').value === '')) && (
-          <TextInput
-            type="datetime-local"
-            label="Utgångsdatum och tid"
-            style={styles.dateInput}
-            required={form.getInputProps('expire').value !== ''}
-            {...form.getInputProps("expire")}
-            disabled={fetching || disabled}
-          />
-        )}
+              {/* Expiration date/time input if enabled */}
+              {form.values.expire !== "" && (
+                <TextInput
+                  type="datetime-local"
+                  label="Välj datum och tid"
+                  {...form.getInputProps("expire")}
+                  disabled={fetching || disabled}
+                />
+              )}
 
-        {userMandates && userMandates.length > 0 && (
-          <Select
-            label="Koppla till mandat (valfritt)"
-            placeholder="Välj mandat"
-            data={mandateSelectData}
-            searchable
-            clearable
-            style={styles.formControl}
-            {...form.getInputProps("mandate")}
-            disabled={fetching || disabled}
-          />
-        )}
+              {/* Optional mandate selection */}
+              {userMandates.length > 0 && (
+                <Select
+                  label="Koppla till mandat (valfritt)"
+                  placeholder="Välj mandat"
+                  data={mandateSelectData}
+                  searchable
+                  clearable
+                  {...form.getInputProps("mandate")}
+                  disabled={fetching || disabled}
+                />
+              )}
 
-        <Button 
-          type="submit" 
-          loading={fetching} 
-          disabled={!form.values.url || fetching || disabled} 
-          style={styles.button} 
-          fullWidth
-        >
-          Förkorta
-        </Button>
-      </form>
+              {/* Submit button */}
+              <Button
+                type="submit"
+                fullWidth
+                loading={fetching}
+                disabled={!form.values.url || fetching || disabled}
+              >
+                Förkorta länk
+              </Button>
+            </Stack>
+          </form>
 
-      {fetching && <Center mt="md"><Loader /></Center>}
+          {/* Optional loading spinner */}
+          {fetching && (
+            <Center mt="md">
+              <Loader />
+            </Center>
+          )}
 
-      {result && (
-        <Box style={styles.resultContainer}>
-          <Title order={3}>Din förkortade länk:</Title>
-          <Text size="lg" fw={500} mb="md">
-            <a href={constructShortUrl(result)} target="_blank" rel="noopener noreferrer">
-              {constructShortUrl(result)}
-            </a>
-          </Text>
-
-          <Tooltip 
-            label="Kopierat!" 
-            opened={copied} 
-            transitionProps={{ transition: 'fade', duration: 150 }}
-          >
-            <Button
-              onClick={handleCopy}
-              variant="light"
-              mb="lg"
-            >
-              Kopiera länk
-            </Button>
-          </Tooltip>
-
-          <Center>
-            <QRCode
-              value={constructShortUrl(result)}
-              size={180}
-              ecLevel="H"
-              logoImage="/logo.svg"
-              logoWidth={40}
-              logoPadding={5}
-            />
-          </Center>
-        </Box>
-      )}
-    </Box>
+          {/* Display short link result and QR code */}
+          {result && (
+            <>
+              <Divider label="Resultat" labelPosition="center" my="xl" />
+              <Stack align="center" spacing="md">
+                <Title order={4}>Din kortlänk:</Title>
+                <Text size="lg" weight={600} component="a" href={constructShortUrl(result)} target="_blank" rel="noopener noreferrer">
+                  {constructShortUrl(result)}
+                </Text>
+                <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
+                  <Button variant="light" onClick={handleCopy}>
+                    Kopiera länk
+                  </Button>
+                </Tooltip>
+                <QRCode
+                  value={constructShortUrl(result)}
+                  size={160}
+                  ecLevel="H"
+                  logoImage="/logo.svg"
+                  logoWidth={40}
+                  logoPadding={5}
+                />
+              </Stack>
+            </>
+          )}
+        </Stack>
+      </Card>
+    </Center>
   );
 };
 
