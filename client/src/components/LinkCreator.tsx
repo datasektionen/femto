@@ -23,6 +23,7 @@ import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
 import Configuration from "../configuration.ts";
 import type {ReactNode } from 'react';
+import { useAuth } from "../autherization/useAuth.ts";
 
 // Utility to construct a full short URL using the backend URL
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
@@ -43,17 +44,13 @@ interface ApiError {
   message: string;
 }
 
-interface Mandate {
-  id: string;
-  role: string;
-}
-
 interface LinkCreatorProps {
   title?: string;
   desc?: string | ReactNode;
   custom?: boolean;
   disabled?: boolean;
-  userMandates?: Mandate[];
+  userGroups?: string[]; // Changed from userMandates to userGroups which are strings
+  showAdvancedOptions?: boolean;
 }
 
 // Main component
@@ -62,8 +59,13 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   desc = "Klistra in en länk för att förkorta den.",
   custom = true,
   disabled = false,
-  userMandates = [],
+  userGroups = [],
+  showAdvancedOptions = false,
 }) => {
+
+  // Get userData from auth context
+  const { userData } = useAuth();
+
   // Component state
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -94,34 +96,39 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
     // Grab JWT token and user data from localStorage
     const token = localStorage.getItem("token");
-    let userData = null;
-    try {
-      userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    } catch (e) {
-      console.error("Error parsing user data:", e);
-    }
 
-    // If user is not authenticated, show an error
+    // If token doesn't exist, show error
     if (!token) {
+        setError({ 
+          title: "Authentication Error", 
+          message: "You must be logged in to create links." 
+        });
+        setFetching(false);
+        return;
+    }
+    
+    // Get user ID from auth context instead of localStorage
+    const userId = userData?.sub;
+    
+    if (!userId) {
       setError({
         title: "Authentication Error",
-        message: "You must be logged in to create links."
+        message: "Could not determine user ID. Please try logging in again."
       });
       setFetching(false);
       return;
     }
 
-    // Extract user ID from stored user data
-    const userId = userData?.sub || userData?.user || userData?.username || "unknown";
-
-    // Build request payload
     const data = {
-      slug: values.short || "",
-      url: values.url,
-      user_id: userId,
-      expire: values.expire || null,
-      mandate: values.mandate || null,
+        slug: values.short || "",
+        url: values.url,
+        user_id: userId,
+        expires: values.expire || null, // Make sure this matches the server-side field name 
+        mandate: values.mandate || null,
+        description: ""  // Add this if your API requires it
     };
+  
+    console.log("Submitting link with data:", data);
 
     try {
       const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
@@ -161,11 +168,14 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Transform user mandates into format used by <Select />
-  const mandateSelectData = userMandates.map((m) => ({
-    label: m.role,
-    value: m.id,
+  // Prepare data for the Select component from the Mandate objects
+  const groupSelectData = userGroups.map(group => ({
+    label: group,
+    value: group
   }));
+
+  // Check if we should show the group selector
+  const hasGroups = groupSelectData.length > 0;
 
   // Render the UI
   return (
@@ -228,18 +238,23 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                 />
               )}
 
-              {/* Optional mandate selection */}
-              {userMandates.length > 0 && (
-                <Select
-                  label="Koppla till mandat (valfritt)"
-                  placeholder="Välj mandat"
-                  data={mandateSelectData}
-                  searchable
-                  clearable
-                  {...form.getInputProps("mandate")}
-                  disabled={fetching || disabled}
-                />
-              )}
+              {/* Advanced options section - only visible with permissions */}
+        {showAdvancedOptions && (
+          <>
+            {/* Group selector - only visible if user has groups */}
+            {hasGroups && (
+              <Select
+                label="Koppla till grupp (valfritt)"
+                placeholder="Välj grupp"
+                data={groupSelectData}
+                searchable
+                clearable
+                {...form.getInputProps("mandate")} // Reuse the mandate field for group
+                disabled={fetching || disabled}
+              />
+            )}
+          </>
+        )}
 
               {/* Submit button */}
               <Button
