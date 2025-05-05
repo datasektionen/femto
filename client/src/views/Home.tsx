@@ -1,4 +1,4 @@
-
+import React, { useEffect, useState } from "react";
 import { Alert } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
@@ -15,7 +15,18 @@ const hasPermissionsOr = (userPermissions: string[], requiredPermissions: string
 
 const Home = () => {
   // Placeholder data
-  const hasToken = true;
+  const hasToken = true; 
+  //this part above, gives all permission and let you test all functionality
+  //in the comment below is the only difference between the newest version and previous one
+  // remove const hasToken = true;  with the comment below to restore the newest version
+  /**
+   * const [hasToken, setHasToken] = useState<boolean>(false);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setHasToken(!!token);
+  }, []);
+   */
+
   const userMandates = [{ id: "1", role: "user" }];  // Mock user mandates
   const pls = ["admin", "user"];  // Placeholder permissions
   

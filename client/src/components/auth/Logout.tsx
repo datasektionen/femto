@@ -1,18 +1,22 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../autherization/useAuth.ts';
+import { logout } from '../../autherization/authApi.ts';
 
 export const Logout = () => {
   const navigate = useNavigate();
   const { setHasToken } = useAuth();
 
   useEffect(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userData");
-    localStorage.removeItem("userMandates");
+    // Use the authApi logout function
+    logout();
+    
+    // Update context
     setHasToken(false);
-    navigate("/shorten", { replace: true });
+    
+    // Navigate to home
+    navigate('/', { replace: true });
   }, [navigate, setHasToken]);
 
-  return <div></div>;
+  return <div>Logging out...</div>;
 };

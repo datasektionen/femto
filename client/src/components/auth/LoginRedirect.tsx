@@ -3,20 +3,13 @@ import Configuration from '../../configuration.ts';
 
 export const LoginRedirect = () => {
   useEffect(() => {
-    // Use the OIDC issuer base URL
-    const oidcIssuer = Configuration.loginApiUrl || 'https://sso.datasektionen.se';
-    
-    // Add the /op/ path segment which is missing
-    const callbackUrl = encodeURIComponent(`${window.location.origin}/auth/oidc-callback`);
-    const authUrl = `${oidcIssuer}/op/authorize?` + 
-      `client_id=${Configuration.clientId || 'femto-dev'}&` +
-      `redirect_uri=${callbackUrl}&` +
-      `response_type=code&` +
-      `scope=openid profile email pls_*`;
+    // Construct the backend login URL
+    const backendLoginUrl = `${Configuration.backendApiUrl}/login`;
 
-    console.log("🔄 Redirecting to OIDC:", authUrl);
-    window.location.href = authUrl;
-  }, []);
+    console.log("🔄 Redirecting to backend login:", backendLoginUrl);
+    // Redirect the user's browser to the backend endpoint
+    window.location.href = backendLoginUrl;
+  }, []); // Empty dependency array ensures this runs only once on mount
 
-  return <div></div>;
+  return <div>Redirecting to login...</div>;
 };
