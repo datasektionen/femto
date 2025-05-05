@@ -33,7 +33,7 @@ interface Link {
   expires: string | null; // ISO String or null
   clicks: number;
   user_id: string | null;
-  mandate: string | null;
+  group: string | null;
 }
 
 const Links: React.FC = () => {

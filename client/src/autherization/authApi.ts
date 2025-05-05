@@ -9,7 +9,7 @@ interface AuthData {
     name?: string;
     [key: string]: any;
   userPermissions: PermissionObject[]; // Match the type in AuthContext
-  userMandates: any[];
+  userGroups: any[];
 }
 
 interface PermissionObject {
