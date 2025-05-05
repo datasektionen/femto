@@ -16,12 +16,13 @@ import {
   Group,
   Stack,
   Divider,
+  Anchor,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
 import Configuration from "../configuration.ts";
-import type { CSSProperties, ReactNode } from 'react';
+import type {ReactNode } from 'react';
 
 // Utility to construct a full short URL using the backend URL
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
@@ -170,7 +171,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   return (
     <Center py="xl">
       <Card shadow="lg" radius="lg" withBorder w="100%" maw={1000} p="xl">
-        <Stack spacing="lg">
+        <Stack gap="lg">
           <Box>
             <Title order={2}>{title}</Title>
             <Text color="dimmed" size="sm">{desc}</Text>
@@ -183,7 +184,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
           )}
 
           <form onSubmit={form.onSubmit(submit)}>
-            <Stack spacing="md">
+            <Stack gap={16}>
               {/* Input for long URL */}
               <TextInput
                 placeholder="https://din-länk.se"
@@ -263,11 +264,11 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
           {result && (
             <>
               <Divider label="Resultat" labelPosition="center" my="xl" />
-              <Stack align="center" spacing="md">
+              <Stack align="center" gap={16}>
                 <Title order={4}>Din kortlänk:</Title>
-                <Text size="lg" weight={600} component="a" href={constructShortUrl(result)} target="_blank" rel="noopener noreferrer">
+                <Anchor size="lg" href={constructShortUrl(result)} target="_blank" rel="noopener noreferrer">
                   {constructShortUrl(result)}
-                </Text>
+                </Anchor>
                 <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
                   <Button variant="light" onClick={handleCopy}>
                     Kopiera länk
