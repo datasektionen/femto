@@ -335,8 +335,8 @@ apiRouter.get('/test-hive-user/:username', async (req, res) => {
         console.log(`🧪 Testing imported Hive API functions for user: ${username}`);
         // Functions are already imported at the top
         const permissions = await fetchUserPermissions(username);
-        const mandates = await fetchUserMemberships(username);
-        res.json({ success: true, permissions: permissions, mandates: mandates });
+        const groups = await fetchUserMemberships(username);
+        res.json({ success: true, permissions: permissions, groups: groups });
     } catch (error: any) {
         console.error(`❌ Error testing imported Hive functions for ${username}:`, error.message);
         res.status(500).json({ success: false, message: error.message || 'Unknown error occurred' });

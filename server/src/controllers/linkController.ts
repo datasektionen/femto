@@ -14,7 +14,7 @@ interface PermissionObject {
  * @returns {Promise<void>} - A promise that resolves when the link is generated and the response is sent.
  */
 export async function insertLink(req: Request, res: Response): Promise<void> {
-    const { slug, url, user_id, description, mandate, expires } = req.body;
+    const { slug, url, user_id, description, group, expires } = req.body;
 
     const userId = req.user?.sub;
 
@@ -25,7 +25,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         )
         : [];
 
-    const userMandates = req.user?.mandates || [];
+    const userGroups = req.user?.groups || [];
 
     console.log(`🔍 Processing link creation for user: ${userId || "unknown"}`);
 
@@ -54,13 +54,13 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     }
 
     // Mandate/group permission check
-    if (mandate) {
-        const userGroups = userMandates.map(m => m.group_name);
-        const belongsToGroup = userGroups.includes(mandate);
+    if (group) {
+        const user_Groups = userGroups.map(m => m.group_name);
+        const belongsToGroup = user_Groups.includes(group);
 
         if (!belongsToGroup) {
-            console.error(`❌ User doesn't belong to the group: ${mandate}`);
-            res.status(403).json({ error: `You don't belong to the group: ${mandate}` });
+            console.error(`❌ User doesn't belong to the group: ${group}`);
+            res.status(403).json({ error: `You don't belong to the group: ${group}` });
             return;
         }
     }
@@ -109,8 +109,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             client = await pool.connect();
             // Insert the new link with the provided slug
             const result = await client.query(
-                "INSERT INTO urls (slug, url, user_id, description, mandate, expires) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-                [slug, url, user_id, description, mandate, expires]
+                "INSERT INTO urls (slug, url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+                [slug, url, user_id, description, group, expires]
             );
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
@@ -129,8 +129,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
             // Insert the new link without a slug, and retrieve the generated ID
             const idResult = await client.query(
-                "INSERT INTO urls (url, user_id, description, mandate, expires) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-                [url, user_id, description, mandate, expires]
+                "INSERT INTO urls (url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                [url, user_id, description, group, expires]
             );
             const id = idResult.rows[0].id;
             // Generate a a Slug from the ID
@@ -177,8 +177,8 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
         : [];
 
     // Extract user groups from the request object (provided by middleware)
-    const userMandates = req.user?.mandates || [];
-    const userGroupNames = userMandates.map(m => m.group_name); // Get just the group names
+    const userGroups = req.user?.groups || [];
+    const userGroupNames = userGroups.map(m => m.group_name); // Get just the group names
 
     if (!userId) {
         console.error("❌ User ID not found in token for deletion attempt");
@@ -205,7 +205,7 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
             console.log(`ℹ️ User ${userId} attempting to delete link ${slug} - checking ownership/mandate`);
 
             // Fetch the link's owner and mandate
-            const linkResult = await client.query("SELECT user_id, mandate FROM urls WHERE slug = $1", [slug]);
+            const linkResult = await client.query("SELECT user_id, group_name FROM urls WHERE slug = $1", [slug]);
 
             if (linkResult.rows.length === 0) {
                 res.status(404).send("Link not found");
@@ -213,18 +213,18 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
             }
 
             const linkOwnerId = linkResult.rows[0].user_id;
-            const linkMandate = linkResult.rows[0].mandate;
+            const linkGroup = linkResult.rows[0].group_name;
 
-            // Check if the user owns the link OR if the link has a mandate and the user belongs to that group
+            // Check if the user owns the link OR if the link has a group and the user belongs to that group
             const isOwner = linkOwnerId === userId;
-            const hasMandateAccess = linkMandate && userGroupNames.includes(linkMandate);
+            const hasGroupAccess = linkGroup && userGroupNames.includes(linkGroup);
 
-            if (isOwner || hasMandateAccess) {
-                console.log(`✅ User ${userId} has permission to delete link ${slug} (Owner: ${isOwner}, Mandate Access: ${hasMandateAccess})`);
+            if (isOwner || hasGroupAccess) {
+                console.log(`✅ User ${userId} has permission to delete link ${slug} (Owner: ${isOwner}, Group Access: ${hasGroupAccess})`);
                 await client.query("DELETE FROM urls WHERE slug = $1", [slug]);
                 res.status(204).send();
             } else {
-                console.warn(`🚫 User ${userId} denied deletion of link ${slug} - Not owner or matching mandate`);
+                console.warn(`🚫 User ${userId} denied deletion of link ${slug} - Not owner or matching group`);
                 res.status(403).send("Forbidden: You do not have permission to delete this link.");
             }
         }
@@ -247,7 +247,7 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
  */
 export async function updateLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
-    const { url, description, mandate, expires } = req.body; // Fields that can be updated
+    const { url, description, group, expires } = req.body; // Fields that can be updated
     const userId = req.user?.sub;
 
     // Simplified permission handling
@@ -258,8 +258,8 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
         : [];
 
     // Extract user mandates and group names
-    const userMandates = req.user?.mandates || [];
-    const userGroupNames = userMandates.map(m => m.group_name);
+    const userGroups = req.user?.groups || [];
+    const userGroupNames = userGroups.map(m => m.group_name);
 
     if (!userId) {
         console.error("❌ User ID not found in token for update attempt");
@@ -268,7 +268,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     }
 
     // Basic validation: At least one field must be provided for update
-    if (url === undefined && description === undefined && mandate === undefined && expires === undefined) {
+    if (url === undefined && description === undefined && group === undefined && expires === undefined) {
         res.status(400).json({ error: "No update fields provided" });
         return;
     }
@@ -290,15 +290,15 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
             setClauses.push(`description = $${paramIndex++}`);
             queryParams.push(description);
         }
-        if (mandate !== undefined) {
+        if (group !== undefined) {
             // Check if user belongs to the new mandate group if they don't have manage-all
-            if (!userPermissions.includes("manage-all") && mandate !== null && !userGroupNames.includes(mandate)) {
-                 console.warn(`🚫 User ${userId} tried to assign link ${slug} to mandate ${mandate} they don't belong to.`);
-                 res.status(403).send(`Forbidden: You do not belong to the group '${mandate}'.`);
+            if (!userPermissions.includes("manage-all") && group !== null && !userGroupNames.includes(group)) {
+                 console.warn(`🚫 User ${userId} tried to assign link ${slug} to group ${group} they don't belong to.`);
+                 res.status(403).send(`Forbidden: You do not belong to the group '${group}'.`);
                  return;
             }
-            setClauses.push(`mandate = $${paramIndex++}`);
-            queryParams.push(mandate); // Allow setting mandate to null
+            setClauses.push(`group_name = $${paramIndex++}`);
+            queryParams.push(group); // Allow setting group to null
         }
         if (expires !== undefined) {
             setClauses.push(`expires = $${paramIndex++}`);
@@ -326,8 +326,8 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
             // User does not have manage-all, check ownership or mandate
             console.log(`ℹ️ User ${userId} attempting to update link ${slug} - checking ownership/mandate`);
 
-            // Fetch the link's owner and mandate first
-            const linkResult = await client.query("SELECT user_id, mandate FROM urls WHERE slug = $1", [slug]);
+            // Fetch the link's owner and group first
+            const linkResult = await client.query("SELECT user_id, group_name FROM urls WHERE slug = $1", [slug]);
 
             if (linkResult.rows.length === 0) {
                 res.status(404).send("Link not found");
@@ -335,19 +335,19 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
             }
 
             const linkOwnerId = linkResult.rows[0].user_id;
-            const linkMandate = linkResult.rows[0].mandate;
+            const linkGroup = linkResult.rows[0].group_name;
 
             const isOwner = linkOwnerId === userId;
-            const hasMandateAccess = linkMandate && userGroupNames.includes(linkMandate);
+            const hasGroupAccess = linkGroup && userGroupNames.includes(linkGroup);
 
-            if (isOwner || hasMandateAccess) {
-                console.log(`✅ User ${userId} has permission to update link ${slug} (Owner: ${isOwner}, Mandate Access: ${hasMandateAccess})`);
-                // Add user_id or mandate check to the WHERE clause for safety
-                // This ensures they can only update links they own or manage via mandate
+            if (isOwner || hasGroupAccess) { // Updated condition
+                console.log(`✅ User ${userId} has permission to update link ${slug} (Owner: ${isOwner}, Group Access: ${hasGroupAccess})`); // Updated log message
+                // Add user_id or group check to the WHERE clause for safety
+                // This ensures they can only update links they own or manage via group
                 const updateQuery = `
                     UPDATE urls
                     SET ${setClauseString}
-                    WHERE slug = $${slugParamIndex} AND (user_id = $${slugParamIndex + 1} OR mandate = ANY($${slugParamIndex + 2}::text[]))
+                    WHERE slug = $${slugParamIndex} AND (user_id = $${slugParamIndex + 1} OR group_name = ANY($${slugParamIndex + 2}::text[]))
                     RETURNING *`;
 
                 // Add userId and userGroupNames to the parameters for the WHERE clause check
@@ -399,7 +399,7 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
             )
             : [];
 
-        const userMandates = req.user?.mandates || [];
+        const userGroups = req.user?.groups || [];
 
         console.log(`🔍 Fetching links for user: ${userId || "unknown"}`);
 
@@ -420,18 +420,18 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
             console.log("🔑 User has manage-all permission - fetching all links");
             query = `SELECT * FROM urls ORDER BY expires DESC NULLS LAST`;
         } else {
-            // Extract user's mandate groups
-            const userGroups = userMandates.map(mandate => mandate.group_name);
+            // Extract user's group names
+            const userGroupNames = userGroups.map(group => group.group_name);
 
-            if (userGroups.length > 0) {
+            if (userGroupNames.length > 0) {
                 // Return links created by the user OR connected to a group they belong to
                 query = `
           SELECT * FROM urls 
           WHERE user_id = $1 
-          OR mandate = ANY($2::text[])
+          OR group_name = ANY($2::text[])
           ORDER BY expires DESC NULLS LAST
         `;
-                queryParams = [userId, userGroups];
+                queryParams = [userId, userGroupNames];
             } else {
                 // Return only links created by the user if they have no groups
                 query = `

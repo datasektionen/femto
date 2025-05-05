@@ -8,7 +8,7 @@ interface UserInfo {
     name: string;
     email: string;
     permissions: string[]; // Add permissions
-    mandates: any[];       // Add mandates
+    groups: any[];       // Add groups
     // Add other user properties as needed
 }
 

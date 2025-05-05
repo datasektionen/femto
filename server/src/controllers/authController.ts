@@ -70,10 +70,10 @@ async function fetchUserPermissions(username: string) {
     }
 }
 
-// Function to fetch user memberships (mandates) from Hive
+// Function to fetch user memberships (group) from Hive
 async function fetchUserMemberships(username: string) {
     try {
-        console.log(`🔍 Fetching mandates for user: ${username}`);
+        console.log(`🔍 Fetching groups for user: ${username}`);
         
         if (!HIVE_API_KEY) {
             console.error("❌ HIVE_API_KEY is undefined");
@@ -90,17 +90,17 @@ async function fetchUserMemberships(username: string) {
                 }
             }
         );
-        console.log("✅ User mandates fetched from Hive");
+        console.log("✅ User groups fetched from Hive");
         return response.data;
     } catch (error: any) {
-        console.error("❌ Error fetching user mandates:", {
+        console.error("❌ Error fetching user groups:", {
             status: error.response?.status,
             statusText: error.response?.statusText,
             message: error.message,
             data: error.response?.data
         });
         // Return empty array but add error information
-        return { error: true, message: "Failed to fetch mandates" };
+        return { error: true, message: "Failed to fetch groups" };
     }
 }
 
@@ -116,7 +116,7 @@ export { fetchUserPermissions, fetchUserMemberships };
  * @returns {Promise<void>} - A promise that resolves when the code is verified and the response is sent.
  */
 // Tar koden vi får från sso och verifierar den, skickar tillbaka en jwt token till frontend
-// och hämtar permissions och mandates från hive
+// och hämtar permissions och grupper från hive
 export async function verifyCode(req: Request, res: Response): Promise<void> {
     try {
         // Check if the OIDC client is initialized
@@ -142,20 +142,20 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
         const usernameRaw = userInfo.sub || userInfo.username || userInfo.user;
         const username = typeof usernameRaw === 'string' ? usernameRaw : String(usernameRaw);
         
-        // Fetch permissions and mandates if username is available
+        // Fetch permissions and group if username is available
         let permissions = [];
-        let mandates = [];
+        let groups = [];
         
         if (username) {
             permissions = await fetchUserPermissions(username);
-            mandates = await fetchUserMemberships(username);
+            groups = await fetchUserMemberships(username);
         }
 
-        // Create a JWT with user info, permissions, and mandates
+        // Create a JWT with user info, permissions, and groups
         const token = jwt.sign({ 
             ...userInfo,
             permissions: permissions,
-            mandates: mandates
+            groups: groups
         }, JWT_SECRET!, { expiresIn: '1h' });
 
         // Return both token and decoded data separately
@@ -163,7 +163,7 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
             token: token,
             userData: userInfo,
             userPermissions: permissions,
-            userMandates: mandates
+            userGroups: groups
         });
     } catch (err: any) {
         console.error('❌ Error verifying code 🔒', err);
@@ -192,7 +192,7 @@ export async function getUserData(req: Request, res: Response): Promise<void> {
           // Add other fields you need
         },
         userPermissions: req.user.permissions || [],
-        userMandates: req.user.mandates || []
+        userGroups: req.user.groups || []
       });
     } catch (err) {
       console.error('Error getting user data:', err);
