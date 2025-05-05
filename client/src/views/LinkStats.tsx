@@ -52,7 +52,7 @@ interface Link {
     expires: string | null;
     clicks: number;
     user_id: string | null;
-    group: string | null;
+    group_name: string | null;
 }
 
 interface StatsData {
@@ -343,7 +343,7 @@ const LinkStats: React.FC = () => {
                     <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
                     <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
                     <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "-"}</Text>
-                    <Text size="sm"><strong>Grupp:</strong> {linkDetails.group || "-"}</Text>
+                    <Text size="sm"><strong>Grupp:</strong> {linkDetails.group_name || "-"}</Text>
                     <Group mt="sm">
                         <Button size="xs" onClick={copyShortLink}>
                             Kopiera kortlänk

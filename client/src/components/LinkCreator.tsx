@@ -249,7 +249,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                 data={groupSelectData}
                 searchable
                 clearable
-                {...form.getInputProps("mandate")} // Reuse the mandate field for group
+                {...form.getInputProps("group")} // Reuse the mandate field for group
                 disabled={fetching || disabled}
               />
             )}
