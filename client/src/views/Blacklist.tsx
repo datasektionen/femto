@@ -65,6 +65,7 @@ const BlacklistUploadPage: React.FC = () => {
       }}
     >
       <h2>Upload Blacklist File</h2>
+      Ladda upp txt-fil med svarlistade länkar i formatet: svarlistad-länk.com
       <input type="file" accept=".txt" onChange={handleFileChange} />
       <button onClick={handleUpload}>Upload</button>
       {message && <p>{message}</p>}
