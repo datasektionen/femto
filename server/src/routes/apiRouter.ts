@@ -5,9 +5,8 @@ import { getAPIStatus } from '../controllers/statusController';
 import { blacklistFile } from '../controllers/blacklistController';
 import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
 import axios from 'axios';
-import multer from 'multer';
 import { Request, Response } from 'express';
-
+import { upload, MulterRequest } from '../controllers/blacklistController';
 
 /**
  * Router for API endpoints.
@@ -106,66 +105,13 @@ apiRouter.get('/links/:slug/lang-stats', getLangstats);
 
 
 // -- Blacklist Management --
-
-// Interface for Multer file handling
-interface MulterRequest extends Request {
-    file?: Express.Multer.File;
-}
-
-// Multer configuration for file uploads
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
 /**
  * POST /api/blacklist/upload
  * Uploads a file containing URLs to add to the blacklist.
  * Requires authentication.
  * Expects a 'file' field in the multipart/form-data request.
  */
-apiRouter.get('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { 
-
-    console.log('blacklistFile called');
-      const multerReq = req as Request; // Explicitly cast req to MulterRequest
-      try {
-          if (!multerReq.file) {
-            res.status(400).send('No file uploaded');
-            return;
-          }
-      
-          // Convert buffer to stream
-          const bufferStream = new Readable();
-          if (req.file) {
-            bufferStream.push(req.file.buffer);
-          } else {
-            res.status(400).send('No file uploaded');
-            return;
-          }
-          bufferStream.push(null);
-      
-          const rl = readline.createInterface({
-            input: bufferStream,
-            crlfDelay: Infinity,
-          });
-  
-          const lines: string[] = [];
-          rl.on('line', (line: string) => {
-            if (line.startsWith("#")) return; // Skip comments
-            lines.push(line.trim());
-          });
-  
-          await databaseInsertBlacklist(lines);
-  
-          
-          console.log('File processed and links blacklisted successfully.');
-  
-          
-          res.status(200).send(lines);
-        } catch (error) {
-          console.error(error);
-          res.status(500).send('Error processing file.');
-        }
-  
-  } ); 
+apiRouter.get('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); } );
 
 
 /* --- Commented out Blacklist Routes ---
@@ -341,13 +287,6 @@ apiRouter.get('/test-hive-user/:username', async (req, res) => {
     }
 });
 
-
-interface MulterRequest extends Request {
-  file?: Express.Multer.File;
-}
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
 
 // Endpoint to upload a blacklist file
 apiRouter.post('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); } ); 
