@@ -15,7 +15,6 @@ import {
 import { Header } from "methone";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { IconChartBar } from "@tabler/icons-react";
 import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
 import Configuration from "../configuration.ts";
 
