@@ -1,38 +1,34 @@
-import { useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import { Alert } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
-import { useAuth } from "../autherization/useAuth.ts";
 
 /**
- * Homepage for Femto, using real authentication data from AuthContext
+ * Homepage for Femto, using placeholder functions (not yet implemeted) 
+ * hasPermissionsOr and LinkCreator component which also uses placeholder functions
  */
 
-const Home = () => {
-  const { 
-    hasToken, 
-    userPermissions,
-    customLinks,
-    manageLinks,
-    mandateGroups,
-    refreshAuthData
-  } = useAuth();
-  
-  // Refresh auth data when component mounts
-  useEffect(() => {
-    refreshAuthData();
-  }, []);
-  
-  // Check if user can create custom links
-  const canCreateCustomLinks = customLinks;
+ // Placeholder hasPermissionsOr
+const hasPermissionsOr = (userPermissions: string[], requiredPermissions: string[]) => {
+    return requiredPermissions.some(permission => userPermissions.includes(permission));
+};
 
-  const canManageLinks = manageLinks;
-  
-  console.log("User permissions:", userPermissions);
-  console.log("User groups:", mandateGroups);
-  console.log("User can create custom links:", customLinks);
-  console.log("User has token:", hasToken);
-  console.log("User can manage all links:", canManageLinks);
+const Home = () => {
+  // Placeholder data
+  const hasToken = true; 
+  //this part above, gives all permission and let you test all functionality
+  //in the comment below is the only difference between the newest version and previous one
+  // remove const hasToken = true;  with the comment below to restore the newest version
+  /**
+   * const [hasToken, setHasToken] = useState<boolean>(false);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setHasToken(!!token);
+  }, []);
+   */
+
+  const userMandates = [{ id: "1", role: "user" }];  // Mock user mandates
+  const pls = ["admin", "user"];  // Placeholder permissions
   
   return (
     <>
@@ -70,22 +66,32 @@ const Home = () => {
                 </p>
             </div>
             
-            {/* Single LinkCreator Component with conditional features */}
-            <LinkCreator
-                title="Förkorta en länk"
-                disabled={!hasToken}
-                desc={
-                    <>
-                        <p>Slumpa en fyra karaktärer lång sträng.</p>
-                        {canCreateCustomLinks && (
-                            <p>Du kan också specificera en egen kort länk (t.ex. "ior").</p>
-                        )}
-                    </>
-                }
-                custom={canCreateCustomLinks} // Only show custom field if user has permission
-                userGroups={mandateGroups || []}
-                showAdvancedOptions={(mandateGroups && mandateGroups.length > 0) || canCreateCustomLinks} 
-            />
+            {/* LinkCreator Component */}
+                <LinkCreator
+                    title="Autogenererad förkortad länk"
+                    disabled={!hasToken}
+                    desc={
+                        <>
+                            <p>Slumpa en fyra karaktärer lång sträng.</p>
+                        </>
+                    }
+                    userMandates={userMandates}
+                />
+
+                {/* Custom LinkCreator for Admins or Users with "custom-link" permission */}
+                {hasPermissionsOr(pls, ["admin", "custom-link"]) && (
+                    <LinkCreator
+                        title="Specificera förkortad länk"
+                        desc={
+                            <>
+                                <p>Önska en förkortad länk, exempelvis "ior". Giltiga tecken: a-z, 0-9, -, och _.</p>
+                                <p>Används för exempelvis rekryteringsformulär för nämnder. Du måste vara funktionär för att nyttja denna funktionalitet.</p>
+                            </>
+                        }
+                        custom
+                        userMandates={userMandates}
+                    />
+                )}
         </div>
     </>
   );
