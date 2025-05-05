@@ -1,5 +1,6 @@
 import { raw, Request, Response } from "express";
 import pool from "../db";
+import { isBlacklistedDB } from "./blacklistController";
 
 interface PermissionObject {
     id: string;
@@ -38,6 +39,12 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     if (userId !== user_id) {
         console.error("❌ User ID mismatch");
         res.status(403).json({ error: "User ID mismatch" });
+        return;
+    }
+    
+    if (await isBlacklistedDB(url)) {
+        console.error("❌ URL is blacklisted");
+        res.status(403).json({ error: "URL is blacklisted" });
         return;
     }
 

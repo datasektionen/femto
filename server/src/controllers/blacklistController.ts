@@ -108,9 +108,13 @@ export async function databaseInsertBlacklist(links: string[]) {
     client.release();
 }
 
+import multer from 'multer';
+// Multer configuration for file uploads
+const storage = multer.memoryStorage();
+export const upload = multer({ storage: storage });
 
 
-interface MulterRequest extends Request {
+export interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
 /**
