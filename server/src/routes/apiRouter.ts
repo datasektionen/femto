@@ -2,14 +2,12 @@ import { Router } from 'express';
 import { deleteLink, updateLink, getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController';
 import { verifyCode, getUserData, fetchUserPermissions, fetchUserMemberships } from '../controllers/authController'; // Added missing imports
 import { getAPIStatus } from '../controllers/statusController';
-import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
+import { blacklistFile } from '../controllers/blacklistController';
 import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
 import axios from 'axios';
 import multer from 'multer';
 import { Request, Response } from 'express';
-import { Readable } from 'stream';
-import * as readline from 'readline';
-import { databaseInsertBlacklist } from '../services/blacklist';
+
 
 /**
  * Router for API endpoints.
@@ -343,5 +341,15 @@ apiRouter.get('/test-hive-user/:username', async (req, res) => {
     }
 });
 
+
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Endpoint to upload a blacklist file
+apiRouter.post('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); } ); 
 
 export default apiRouter;
