@@ -18,6 +18,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
 import Configuration from "../configuration.ts";
 
+
 // Create axios instance with base URL - we'll add the token dynamically in the requests
 const api = axios.create({
     baseURL: Configuration.backendApiUrl,
@@ -35,7 +36,7 @@ interface Link {
   clicks: number;
   user_id: string | null;
   group: string | null;
-
+}
 
 const Links: React.FC = () => {
     // --- State ---

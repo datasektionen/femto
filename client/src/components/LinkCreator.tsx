@@ -35,7 +35,8 @@ const copyShortUrlToClipboard = (slug: string) => navigator.clipboard.writeText(
 interface FormValues {
   url: string;
   short: string;
-  expire: string;
+  expire: string;         // This will hold the actual date
+  hasExpiration: boolean; // New toggle field
   group: string | null;
 }
 
@@ -78,11 +79,19 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       url: "",
       short: "",
       expire: "",
+      hasExpiration: false, // New field
       group: null,
     },
     validate: {
       url: (value) =>
         /^https?:\/\/.*$/.test(value) ? null : "Invalid URL. Should include http:// or https://",
+      expire: (value, values) => {
+        // Validate date only if expiration is enabled
+        if (values.hasExpiration && !value) {
+          return "Vänligen välj ett utgångsdatum";
+        }
+        return null;
+      }
     },
   });
 
@@ -120,12 +129,13 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     }
 
     const data = {
-        slug: values.short || "",
-        url: values.url,
-        user_id: userId,
-        expires: values.expire || null, // Make sure this matches the server-side field name 
-        group: values.group || null,
-        description: ""  // Add this if your API requires it
+      slug: values.short || "",
+      url: values.url,
+      user_id: userId,
+      // Only include expire if hasExpiration is true
+      expires: values.hasExpiration ? values.expire : null,
+      group: values.group || null,
+      description: "" 
     };
   
     console.log("Submitting link with data:", data);
@@ -153,9 +163,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
       setResult(slug);
       form.reset();
-    } catch (err) {
-      console.error("Error submitting form:", err);
-      setError({ title: "Error", message: err instanceof Error ? err.message : String(err) });
+    } catch (err: any) {
+      console.error("❌ Error inserting link 📁", err.stack);
+      setError({ title: "Error", message: "Internal Server Error" });
     } finally {
       setFetching(false);
     }
@@ -217,9 +227,11 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
               {/* Optional expiration toggle */}
               <RadioGroup
                 label="Utgångsdatum (valfritt)"
-                value={form.values.expire ? "yes" : "no"}
+                value={form.values.hasExpiration ? "yes" : "no"}
                 onChange={(value) => {
-                  form.setFieldValue('expire', value === 'no' ? '' : 'yes');
+                  form.setFieldValue('hasExpiration', value === 'yes');
+                  // Clear the expire field if disabled
+                  if (value === 'no') form.setFieldValue('expire', '');
                 }}
               >
                 <Group gap="md">
@@ -229,11 +241,12 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
               </RadioGroup>
 
               {/* Expiration date/time input if enabled */}
-              {form.values.expire !== "" && (
+              {form.values.hasExpiration && (
                 <TextInput
                   type="datetime-local"
                   label="Välj datum och tid"
                   {...form.getInputProps("expire")}
+                  withAsterisk
                   disabled={fetching || disabled}
                 />
               )}
