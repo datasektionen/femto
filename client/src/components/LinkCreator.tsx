@@ -36,7 +36,7 @@ interface FormValues {
   url: string;
   short: string;
   expire: string;
-  mandate: string | null;
+  group: string | null;
 }
 
 interface ApiError {
@@ -78,7 +78,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       url: "",
       short: "",
       expire: "",
-      mandate: null,
+      group: null,
     },
     validate: {
       url: (value) =>
@@ -124,7 +124,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         url: values.url,
         user_id: userId,
         expires: values.expire || null, // Make sure this matches the server-side field name 
-        mandate: values.mandate || null,
+        group: values.group || null,
         description: ""  // Add this if your API requires it
     };
   
@@ -249,7 +249,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                 data={groupSelectData}
                 searchable
                 clearable
-                {...form.getInputProps("mandate")} // Reuse the mandate field for group
+                {...form.getInputProps("group")} // Reuse the mandate field for group
                 disabled={fetching || disabled}
               />
             )}

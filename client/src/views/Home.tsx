@@ -15,7 +15,7 @@ const Home = () => {
       userPermissions,
       customLinks,
       manageLinks,
-      mandateGroups,
+      groups,
       refreshAuthData
     } = useAuth();
     
@@ -30,7 +30,7 @@ const Home = () => {
     const canManageLinks = manageLinks;
     
     console.log("User permissions:", userPermissions);
-    console.log("User groups:", mandateGroups);
+    console.log("User groups:", groups);
     console.log("User can create custom links:", customLinks);
     console.log("User has token:", hasToken);
     console.log("User can manage all links:", canManageLinks);
@@ -84,8 +84,8 @@ const Home = () => {
                         </>
                     }   
                     custom={canCreateCustomLinks} // Only show custom field if user has permission
-                    userGroups={mandateGroups || []}
-                    showAdvancedOptions={(mandateGroups && mandateGroups.length > 0) || canCreateCustomLinks}     
+                    userGroups={groups || []}
+                    showAdvancedOptions={(groups && groups.length > 0) || canCreateCustomLinks}     
                     
                 />
         </div>

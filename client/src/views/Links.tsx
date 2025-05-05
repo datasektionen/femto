@@ -25,16 +25,17 @@ const api = axios.create({
 
 // Interface för Link
 interface Link {
-    id: string;
-    slug: string;
-    url: string;
-    description: string;
-    date: string; // ISO String
-    expires: string | null; // ISO String or null
-    clicks: number;
-    user_id: string | null;
-    mandate: string | null;
-}
+
+  id: string;
+  slug: string;
+  url: string;
+  description: string;
+  date: string; // ISO String
+  expires: string | null; // ISO String or null
+  clicks: number;
+  user_id: string | null;
+  group: string | null;
+
 
 const Links: React.FC = () => {
     // --- State ---

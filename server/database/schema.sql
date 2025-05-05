@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS urls (
     user_id VARCHAR(255),        
     expires TIMESTAMP DEFAULT NULL,  
     description TEXT,            
-    mandate VARCHAR(255)         
+    group_name VARCHAR(255)         
 );
 
 CREATE TABLE IF NOT EXISTS url_clicks (

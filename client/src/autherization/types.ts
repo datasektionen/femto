@@ -16,6 +16,7 @@ export interface UserInfo {
   [key: string]: any;   // Allow for other pls_* claims
 }
 
+// ta bort kanske
 export interface DfunktMandate {
   start: string;
   end: string;
@@ -26,6 +27,7 @@ export interface DfunktMandate {
   };
 }
 
+//ta bort kanske
 export interface DfunktUser {
   mandates: DfunktMandate[];
   first_name: string;

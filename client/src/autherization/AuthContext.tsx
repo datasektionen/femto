@@ -19,9 +19,9 @@ interface AuthContextType {
   setHasToken: (value: boolean) => void;
   userData: UserInfo | null;
   userPermissions: PermissionObject[] | null;
-  userMandates: any[] | null;
-  mandateGroups: string[]; // New property for mandate group names
-  hasMandateGroup: (groupName: string) => boolean; // New helper function
+  userGroups: any[] | null;
+  groups: string[]; // New property for mandate group names
+  hasGroup: (groupName: string) => boolean; // New helper function
   refreshAuthData: () => Promise<void>;
   isLoading: boolean;
   customLinks: boolean;
@@ -33,9 +33,9 @@ export const AuthContext = createContext<AuthContextType>({
   setHasToken: () => {},
   userData: null,
   userPermissions: null,
-  userMandates: null,
-  mandateGroups: [], // Initialize empty array
-  hasMandateGroup: () => false, // Initialize helper function
+  userGroups: null,
+  groups: [], // Initialize empty array
+  hasGroup: () => false, // Initialize helper function
   refreshAuthData: async () => {},
   isLoading: false,
   customLinks: false,
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasToken, setHasToken] = useState<boolean>(isAuthenticated());
   const [userData, setUserData] = useState<UserInfo | null>(null);
   const [userPermissions, setUserPermissions] = useState<PermissionObject[] | null>(null);
-  const [userMandates, setUserMandates] = useState<any[] | null>(null);
+  const [userGroups, setUserGroups] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Fetch user data from the backend
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setHasToken(false);
       setUserData(null);
       setUserPermissions(null);
-      setUserMandates(null);
+      setUserGroups(null);
       return;
     }
     
@@ -69,20 +69,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (authData) {
         setUserData(authData.userData);
         setUserPermissions(authData.userPermissions);
-        setUserMandates(authData.userMandates);
+        setUserGroups(authData.userGroups);
         console.log("✅ Auth data refreshed successfully");
       } else {
         // If fetch failed, clear user data
         setUserData(null);
         setUserPermissions(null);
-        setUserMandates(null);
+        setUserGroups(null);
         setHasToken(false);
       }
     } catch (error) {
       console.error("❌ Error refreshing auth data:", error);
       setUserData(null);
       setUserPermissions(null);
-      setUserMandates(null);
+      setUserGroups(null);
       setHasToken(false);
     } finally {
       setIsLoading(false);
@@ -101,21 +101,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     VIEW_ALL_LINKS = 'manage-all',
   }
 
-  // Extract just the group names from userMandates
-  const mandateGroups = userMandates 
-    ? userMandates
-        .filter(mandate => mandate && mandate.group_name) // Filter out null or undefined values
-        .map(mandate => mandate.group_name)               // Extract just the group_name
+  // Extract just the group names from userGroups
+  const groups = userGroups 
+    ? userGroups
+        .filter(group => group && group.group_name) // Filter out null or undefined values
+        .map(group => group.group_name)               // Extract just the group_name
     : [];
 
-  // Log mandate groups for debugging
+  // Log groups for debugging
   useEffect(() => {
-    console.log("Available groups:", mandateGroups);
-  }, [mandateGroups]);
+    console.log("Available groups:", groups);
+  }, [groups]);
 
-  // Check if user has a specific mandate group
-  const hasMandateGroup = (groupName: string): boolean => {
-    return mandateGroups.includes(groupName);
+  // Check if user has a specific group
+  const hasGroup = (groupName: string): boolean => {
+    return groups.includes(groupName);
   };
 
   const customLinks = Boolean(
@@ -133,9 +133,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setHasToken,
       userData,
       userPermissions,
-      userMandates,
-      mandateGroups,           // Add the simple list of mandate groups
-      hasMandateGroup,         // Add the helper function
+      userGroups,
+      groups,           // Add the simple list of mandate groups
+      hasGroup,         // Add the helper function
       refreshAuthData,
       isLoading,
       customLinks,
