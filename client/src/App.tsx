@@ -10,6 +10,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
 import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
+import { Notifications } from "@mantine/notifications";
 
 import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
 
@@ -80,6 +81,7 @@ const App = () => {
           primaryColor: "green", // Adjust Mantine theme as needed
         }}
       >
+        <Notifications position="bottom-right" />
         {/* BrowserRouter wraps the application content that uses routing */}
         <BrowserRouter basename="/">
           <AppContent />

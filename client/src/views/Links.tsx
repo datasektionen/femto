@@ -11,7 +11,17 @@ import {
     Container,
     Stack,
     Card,
+    Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter
+import { notifications } from "@mantine/notifications";
+import {
+    IconTrash,
+    IconInfoSquare,
+    IconClipboard,
+    IconTrashFilled, // Added IconTrashFilled
+    IconInfoSquareFilled, // Added IconInfoSquareFilled
+    IconClipboardFilled, // Added IconCopyCheck as a hover alternative for IconCopy
+} from "@tabler/icons-react"; // Importera ikoner från Tabler Icons
 import { Header } from "methone";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -27,15 +37,15 @@ const api = axios.create({
 // Interface för Link
 interface Link {
 
-  id: string;
-  slug: string;
-  url: string;
-  description: string;
-  date: string; // ISO String
-  expires: string | null; // ISO String or null
-  clicks: number;
-  user_id: string | null;
-  group: string | null;
+    id: string;
+    slug: string;
+    url: string;
+    description: string;
+    date: string; // ISO String
+    expires: string | null; // ISO String or null
+    clicks: number;
+    user_id: string | null;
+    group: string | null;
 }
 
 const Links: React.FC = () => {
@@ -47,6 +57,11 @@ const Links: React.FC = () => {
     const [activePage, setActivePage] = useState(1);
     const itemsPerPage = 5;
     const { hasToken } = useAuth(); // Get authentication state from your auth context
+
+    // State for button hover effects - store the slug of the hovered link
+    const [hoveredCopyLinkSlug, setHoveredCopyLinkSlug] = useState<string | null>(null);
+    const [hoveredDetailsLinkSlug, setHoveredDetailsLinkSlug] = useState<string | null>(null);
+    const [hoveredRemoveLinkSlug, setHoveredRemoveLinkSlug] = useState<string | null>(null);
 
     const navigate = useNavigate();
 
@@ -96,6 +111,11 @@ const Links: React.FC = () => {
             .writeText(shortUrl)
             .then(() => console.log("Kopierad kort länk:", shortUrl))
             .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
+        notifications.show({
+            title: "Kopierad",
+            autoClose: 2000,
+            message: undefined
+        });
     };
 
     const handleShowDetails = (slug: string) => {
@@ -188,7 +208,7 @@ const Links: React.FC = () => {
                     />
                 </div>
 
-                <div style={{ overflowX: "auto" }}>
+                <div>
                     <Stack gap="xs">
                         {paginatedLinks.length > 0 ? (
                             paginatedLinks.map((link) => (
@@ -196,111 +216,65 @@ const Links: React.FC = () => {
                                     key={link.id}
                                     withBorder
                                     radius="sm"
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "stretch",
-                                        height: "6rem",
-                                        width: "100%",
-                                    }}
                                 >
-                                    <div
-                                        style={{
-                                            flex: 1,
-                                            display: "flex",
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            gap: "1rem",
-                                            minWidth: "30rem",
-                                        }}
-                                    >
-                                        <Text
-                                            fw={500}
-                                            style={{
-                                                fontFamily: "monospace",
-                                                flexShrink: 0,
-                                                width: "12rem",
-                                            }}
-                                        >
-                                            {link.slug}
-                                        </Text>
-                                        <a
-                                            href={link.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            title={link.url}
-                                            style={{
-                                                display: "block",
-                                                maxWidth: "50rem",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
-                                            {link.url}
-                                        </a>
-                                    </div>
-                                    <Group gap="sm" style={{ height: "100%" }}>
-                                        <Button
-                                            size="sm"
-                                            variant="light"
-                                            radius="md"
-                                            style={{
-                                                height: "150%",
-                                                width: "10rem",
-                                            }}
-                                            onClick={() => copyToClipboard(link.slug)}
-                                            styles={{
-                                                root: {
-                                                    "&:hover": {
-                                                        backgroundColor: "#4ba5ee",
-                                                        color: "white",
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            QR code
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            radius="md"
-                                            style={{
-                                                height: "150%",
-                                                width: "10rem",
-                                            }}
-                                            onClick={() => handleShowDetails(link.slug)}
-                                            styles={{
-                                                root: {
-                                                    "&:hover": {
-                                                        borderColor: "#007bff",
-                                                        color: "#007bff",
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            Info
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            color="red"
-                                            radius="md"
-                                            style={{
-                                                height: "150%",
-                                                width: "10rem",
-                                            }}
-                                            onClick={() => handleRemove(link.slug)}
-                                            styles={{
-                                                root: {
-                                                    "&:hover": {
-                                                        backgroundColor: "red",
-                                                        color: "white",
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            Ta bort
-                                        </Button>
+                                    <Group style={{ display: "flex", justifyContent: "space-between" }}>
+                                        {/* Text (Slug, URL) on the LEFT */}
+                                        <Group gap="sm" justify="flex-start">
+                                            <Text
+                                                fw={500}
+                                            >
+                                                {link.slug}
+                                            </Text>
+                                            <a
+                                                href={link.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={link.url}
+                                            >
+                                                {link.url}
+                                            </a>
+                                        </Group>
+
+                                        {/* Buttons on the RIGHT */}
+                                        <Group gap="sm" justify="flex-end">
+                                            <Tooltip label="Kopiera förkortad länk" withArrow>
+                                                <Button
+                                                    size="sm"
+                                                    variant="light"
+                                                    radius="md"
+                                                    onClick={() => copyToClipboard(link.slug)}
+                                                    onMouseEnter={() => setHoveredCopyLinkSlug(link.slug)}
+                                                    onMouseLeave={() => setHoveredCopyLinkSlug(null)}
+                                                >
+                                                    {hoveredCopyLinkSlug === link.slug ? <IconClipboardFilled size={18} /> : <IconClipboard size={18} />}
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip label="Se detaljer" withArrow>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    radius="md"
+                                                    onClick={() => handleShowDetails(link.slug)}
+                                                    onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
+                                                    onMouseLeave={() => setHoveredDetailsLinkSlug(null)}
+                                                >
+                                                    {hoveredDetailsLinkSlug === link.slug ? <IconInfoSquareFilled size={18} /> : <IconInfoSquare size={18} />}
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip label="Ta bort länk" withArrow>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    color="red"
+                                                    radius="md"
+                                                    onClick={() => handleRemove(link.slug)}
+                                                    onMouseEnter={() => setHoveredRemoveLinkSlug(link.slug)}
+                                                    onMouseLeave={() => setHoveredRemoveLinkSlug(null)}
+                                                >
+                                                    {hoveredRemoveLinkSlug === link.slug ? <IconTrashFilled size={18} /> : <IconTrash size={18} />}
+                                                </Button>
+                                            </Tooltip>
+                                        </Group>
                                     </Group>
                                 </Card>
                             ))
