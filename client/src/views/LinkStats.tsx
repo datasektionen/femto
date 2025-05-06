@@ -6,7 +6,6 @@ import {
     Alert,
     Select,
     Text,
-    Paper,
     Card,
     Loader,
     Group,
