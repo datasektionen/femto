@@ -27,7 +27,8 @@ const AppContent = () => {
       // Use React Router <Link> components as shown in the docs
       <Link to="/shorten" key="methone-link-1">Förkorta</Link>,
       // Conditionally add links based on auth status
-      ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>] : []),
+      ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>, <Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
+
     ],
   };
 
