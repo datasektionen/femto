@@ -81,7 +81,7 @@ const App = () => {
           primaryColor: "green", // Adjust Mantine theme as needed
         }}
       >
-        <Notifications />
+        <Notifications position="bottom-right" />
         {/* BrowserRouter wraps the application content that uses routing */}
         <BrowserRouter basename="/">
           <AppContent />

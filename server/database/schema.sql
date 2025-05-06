@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS url_clicks;
-DROP TABLE IF EXISTS urls;
+DROP TABLE IF EXISTS url_clicks; -- TODO: remove in production?
+DROP TABLE IF EXISTS urls; -- TODO: remove in production?
 
 CREATE TABLE IF NOT EXISTS urls (
     id BIGSERIAL PRIMARY KEY,    -- Auto-incrementing ID for Base62 encoding
