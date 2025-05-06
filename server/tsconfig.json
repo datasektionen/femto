@@ -2,6 +2,7 @@
     "compilerOptions": {
       "target": "ES6",
       "module": "commonjs",
+      //"types": ["vite/client"],
       "outDir": "./dist",
       "rootDir": "./src",
       "esModuleInterop": true,

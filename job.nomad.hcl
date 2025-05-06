@@ -47,6 +47,20 @@ job "femto" {
       template {
         data        = <<ENV
 PORT={{ env "NOMAD_PORT_backend" }}
+POSTGRES_HOST=postgres.dsekt.internal
+POSTGRES_PORT=5432
+POSTGRES_DB=femto-dev
+POSTGRES_USER=femto-dev
+{{ with nomadVar "nomad/jobs/femto" }}
+POSTGRES_PASSWORD={{ .db_password }}
+OIDC_CLIENT_ID={{ .oidc_client_id }}
+OIDC_CLIENT_SECRET={{ .oidc_client_secret }}
+JWT_SECRET={{ .jwt_secret }}
+HIVE_API_KEY={{ .hive_api_token_secret }}
+{{ end }}
+OIDC_ISSUER=https://sso.datasektionen.se
+API_URL=https://${var.domain_name}
+CLIENT_URL=https://admin.${var.domain_name}
 ENV
         destination = "local/.env"
         env         = true

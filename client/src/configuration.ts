@@ -1,18 +1,19 @@
-const CLIENT_ID = process.env.REACT_APP_CLIENT_ID || "";
-const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET || "";
+const backendApiUrl = import.meta.env.VITE_BACKEND_ROOT || "https://femto.betasektionen.se";
 
+/**
+ * This file contains the configuration for the application.
+ * It is used to set the backend API URL.
+ * Add any other configuration settings here as needed.
+ */
+
+// Define the AppConfig interface
 interface AppConfig {
-  loginApiUrl: string;
-  oidcIssuer: string;
-  clientId: string;
-  clientSecret: string;
+  backendApiUrl: string;
 }
 
+// Create a configuration object
 const Configuration: AppConfig = {
-  loginApiUrl: "https://sso.datasektionen.se",
-  oidcIssuer: "https://sso.datasektionen.se/op",
-  clientId: CLIENT_ID,  
-  clientSecret: CLIENT_SECRET, 
+  backendApiUrl: backendApiUrl,
 };
 
 export default Configuration;

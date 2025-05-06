@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { getLinkStats, getAllLinks, getLink, insertLink } from '../controllers/linkController'; // Importera statistik-funktionen
-import { apiKeyAuth } from '../middlewares/authMiddleware';
-import { verifyCode } from '../controllers/authController';
+import { deleteLink, updateLink, getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController';
+import { verifyCode, getUserData, fetchUserPermissions, fetchUserMemberships } from '../controllers/authController'; // Added missing imports
 import { getAPIStatus } from '../controllers/statusController';
-import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist } from '../controllers/blacklistController';
+import { blacklistFile } from '../controllers/blacklistController';
+import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
+import axios from 'axios';
+import { Request, Response } from 'express';
+import { upload, MulterRequest } from '../controllers/blacklistController';
 
 /**
  * Router for API endpoints.
@@ -11,78 +14,281 @@ import { addLinkBlacklist, removeLinkBlacklist, getBlacklist, checkLinkBlacklist
  */
 const apiRouter = Router();
 
-// Apply the apiKeyAuth middleware to all routes under the apiRouter.
-// This ensures that any request to the /api/* endpoints must include a valid API key in the Authorization header.
-apiRouter.use(apiKeyAuth);
+// --- Public Routes ---
 
 /**
  * GET /api/status
- * Endpoint to check the status of the API.
+ * Checks the status of the API.
  * Queries the database for the current time and returns it.
  */
-apiRouter.get('/status', async (req, res) => { getAPIStatus(req, res);});
+apiRouter.get('/status', async (req, res) => { getAPIStatus(req, res); });
 
 /**
  * POST /api/auth/verify-code
- * Endpoint to verify the authentication code.
- * Delegates the request handling to the verifyCode utility function.
+ * Verifies the authentication code provided by the user.
+ * Delegates the request handling to the verifyCode controller.
  */
 apiRouter.post("/auth/verify-code", async (req, res) => { verifyCode(req, res); });
 
+// --- JWT Authentication Middleware ---
+// All routes defined below this line require a valid JWT token.
+apiRouter.use(jwtAuth);
+
+// --- Authenticated Routes ---
+
+// -- User Authentication & Data --
+
 /**
- * GET /api/stats
- * Hämtar statistik för länkar: totalt antal länkar och sammanlagda klick.
+ * GET /api/auth/user-data
+ * Retrieves data for the authenticated user.
+ * Delegates the request handling to the getUserData controller.
  */
-// GET /api/links/:slug/stats
-apiRouter.get('/links/:slug/stats', getLinkStats);
+apiRouter.get('/auth/user-data', getUserData);
+
+// -- Link Management --
 
 /**
  * POST /api/links
- * Endpoint to insert a new link.
- * Delegates the request handling to the insertLink utility function.
+ * Creates a new shortened link.
+ * Requires authentication.
+ * Delegates the request handling to the insertLink controller.
  */
 apiRouter.post('/links', async (req, res) => { insertLink(req, res); });
 
 /**
  * GET /api/links
- * Endpoint to get all links.
- * Delegates the request handling to the getAllLinks utility function.
+ * Retrieves all links associated with the authenticated user.
+ * Requires authentication.
+ * Delegates the request handling to the getAllLinks controller.
  */
 apiRouter.get('/links', async (req, res) => { getAllLinks(req, res); });
 
 /**
  * GET /api/links/:slug
- * Endpoint to get a specific link by its slug.
- * Delegates the request handling to the getLink utility function.
+ * Retrieves a specific link by its slug.
+ * Requires authentication.
+ * Delegates the request handling to the getLink controller.
  */
 apiRouter.get('/links/:slug', async (req, res) => { getLink(req, res); });
 
 /**
- * POST /api/blacklist
- * Adds a link to the blacklist.
- * Delegates the request handling to the addLinkBlacklist utility function.
+ * DELETE /api/links/:slug
+ * Deletes a specific link by its slug.
+ * Requires authentication.
+ * Delegates the request handling to the removeLink controller.
  */
-apiRouter.post('/blacklist', async (req, res) => { addLinkBlacklist(req, res); });
+apiRouter.delete('/links/:slug', async (req, res) => { deleteLink(req, res); });
+
+/**
+ * PATCH /api/links/:slug
+ * Updates a specific link by its slug.
+ * Requires authentication.
+ * Delegates the request handling to the updateLink controller.
+ */
+apiRouter.patch('/links/:slug', async (req, res) => { updateLink(req, res); });
+
+/**
+ * GET /api/links/:slug/stats
+ * Retrieves statistics (total clicks) for a specific link.
+ * Requires authentication.
+ * Delegates the request handling to the getLinkStats controller.
+ */
+apiRouter.get('/links/:slug/stats', getLinkStats);
+
+/**
+ * GET /api/links/:slug/lang-stats
+ * Retrieves language-based statistics for a specific link.
+ * Requires authentication.
+ * Delegates the request handling to the getLangstats controller.
+ */
+apiRouter.get('/links/:slug/lang-stats', getLangstats);
+
+
+// -- Blacklist Management --
+/**
+ * POST /api/blacklist/upload
+ * Uploads a file containing URLs to add to the blacklist.
+ * Requires authentication.
+ * Expects a 'file' field in the multipart/form-data request.
+ */
+apiRouter.get('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); } );
+
+
+/* --- Commented out Blacklist Routes ---
+ * These routes are currently inactive. Uncomment to enable manual blacklist management via API.
+ */
+
+/**
+ * POST /api/blacklist
+ * Adds a single URL to the blacklist.
+ * Requires authentication.
+ * Expects { "url": "some_url" } in the request body.
+ */
+// apiRouter.post('/blacklist', async (req, res) => { addLinkBlacklist(req, res); });
 
 /**
  * GET /api/blacklist
- * Retrieves all links from the blacklist.
- * Delegates the request handling to the getBlacklist utility function.
+ * Retrieves all URLs currently in the blacklist.
+ * Requires authentication.
  */
-apiRouter.get('/blacklist', async (req, res) => { getBlacklist(req, res); });
+// apiRouter.get('/blacklist', async (req, res) => { getBlacklist(req, res); });
 
 /**
  * DELETE /api/blacklist/:url
- * Removes a link from the blacklist.
- * Delegates the request handling to the removeLinkBlacklist utility function.
+ * Removes a specific URL from the blacklist.
+ * Requires authentication. The URL to remove should be URL-encoded in the path.
  */
-apiRouter.delete('/blacklist/:url', async (req, res) => { removeLinkBlacklist(req, res); });
+// apiRouter.delete('/blacklist/:url', async (req, res) => { removeLinkBlacklist(req, res); });
 
 /**
- * POST /api/blacklist/:url
- * Checks if a link is in the blacklist.
- * Delegates the request handling to the checkLinkBlacklist utility function.
+ * POST /api/blacklist/check/:url
+ * Checks if a specific URL exists in the blacklist.
+ * Requires authentication. The URL to check should be URL-encoded in the path.
+ * Note: Changed from POST to GET for semantic correctness (checking state).
  */
-apiRouter.post('/blacklist/:url', async (req, res) => { checkLinkBlacklist(req, res); });
+// apiRouter.get('/blacklist/check/:url', async (req, res) => { checkLinkBlacklist(req, res); });
+
+
+// --- Hive API Test Routes (for debugging) ---
+
+/**
+ * GET /api/test-hive/:username
+ * Test endpoint to diagnose Hive API connection issues using Bearer token.
+ * Requires authentication.
+ */
+apiRouter.get('/test-hive/:username', async (req, res) => {
+    const username = req.params.username;
+    const apiKey = process.env.HIVE_API_KEY;
+
+    console.log(`🧪 Testing Hive API connection for user: ${username}`);
+    console.log(`🔑 Using API key with Bearer authentication`);
+
+    try {
+        // Test permissions endpoint
+        console.log("🔍 Testing permissions endpoint...");
+        const permissionsResponse = await axios.get(
+            `https://hive.datasektionen.se/api/v1/user/${username}/permissions`,
+            { headers: { "Authorization": `Bearer ${apiKey}` } }
+        );
+
+        // Test memberships endpoint
+        console.log("🔍 Testing memberships endpoint...");
+        const membershipsResponse = await axios.get(
+            `https://hive.datasektionen.se/api/v1/tagged/link-manager/memberships/${username}`,
+            { headers: { "Authorization": `Bearer ${apiKey}` } }
+        );
+
+        res.json({
+            success: true,
+            permissions: { status: permissionsResponse.status, data: permissionsResponse.data },
+            memberships: { status: membershipsResponse.status, data: membershipsResponse.data }
+        });
+    } catch (error: any) {
+        console.error(`❌ Error testing Hive API for ${username}:`, error.message);
+        res.status(error.response?.status || 500).json({
+            success: false,
+            message: error.message,
+            responseData: error.response?.data,
+            responseStatus: error.response?.status,
+            responseHeaders: error.response?.headers,
+            requestHeaders: error.request?._header // Note: _header might be internal detail
+        });
+    }
+});
+
+/**
+ * GET /api/test-hive-alt/:username
+ * Alternative test endpoint trying various Hive API authentication methods.
+ * Requires authentication.
+ */
+apiRouter.get('/test-hive-alt/:username', async (req, res) => {
+    const username = req.params.username;
+    const apiKey = process.env.HIVE_API_KEY;
+
+    console.log(`🧪 Testing alternative Hive API authentication methods for user: ${username}`);
+
+    const authMethods = [
+        { name: "X-API-Key header", headers: { "X-API-Key": apiKey } },
+        { name: "Bearer token", headers: { "Authorization": `Bearer ${apiKey}` } },
+        { name: "Token in Authorization", headers: { "Authorization": `Token ${apiKey}` } },
+        { name: "API Key in Authorization", headers: { "Authorization": `ApiKey ${apiKey}` } },
+        { name: "Lowercase x-api-key", headers: { "x-api-key": apiKey } }
+    ];
+
+    const results = [];
+    let foundWorkingMethod = false;
+
+    for (const method of authMethods) {
+        try {
+            console.log(`🔍 Testing permissions with ${method.name}...`);
+            const response = await axios.get(
+                `https://hive.datasektionen.se/api/v1/user/${username}/permissions?system=femto`,
+                { headers: method.headers }
+            );
+            results.push({ method: method.name, success: true, status: response.status, data: response.data });
+            console.log(`✅ Success with ${method.name}`);
+            foundWorkingMethod = true;
+            // break; // Optional: Stop after first success
+        } catch (error: any) {
+            results.push({
+                method: method.name,
+                success: false,
+                status: error.response?.status,
+                error: error.message,
+                data: error.response?.data
+            });
+            console.log(`❌ Failed with ${method.name}: Status ${error.response?.status}`);
+        }
+    }
+
+    // Test alternative endpoint format
+    try {
+        console.log("🔍 Testing alternative endpoint URL format...");
+        const alternativeResponse = await axios.get(
+            `https://hive.datasektionen.se/api/v1/permissions/${username}?system=femto`,
+            // Use a known potentially working method for this test, e.g., X-API-Key or Bearer
+            { headers: { "X-API-Key": apiKey } }
+        );
+        results.push({ method: "Alternative URL format", success: true, status: alternativeResponse.status, data: alternativeResponse.data });
+        foundWorkingMethod = foundWorkingMethod || true;
+    } catch (error: any) {
+        results.push({
+            method: "Alternative URL format",
+            success: false,
+            status: error.response?.status,
+            error: error.message,
+            data: error.response?.data
+        });
+        console.log(`❌ Failed with alternative URL format: Status ${error.response?.status}`);
+    }
+
+    res.json({
+        success: foundWorkingMethod,
+        results: results
+    });
+});
+
+/**
+ * GET /api/test-hive-user/:username
+ * Direct test using the imported Hive authentication functions from authController.
+ * Requires authentication.
+ */
+apiRouter.get('/test-hive-user/:username', async (req, res) => {
+    const username = req.params.username;
+    try {
+        console.log(`🧪 Testing imported Hive API functions for user: ${username}`);
+        // Functions are already imported at the top
+        const permissions = await fetchUserPermissions(username);
+        const groups = await fetchUserMemberships(username);
+        res.json({ success: true, permissions: permissions, groups: groups });
+    } catch (error: any) {
+        console.error(`❌ Error testing imported Hive functions for ${username}:`, error.message);
+        res.status(500).json({ success: false, message: error.message || 'Unknown error occurred' });
+    }
+});
+
+
+// Endpoint to upload a blacklist file
+apiRouter.post('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); } ); 
 
 export default apiRouter;
