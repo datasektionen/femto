@@ -9,6 +9,7 @@ import {
     Text,
     Group,
     Container,
+    Badge,
     Box,
     Stack,
     Card,
@@ -18,6 +19,7 @@ import {
     IconTrash,
     IconInfoSquare,
     IconClipboard,
+    IconQrcode,
     IconTrashFilled, // Added IconTrashFilled
     IconInfoSquareFilled, // Added IconInfoSquareFilled
     IconClipboardFilled, // Added IconCopyCheck as a hover alternative for IconCopy
@@ -29,6 +31,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
 import Configuration from "../configuration.ts";
+import { toCanvas } from "qrcode";
 
 
 // Create axios instance with base URL - we'll add the token dynamically in the requests
@@ -47,7 +50,7 @@ interface Link {
     expires: string | null; // ISO String or null
     clicks: number;
     user_id: string | null;
-    group: string | null;
+    group_name: string | null;
 }
 
 const Links: React.FC = () => {
@@ -93,6 +96,7 @@ const Links: React.FC = () => {
             })
             .then((res) => {
                 setLinksData(res.data);
+                console.log("Hämtade länkar:", res.data);
                 setLoading(false);
             })
             .catch((err) => {
@@ -111,7 +115,7 @@ const Links: React.FC = () => {
             });
     }, [hasToken, navigate]); // Added dependencies
 
-    const copyToClipboard = (slug: string) => {
+    const handleCopy = (slug: string) => {
         const shortUrl = `${Configuration.backendApiUrl}/${slug}`;
         navigator.clipboard
             .writeText(shortUrl)
@@ -138,6 +142,46 @@ const Links: React.FC = () => {
         });
         // refresh the links list after deletion
         setLinksData((prevLinks) => prevLinks.filter((link) => link.slug !== slug));
+    };
+
+    const handleQRCode = async (slug: string): Promise<void> => {
+        const canvas = document.createElement('canvas');
+        const logoSrc = '/logo.svg';
+        const url = `${Configuration.backendApiUrl}/${slug}`;
+
+        // Generate QR with high error correction
+        await toCanvas(canvas, url, {
+            width: 160,
+            margin: 1,
+            errorCorrectionLevel: 'H', // Match ecLevel="H"
+        });
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const logo = new Image();
+        logo.crossOrigin = 'anonymous';
+        logo.onload = () => {
+            const logoSize = 40;
+            const padding = 5;
+            const sizeWithPadding = logoSize + padding * 2;
+            const x = (canvas.width - sizeWithPadding) / 2;
+            const y = (canvas.height - sizeWithPadding) / 2;
+
+            // Draw white background (padding effect)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x, y, sizeWithPadding, sizeWithPadding);
+
+            // Draw logo centered
+            ctx.drawImage(logo, x + padding, y + padding, logoSize, logoSize);
+
+            // Trigger download
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'qrcode_with_logo.png';
+            link.click();
+        };
+        logo.src = logoSrc;
     };
 
     if (loading) {
@@ -190,11 +234,11 @@ const Links: React.FC = () => {
             <Header title="Länkar - Översikt" />
             <Container>
                 <Box mb="md" mt="md">
-                {!hasToken && (
-                    <Alert title="Du är inte inloggad" color="blue" mb="md">
-                        Logga in för att förkorta länkar
-                    </Alert>
-                )}
+                    {!hasToken && (
+                        <Alert title="Du är inte inloggad" color="blue" mb="md">
+                            Logga in för att förkorta länkar
+                        </Alert>
+                    )}
                     <Select
                         label="Sortera efter"
                         value={filter}
@@ -211,7 +255,7 @@ const Links: React.FC = () => {
                             { value: "slug-a-z", label: "Slug (A-Ö)" },
                             { value: "slug-z-a", label: "Slug (Ö-A)" },
                         ]}
-                    />               
+                    />
                 </Box>
 
                 <Box mb="md" mt="md">
@@ -240,6 +284,9 @@ const Links: React.FC = () => {
                                             >
                                                 {link.url}
                                             </a>
+                                            <Badge color={link.group_name ? 'blue' : 'gray'} variant="light">
+                                                {link.group_name || 'No group'}
+                                            </Badge>
                                         </Group>
 
                                         {/* Buttons on the RIGHT */}
@@ -249,7 +296,7 @@ const Links: React.FC = () => {
                                                     size="sm"
                                                     variant="light"
                                                     radius="md"
-                                                    onClick={() => copyToClipboard(link.slug)}
+                                                    onClick={() => handleCopy(link.slug)}
                                                     onMouseEnter={() => setHoveredCopyLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredCopyLinkSlug(null)}
                                                 >
@@ -266,6 +313,16 @@ const Links: React.FC = () => {
                                                             <IconClipboard size={iconSize} />
                                                         )
                                                     )}
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip label="Ladda ner QR-kod" withArrow>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    radius="md"
+                                                    onClick={() => handleQRCode(link.slug)}
+                                                >
+                                                    <IconQrcode size={iconSize} />
                                                 </Button>
                                             </Tooltip>
                                             <Tooltip label="Se detaljer" withArrow>

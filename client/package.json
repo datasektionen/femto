@@ -18,6 +18,7 @@
     "@types/qrcode.react": "^1.0.5",
     "axios": "^1.8.4",
     "methone": "github:datasektionen/Methone",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-qrcode-logo": "^3.0.0",
