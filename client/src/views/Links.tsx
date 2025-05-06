@@ -307,16 +307,28 @@ const Links: React.FC = () => {
                                                 {link.url}
                                             </a>
                                             <Badge color={link.group_name ? stringToColor(link.group_name) : 'gray'} variant="light">
-                                                {link.group_name || 'No group'}
+                                                {link.group_name || 'Ingen grupp'}
                                             </Badge>
                                         </Group>
 
                                         {/* Buttons on the RIGHT */}
                                         <Group gap="sm" justify="flex-end">
-                                            <Tooltip label="Kopiera förkortad länk" withArrow>
+                                        <Tooltip label="Se detaljer" withArrow>
                                                 <Button
                                                     size="sm"
                                                     variant="light"
+                                                    radius="md"
+                                                    onClick={() => handleShowDetails(link.slug)}
+                                                    onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
+                                                    onMouseLeave={() => setHoveredDetailsLinkSlug(null)}
+                                                >
+                                                    {hoveredDetailsLinkSlug === link.slug ? <IconInfoSquareFilled size={iconSize} /> : <IconInfoSquare size={iconSize} />}
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip label="Kopiera förkortad länk" withArrow>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
                                                     radius="md"
                                                     onClick={() => handleCopy(link.slug)}
                                                     onMouseEnter={() => setHoveredCopyLinkSlug(link.slug)}
@@ -345,18 +357,6 @@ const Links: React.FC = () => {
                                                     onClick={() => handleQRCode(link.slug)}
                                                 >
                                                     <IconQrcode size={iconSize} />
-                                                </Button>
-                                            </Tooltip>
-                                            <Tooltip label="Se detaljer" withArrow>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    radius="md"
-                                                    onClick={() => handleShowDetails(link.slug)}
-                                                    onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
-                                                    onMouseLeave={() => setHoveredDetailsLinkSlug(null)}
-                                                >
-                                                    {hoveredDetailsLinkSlug === link.slug ? <IconInfoSquareFilled size={iconSize} /> : <IconInfoSquare size={iconSize} />}
                                                 </Button>
                                             </Tooltip>
                                             <Tooltip label="Ta bort länk" withArrow>
