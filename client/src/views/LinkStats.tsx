@@ -7,6 +7,7 @@ import {
     Select,
     Text,
     Paper,
+    Card,
     Loader,
     Group,
     Title,
@@ -334,7 +335,7 @@ const LinkStats: React.FC = () => {
                     &larr; Tillbaka
                 </Button>
 
-                <Paper shadow="xs" p="md" mb="lg">
+                <Card radius="lg" shadow="xs" p="md" mb="lg">
                     <Title order={3} mb="sm">Länkdetaljer</Title>
                     <Text size="sm"><strong>Kortlänk:</strong> <span style={{ fontFamily: 'monospace' }}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
                     <Text size="sm" style={{ wordBreak: 'break-all' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
@@ -355,9 +356,9 @@ const LinkStats: React.FC = () => {
                             Ta bort
                         </Button>
                     </Group>
-                </Paper>
+                </Card>
 
-                <Paper shadow="xs" p="md">
+                <Card radius="lg" shadow="xs" p="md">
                     <Title order={3} mb="sm">
                         Klickstatistik
                     </Title>
@@ -416,9 +417,9 @@ const LinkStats: React.FC = () => {
                             </LineChart>
                         </ResponsiveContainer>
                     )}
-                </Paper>
+                </Card>
 
-                <Paper shadow="xs" p="md" mt="lg">
+                <Card radius="lg" shadow="xs" p="md" mt="lg">
                     <Title order={3} mb="sm">
                         Klick per språk
                     </Title>
@@ -442,7 +443,7 @@ const LinkStats: React.FC = () => {
                             </ResponsiveContainer>
                         )
                     )}
-                </Paper>
+                </Card>
             </Box>
         </>
     );

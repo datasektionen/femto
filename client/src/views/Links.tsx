@@ -184,6 +184,28 @@ const Links: React.FC = () => {
         logo.src = logoSrc;
     };
 
+    function stringToColor(str: string | null | undefined): string {
+        // Handle null or undefined input
+        if (!str) {
+            console.warn("Input string is null or undefined. Using default value.");
+            str = "default"; // Default value if input is null or undefined
+        }
+
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        // Generate color components based on the hash
+        const r = (hash & 0xff0000) >> 16;
+        const g = (hash & 0x00ff00) >> 8;
+        const b = hash & 0x0000ff;
+
+        // Return the color as an RGB string
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+
     if (loading) {
         return (
             <div id="content">
@@ -284,7 +306,7 @@ const Links: React.FC = () => {
                                             >
                                                 {link.url}
                                             </a>
-                                            <Badge color={link.group_name ? 'blue' : 'gray'} variant="light">
+                                            <Badge color={link.group_name ? stringToColor(link.group_name) : 'gray'} variant="light">
                                                 {link.group_name || 'No group'}
                                             </Badge>
                                         </Group>
