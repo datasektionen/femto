@@ -10,7 +10,6 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
 import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
-import { Notifications } from "@mantine/notifications";
 
 import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
 
@@ -28,7 +27,8 @@ const AppContent = () => {
       // Use React Router <Link> components as shown in the docs
       <Link to="/shorten" key="methone-link-1">Förkorta</Link>,
       // Conditionally add links based on auth status
-      ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>] : []),
+      ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>, <Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
+
     ],
   };
 
@@ -81,7 +81,6 @@ const App = () => {
           primaryColor: "green", // Adjust Mantine theme as needed
         }}
       >
-        <Notifications position="bottom-right" />
         {/* BrowserRouter wraps the application content that uses routing */}
         <BrowserRouter basename="/">
           <AppContent />

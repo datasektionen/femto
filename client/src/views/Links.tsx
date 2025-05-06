@@ -9,24 +9,29 @@ import {
     Text,
     Group,
     Container,
+    Badge,
+    Box,
     Stack,
     Card,
     Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter
-import { notifications } from "@mantine/notifications";
 import {
     IconTrash,
     IconInfoSquare,
     IconClipboard,
+    IconQrcode,
     IconTrashFilled, // Added IconTrashFilled
     IconInfoSquareFilled, // Added IconInfoSquareFilled
     IconClipboardFilled, // Added IconCopyCheck as a hover alternative for IconCopy
+    IconClipboardCheck, // Added IconCopyCheck as a hover alternative for IconCopy
+    IconClipboardCheckFilled,
 } from "@tabler/icons-react"; // Importera ikoner från Tabler Icons
 import { Header } from "methone";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
 import Configuration from "../configuration.ts";
+import { toCanvas } from "qrcode";
 
 
 // Create axios instance with base URL - we'll add the token dynamically in the requests
@@ -45,7 +50,7 @@ interface Link {
     expires: string | null; // ISO String or null
     clicks: number;
     user_id: string | null;
-    group: string | null;
+    group_name: string | null;
 }
 
 const Links: React.FC = () => {
@@ -57,11 +62,15 @@ const Links: React.FC = () => {
     const [activePage, setActivePage] = useState(1);
     const itemsPerPage = 5;
     const { hasToken } = useAuth(); // Get authentication state from your auth context
+    const iconSize = 22; // Define icon size for consistency
 
     // State for button hover effects - store the slug of the hovered link
     const [hoveredCopyLinkSlug, setHoveredCopyLinkSlug] = useState<string | null>(null);
     const [hoveredDetailsLinkSlug, setHoveredDetailsLinkSlug] = useState<string | null>(null);
     const [hoveredRemoveLinkSlug, setHoveredRemoveLinkSlug] = useState<string | null>(null);
+
+    // State to track which link has been copied and show the check icon
+    const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
     const navigate = useNavigate();
 
@@ -87,6 +96,7 @@ const Links: React.FC = () => {
             })
             .then((res) => {
                 setLinksData(res.data);
+                console.log("Hämtade länkar:", res.data);
                 setLoading(false);
             })
             .catch((err) => {
@@ -105,17 +115,16 @@ const Links: React.FC = () => {
             });
     }, [hasToken, navigate]); // Added dependencies
 
-    const copyToClipboard = (slug: string) => {
+    const handleCopy = (slug: string) => {
         const shortUrl = `${Configuration.backendApiUrl}/${slug}`;
         navigator.clipboard
             .writeText(shortUrl)
-            .then(() => console.log("Kopierad kort länk:", shortUrl))
+            .then(() => {
+                console.log("Kopierad kort länk:", shortUrl);
+                setCopiedSlug(slug); // Set the copied slug
+                setTimeout(() => setCopiedSlug(null), 2000); // Clear after 2 seconds
+            })
             .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
-        notifications.show({
-            title: "Kopierad",
-            autoClose: 2000,
-            message: undefined
-        });
     };
 
     const handleShowDetails = (slug: string) => {
@@ -134,6 +143,68 @@ const Links: React.FC = () => {
         // refresh the links list after deletion
         setLinksData((prevLinks) => prevLinks.filter((link) => link.slug !== slug));
     };
+
+    const handleQRCode = async (slug: string): Promise<void> => {
+        const canvas = document.createElement('canvas');
+        const logoSrc = '/logo.svg';
+        const url = `${Configuration.backendApiUrl}/${slug}`;
+
+        // Generate QR with high error correction
+        await toCanvas(canvas, url, {
+            width: 160,
+            margin: 1,
+            errorCorrectionLevel: 'H', // Match ecLevel="H"
+        });
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const logo = new Image();
+        logo.crossOrigin = 'anonymous';
+        logo.onload = () => {
+            const logoSize = 40;
+            const padding = 5;
+            const sizeWithPadding = logoSize + padding * 2;
+            const x = (canvas.width - sizeWithPadding) / 2;
+            const y = (canvas.height - sizeWithPadding) / 2;
+
+            // Draw white background (padding effect)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x, y, sizeWithPadding, sizeWithPadding);
+
+            // Draw logo centered
+            ctx.drawImage(logo, x + padding, y + padding, logoSize, logoSize);
+
+            // Trigger download
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'qrcode_with_logo.png';
+            link.click();
+        };
+        logo.src = logoSrc;
+    };
+
+    function stringToColor(str: string | null | undefined): string {
+        // Handle null or undefined input
+        if (!str) {
+            console.warn("Input string is null or undefined. Using default value.");
+            str = "default"; // Default value if input is null or undefined
+        }
+
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        // Generate color components based on the hash
+        const r = (hash & 0xff0000) >> 16;
+        const g = (hash & 0x00ff00) >> 8;
+        const b = hash & 0x0000ff;
+
+        // Return the color as an RGB string
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
 
     if (loading) {
         return (
@@ -184,15 +255,16 @@ const Links: React.FC = () => {
         <>
             <Header title="Länkar - Översikt" />
             <Container>
-                {!hasToken && (
-                    <Alert title="Du är inte inloggad" color="blue" mb="md">
-                        Logga in för att förkorta länkar
-                    </Alert>
-                )}
-                <div style={{ marginBottom: "25px", maxWidth: "300px" }}>
+                <Box mb="md" mt="md">
+                    {!hasToken && (
+                        <Alert title="Du är inte inloggad" color="blue" mb="md">
+                            Logga in för att förkorta länkar
+                        </Alert>
+                    )}
                     <Select
                         label="Sortera efter"
                         value={filter}
+                        radius="lg"
                         onChange={(value) => {
                             setFilter(value || "newest-oldest");
                             setActivePage(1);
@@ -206,16 +278,17 @@ const Links: React.FC = () => {
                             { value: "slug-z-a", label: "Slug (Ö-A)" },
                         ]}
                     />
-                </div>
+                </Box>
 
-                <div>
+                <Box mb="md" mt="md">
                     <Stack gap="xs">
                         {paginatedLinks.length > 0 ? (
                             paginatedLinks.map((link) => (
                                 <Card
                                     key={link.id}
                                     withBorder
-                                    radius="sm"
+                                    radius="lg"
+                                    shadow="sm"
                                 >
                                     <Group style={{ display: "flex", justifyContent: "space-between" }}>
                                         {/* Text (Slug, URL) on the LEFT */}
@@ -233,6 +306,9 @@ const Links: React.FC = () => {
                                             >
                                                 {link.url}
                                             </a>
+                                            <Badge color={link.group_name ? stringToColor(link.group_name) : 'gray'} variant="light">
+                                                {link.group_name || 'No group'}
+                                            </Badge>
                                         </Group>
 
                                         {/* Buttons on the RIGHT */}
@@ -242,11 +318,33 @@ const Links: React.FC = () => {
                                                     size="sm"
                                                     variant="light"
                                                     radius="md"
-                                                    onClick={() => copyToClipboard(link.slug)}
+                                                    onClick={() => handleCopy(link.slug)}
                                                     onMouseEnter={() => setHoveredCopyLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredCopyLinkSlug(null)}
                                                 >
-                                                    {hoveredCopyLinkSlug === link.slug ? <IconClipboardFilled size={18} /> : <IconClipboard size={18} />}
+                                                    {copiedSlug === link.slug ? (
+                                                        hoveredCopyLinkSlug === link.slug ? (
+                                                            <IconClipboardCheckFilled size={iconSize} />
+                                                        ) : (
+                                                            <IconClipboardCheck size={iconSize} />
+                                                        )
+                                                    ) : (
+                                                        hoveredCopyLinkSlug === link.slug ? (
+                                                            <IconClipboardFilled size={iconSize} />
+                                                        ) : (
+                                                            <IconClipboard size={iconSize} />
+                                                        )
+                                                    )}
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip label="Ladda ner QR-kod" withArrow>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    radius="md"
+                                                    onClick={() => handleQRCode(link.slug)}
+                                                >
+                                                    <IconQrcode size={iconSize} />
                                                 </Button>
                                             </Tooltip>
                                             <Tooltip label="Se detaljer" withArrow>
@@ -258,7 +356,7 @@ const Links: React.FC = () => {
                                                     onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredDetailsLinkSlug(null)}
                                                 >
-                                                    {hoveredDetailsLinkSlug === link.slug ? <IconInfoSquareFilled size={18} /> : <IconInfoSquare size={18} />}
+                                                    {hoveredDetailsLinkSlug === link.slug ? <IconInfoSquareFilled size={iconSize} /> : <IconInfoSquare size={iconSize} />}
                                                 </Button>
                                             </Tooltip>
                                             <Tooltip label="Ta bort länk" withArrow>
@@ -271,7 +369,7 @@ const Links: React.FC = () => {
                                                     onMouseEnter={() => setHoveredRemoveLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredRemoveLinkSlug(null)}
                                                 >
-                                                    {hoveredRemoveLinkSlug === link.slug ? <IconTrashFilled size={18} /> : <IconTrash size={18} />}
+                                                    {hoveredRemoveLinkSlug === link.slug ? <IconTrashFilled size={iconSize} /> : <IconTrash size={iconSize} />}
                                                 </Button>
                                             </Tooltip>
                                         </Group>
@@ -297,7 +395,7 @@ const Links: React.FC = () => {
                             total={totalPages}
                         />
                     )}
-                </div>
+                </Box>
             </Container>
         </>
     );

@@ -51,7 +51,8 @@ export async function databaseInsertBlacklist(links: string[]) {
     let client;
     client = await pool.connect();
 
-    await client.query(`CREATE TABLE IF NOT EXISTS blockedurls (url varchar(255) PRIMARY KEY);`);
+    // Table creation is defined in the database schema
+    //await client.query(`CREATE TABLE IF NOT EXISTS blockedurls (url varchar(255) PRIMARY KEY);`);
 
     let queryBase = `INSERT INTO blockedurls (url) VALUES `;
     let queryBaseCopy = queryBase;
