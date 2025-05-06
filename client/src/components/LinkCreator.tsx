@@ -202,7 +202,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     // Render the UI
     return (
         <Center py="xl">
-            <Card shadow="lg" radius="lg" withBorder w="100%" maw={1000} p="xl">
+            <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
                 <Stack gap="lg">
                     <Title order={2}>{title}</Title>
 
