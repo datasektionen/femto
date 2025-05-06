@@ -178,7 +178,7 @@ const Links: React.FC = () => {
             // Trigger download
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/png');
-            link.download = 'qrcode_with_logo.png';
+            link.download = `${slug}.png`;
             link.click();
         };
         logo.src = logoSrc;
