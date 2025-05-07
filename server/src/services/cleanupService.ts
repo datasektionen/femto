@@ -27,8 +27,7 @@ async function cleanupExpiredLinks(): Promise<void> {
       `
       SELECT COUNT(*) FROM urls
       WHERE expires IS NOT NULL
-        AND expires AT TIME ZONE 'Europe/Stockholm'
-            < NOW() AT TIME ZONE 'Europe/Stockholm'
+        AND expires < NOW() AT TIME ZONE 'Europe/Stockholm'
       `
     );
     
@@ -53,8 +52,7 @@ async function cleanupExpiredLinks(): Promise<void> {
         `
         DELETE FROM urls
         WHERE expires IS NOT NULL
-          AND expires AT TIME ZONE 'Europe/Stockholm'
-              < NOW() AT TIME ZONE 'Europe/Stockholm'
+          AND expires < NOW() AT TIME ZONE 'Europe/Stockholm'
         RETURNING slug
         `
       );

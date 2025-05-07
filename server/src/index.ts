@@ -11,7 +11,7 @@ app.use(cors()); // Middleware to enable CORS
 app.use(express.json()); // Middleware to parse JSON request bodies
 
 
-// Run every minute for testing
+// Run every minute to clean up expired links
 scheduleCleanupJob('* * * * *');
 
 // Routes
