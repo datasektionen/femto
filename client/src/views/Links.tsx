@@ -316,7 +316,7 @@ const Links: React.FC = () => {
                                         <Tooltip label="Se detaljer" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="light"
+                                                    variant="filled"
                                                     radius="md"
                                                     onClick={() => handleShowDetails(link.slug)}
                                                     onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
@@ -328,7 +328,7 @@ const Links: React.FC = () => {
                                             <Tooltip label="Kopiera förkortad länk" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
+                                                    variant="light"
                                                     radius="md"
                                                     onClick={() => handleCopy(link.slug)}
                                                     onMouseEnter={() => setHoveredCopyLinkSlug(link.slug)}
@@ -352,7 +352,7 @@ const Links: React.FC = () => {
                                             <Tooltip label="Ladda ner QR-kod" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
+                                                    variant="light"
                                                     radius="md"
                                                     onClick={() => handleQRCode(link.slug)}
                                                 >
@@ -362,7 +362,7 @@ const Links: React.FC = () => {
                                             <Tooltip label="Ta bort länk" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
+                                                    variant="light"
                                                     color="red"
                                                     radius="md"
                                                     onClick={() => handleRemove(link.slug)}
