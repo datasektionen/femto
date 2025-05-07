@@ -14,6 +14,13 @@ import {
 } from "@mantine/core";
 import { Header } from "methone";
 import {
+    IconEdit,
+    IconArrowLeft,
+    IconClipboard,
+    IconClipboardList,
+    IconTrash
+} from "@tabler/icons-react";
+import {
     LineChart,
     Line,
     XAxis,
@@ -30,6 +37,8 @@ import Configuration from "../configuration.ts";
 const api = axios.create({
     baseURL: Configuration.backendApiUrl
 });
+
+const iconSize = 20;
 
 api.interceptors.request.use(
     (config) => {
@@ -324,125 +333,158 @@ const LinkStats: React.FC = () => {
 
     return (
         <>
-            <Header title={`Statistik för /${linkDetails.slug}`} />
+            {/* Header, show link without the protocol */}
+            <Header title={`Detaljer - ${Configuration.backendApiUrl.replace(/^https?:\/\//i, "")}/${linkDetails.slug}`} />
             <Box id="content" mb="xl">
                 <Button
+                    size="sm"
                     variant="outline"
+                    radius="md"
                     mb="md"
                     onClick={() => navigate("/links")}
                 >
-                    &larr; Tillbaka
+                    <IconArrowLeft size={iconSize} />
+                    Tillbaka
                 </Button>
+                <Group grow align="flex-start">
+                    {/* LEFT SIDE */}
+                    <Box>
 
-                <Card radius="lg" shadow="xs" p="md" mb="lg">
-                    <Title order={3} mb="sm">Länkdetaljer</Title>
-                    <Text size="sm"><strong>Kortlänk:</strong> <span style={{ fontFamily: 'monospace' }}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
-                    <Text size="sm" style={{ wordBreak: 'break-all' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
-                    <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "-"}</Text>
-                    <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
-                    <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
-                    <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
-                    <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "-"}</Text>
-                    <Text size="sm"><strong>Grupp:</strong> {linkDetails.group_name || "-"}</Text>
-                    <Group mt="sm">
-                        <Button size="xs" onClick={copyShortLink}>
-                            Kopiera kortlänk
-                        </Button>
-                        <Button size="xs" variant="light" onClick={copyOriginalLink}>
-                            Kopiera originallänk
-                        </Button>
-                        <Button size="xs" variant="light" c="red" onClick={deleteLink}>
-                            Ta bort
-                        </Button>
-                    </Group>
-                </Card>
+                        <Card radius="lg" shadow="xs" withBorder p="md" mb="lg">
+                            <Group>
+                                <Button size="sm"
+                                    variant="light"
+                                    radius="md" onClick={copyShortLink}>
+                                    <IconClipboard size={iconSize} />
+                                    Kopiera kortlänk
+                                </Button>
+                                <Button size="sm"
+                                    variant="light"
+                                    radius="md" onClick={copyOriginalLink}>
+                                    <IconClipboardList size={iconSize} />
+                                    Kopiera originallänk
+                                </Button>
+                                <Button size="sm"
+                                    variant="light"
+                                    radius="md" c="red" onClick={deleteLink}>
+                                    <IconTrash size={iconSize} />
+                                    Ta bort
+                                </Button>
+                                <Button size="sm"
+                                    variant="light"
+                                    radius="md">
+                                    <IconEdit size={iconSize} />
+                                    Redigera
+                                </Button>
+                            </Group>
+                        </Card>
 
-                <Card radius="lg" shadow="xs" p="md">
-                    <Title order={3} mb="sm">
-                        Klickstatistik
-                    </Title>
-                    <Box mb="md">
-                        <Select
-                            label="Visa statistik per"
-                            value={granularity}
-                            onChange={(v) =>
-                                setGranularity((v as "day" | "hour" | "week") || "day")
-                            }
-                            data={[
-                                { value: 'day', label: 'Totalt' },
-                                { value: 'hour', label: 'Idag' },
-                                { value: 'week', label: 'Senaste 7 dagarna' },
-                            ]}
-                        />
+                        <Card radius="lg" shadow="xs" withBorder p="md" mb="lg">
+                            <Title order={3} mb="sm">Länkdetaljer</Title>
+                            <Text size="sm"><strong>Kortlänk:</strong> <span style={{ fontFamily: 'monospace' }}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
+                            <Text size="sm" style={{ wordBreak: 'break-all' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
+                            <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "-"}</Text>
+                            <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
+                            <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
+                            <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
+                            <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "-"}</Text>
+                            <Text size="sm"><strong>Grupp:</strong> {linkDetails.group_name || "-"}</Text>
+                        </Card>
+
                     </Box>
-                    {error && <Alert color="red">{error}</Alert>}
-                    {loadingStats ? (
-                        <Loader />
-                    ) : (
-                        <ResponsiveContainer width="100%" height={350}>
-                            <LineChart
-                                data={statsData}
-                                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                                <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(t) => formatAxisDate(t, granularity)}
-                                    stroke="#adb5bd"
-                                    tick={{ fontSize: 11 }}
-                                    padding={{ left: 10, right: 10 }}
-                                    interval="preserveStartEnd"
-                                />
-                                <YAxis
-                                    allowDecimals={false}
-                                    domain={[0, isZeroLine ? 5 : "auto"]}
-                                    stroke="#adb5bd"
-                                    tick={{ fontSize: 11 }}
-                                />
-                                <Tooltip
-                                    labelFormatter={(l) => formatAxisDate(l, granularity)}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="clicks"
-                                    name="Klick"
-                                    stroke="#339AF0"
-                                    strokeWidth={2}
-                                    dot={!isZeroLine ? { r: 3, fill: "#339AF0" } : false}
-                                    activeDot={{ r: 6 }}
-                                    isAnimationActive={false}
-                                    connectNulls={false}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    )}
-                </Card>
 
-                <Card radius="lg" shadow="xs" p="md" mt="lg">
-                    <Title order={3} mb="sm">
-                        Klick per språk
-                    </Title>
-                    {loadingLang && <Loader />}
-                    {errorLang && <Alert color="red">{errorLang}</Alert>}
-                    {!loadingLang && !errorLang && (
-                        langData.length === 0 ? (
-                            <Text color="dimmed">Inga klick registrerade.</Text>
-                        ) : (
-                            <ResponsiveContainer width="100%" height={200}>
-                                <BarChart
-                                    data={langData}
-                                    margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="language" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip />
-                                    <Bar dataKey="clicks" name="Klick" fill="#339AF0" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )
-                    )}
-                </Card>
+                    {/* RIGHT SIDE */}
+                    <Box>
+
+                        <Card radius="lg" shadow="xs" withBorder p="md">
+                            <Title order={3} mb="sm">
+                                Klickstatistik
+                            </Title>
+                            <Box mb="md">
+                                <Select
+                                    label="Visa statistik per"
+                                    value={granularity}
+                                    onChange={(v) =>
+                                        setGranularity((v as "day" | "hour" | "week") || "day")
+                                    }
+                                    data={[
+                                        { value: 'day', label: 'Totalt' },
+                                        { value: 'hour', label: 'Idag' },
+                                        { value: 'week', label: 'Senaste 7 dagarna' },
+                                    ]}
+                                />
+                            </Box>
+                            {error && <Alert color="red">{error}</Alert>}
+                            {loadingStats ? (
+                                <Loader />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={350}>
+                                    <LineChart
+                                        data={statsData}
+                                        margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                                        <XAxis
+                                            dataKey="date"
+                                            tickFormatter={(t) => formatAxisDate(t, granularity)}
+                                            stroke="#adb5bd"
+                                            tick={{ fontSize: 11 }}
+                                            padding={{ left: 10, right: 10 }}
+                                            interval="preserveStartEnd"
+                                        />
+                                        <YAxis
+                                            allowDecimals={false}
+                                            domain={[0, isZeroLine ? 5 : "auto"]}
+                                            stroke="#adb5bd"
+                                            tick={{ fontSize: 11 }}
+                                        />
+                                        <Tooltip
+                                            labelFormatter={(l) => formatAxisDate(l, granularity)}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="clicks"
+                                            name="Klick"
+                                            stroke="#339AF0"
+                                            strokeWidth={2}
+                                            dot={!isZeroLine ? { r: 3, fill: "#339AF0" } : false}
+                                            activeDot={{ r: 6 }}
+                                            isAnimationActive={false}
+                                            connectNulls={false}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
+                        </Card>
+
+                        <Card radius="lg" shadow="xs" withBorder p="md" mt="lg">
+                            <Title order={3} mb="sm">
+                                Klick per språk
+                            </Title>
+                            {loadingLang && <Loader />}
+                            {errorLang && <Alert color="red">{errorLang}</Alert>}
+                            {!loadingLang && !errorLang && (
+                                langData.length === 0 ? (
+                                    <Text color="dimmed">Inga klick registrerade.</Text>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={200}>
+                                        <BarChart
+                                            data={langData}
+                                            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="language" />
+                                            <YAxis allowDecimals={false} />
+                                            <Tooltip />
+                                            <Bar dataKey="clicks" name="Klick" fill="#339AF0" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                )
+                            )}
+                        </Card>
+
+                    </Box>
+                </Group>
             </Box>
         </>
     );
