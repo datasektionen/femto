@@ -555,7 +555,7 @@ const LinkStats: React.FC = () => {
                         {/* Link Details Card: Display or Edit Form */}
                         <Card radius="lg" shadow="xs" withBorder p="md" mb="lg">
                             <Title order={3} mb="sm">Länkdetaljer</Title>
-                            <Text size="sm"><strong>Kortlänk:</strong> <span style={{ fontFamily: 'monospace' }}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
+                            <Text size="sm"><strong>Kortlänk:</strong> <a href={`${Configuration.backendApiUrl}/${linkDetails.slug}`} target="_blank" rel="noopener noreferrer">{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</a></Text>
                             <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
                             <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "Okänd"}</Text>
                             <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
@@ -583,7 +583,6 @@ const LinkStats: React.FC = () => {
                                         radius="md"
                                         type="datetime-local"
                                         label="Upphör (valfritt)"
-                                        description="Lämna tomt om länken inte ska upphöra."
                                         {...form.getInputProps('expires')}
                                         mb="sm"
                                     />
@@ -626,7 +625,7 @@ const LinkStats: React.FC = () => {
                             ) : (
                                 /* DISPLAY MODE: Showing current link details */
                                 <Box>
-                                    <Text size="sm" style={{ overflowWrap: 'break-word' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
+                                    <Text size="sm"><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
                                     <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "Ingen"}</Text>
                                     <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
                                     <Text size="sm"><strong>Grupp:</strong> {linkDetails.group_name || "Ingen"}</Text>
