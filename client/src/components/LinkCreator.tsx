@@ -73,6 +73,10 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // Minimum date-time for expiration
+  const minDateTime = new Date().toISOString().slice(0,16); 
+  // YYYY-MM-DDTHH:mm in local time
+
   // Mantine form setup with initial values and validation
   const form = useForm<FormValues>({
     initialValues: {
@@ -87,8 +91,10 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         /^https?:\/\/.*$/.test(value) ? null : "Invalid URL. Should include http:// or https://",
       expire: (value, values) => {
         // Validate date only if expiration is enabled
-        if (values.hasExpiration && !value) {
-          return "Vänligen välj ett utgångsdatum";
+        if (values.hasExpiration) {
+          if (!value) return "Vänligen välj ett utgångsdatum";
+          if (new Date(value) < new Date()) 
+            return "Utgångsdatum får inte vara i det förflutna";
         }
         return null;
       }
@@ -252,6 +258,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                   type="datetime-local"
                   label="Välj datum och tid"
                   {...form.getInputProps("expire")}
+                  min={minDateTime}           // disable past dates
                   withAsterisk
                   disabled={fetching || disabled}
                 />
