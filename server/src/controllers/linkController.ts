@@ -44,10 +44,10 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
     let expiresForDb: Date | null = null;
     if (expiresString) {
-        expiresForDb = new Date(expiresString); // Creates Date object based on server's local interpretation of the string
+        // Parse the ISO string correctly to ensure UTC handling
+        expiresForDb = new Date(expiresString);
         console.log(`Received expires string: ${expiresString}`);
-        console.log(`Converted to JS Date object: ${expiresForDb.toString()}`);
-        console.log(`JS Date object (ISO UTC): ${expiresForDb.toISOString()}`);
+        console.log(`Parsed UTC time: ${expiresForDb.toISOString()}`);
     }
 
     const userId = req.user?.sub;
@@ -142,9 +142,10 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         try {
             client = await pool.connect();
             // Insert the new link with the provided slug
-            const result = await client.query(
-                "INSERT INTO urls (slug, url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-                [slug, url, user_id, description, group, expiresForDb]
+            const query = `INSERT INTO urls (slug, url, user_id, description, group_name, expires) 
+                           VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING *`;
+            const result = await client.query(query, 
+              [slug, url, user_id, description, group, expiresForDb?.toISOString()]
             );
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
@@ -163,8 +164,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
             // Insert the new link without a slug, and retrieve the generated ID
             const idResult = await client.query(
-                "INSERT INTO urls (url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-                [url, user_id, description, group, expiresForDb]
+                "INSERT INTO urls (url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5::timestamptz) RETURNING id",
+                [url, user_id, description, group, expiresForDb?.toISOString()]  // FIX: Convert to ISO string
             );
             const id = idResult.rows[0].id;
             // Generate a a Slug from the ID
@@ -483,14 +484,14 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
         const result = await pool.query(query, queryParams);
         
         // Format timestamps for each link before sending
-        const formattedLinks = result.rows.map(link => ({
+        const formatted = result.rows.map(link => ({
             ...link,
-            date: formatTimestampToNaiveString(link.date, true),
-            expires: formatTimestampToNaiveString(link.expires),
+            date: link.date.toISOString(),     // still UTC
+            expires: link.expires?.toISOString() || null
         }));
 
-        console.log(`✅ Found ${formattedLinks.length} links for user ${userId}`);
-        res.status(200).json(formattedLinks);
+        console.log(`✅ Found ${formatted.length} links for user ${userId}`);
+        res.status(200).json(formatted);
     } catch (error) {
         console.error("❌ Error getting links:", error);
         res.status(500).json({ error: "Internal server error" });

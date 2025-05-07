@@ -128,17 +128,23 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       return;
     }
 
+    const expiresUtc = values.hasExpiration
+    ? new Date(values.expire).toISOString()
+    : null;
+
     const data = {
       slug: values.short || "",
       url: values.url,
       user_id: userId,
-      // Only include expire if hasExpiration is true
-      expires: values.hasExpiration ? values.expire : null,
+      // Convert to UTC before sending to server
+      expires: expiresUtc,
       group: values.group || null,
       description: "" 
     };
   
     console.log("Submitting link with data:", data);
+    console.log("Local time selected:", values.expire);
+    console.log("Converted to UTC:", data.expires);
 
     try {
       const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
