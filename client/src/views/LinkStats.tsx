@@ -14,20 +14,22 @@ import {
     Box,
     Divider,
 } from "@mantine/core";
+import { Tooltip as MantineTooltip } from "@mantine/core";
 import { Header } from "methone";
 import {
     IconEdit,
     IconArrowLeft,
     IconClipboard,
     IconClipboardList,
-    IconTrash
+    IconTrash,
+    IconRefresh
 } from "@tabler/icons-react";
 import {
     LineChart,
     Line,
     XAxis,
     YAxis,
-    Tooltip,
+    Tooltip as RechartsTooltip,
     ResponsiveContainer,
     CartesianGrid,
     BarChart,
@@ -540,15 +542,26 @@ const LinkStats: React.FC = () => {
                         {/* Action Buttons Card: Copy, Delete */}
                         <Card radius="lg" shadow="xs" withBorder p="md" mb="lg">
                             <Group grow>
-                                <Button size="sm" variant="light" radius="md" onClick={copyShortLink} leftSection={<IconClipboard size={iconSize} />}>
-                                    Kopiera kortlänk
-                                </Button>
-                                <Button size="sm" variant="light" radius="md" onClick={copyOriginalLink} leftSection={<IconClipboardList size={iconSize} />}>
-                                    Kopiera originallänk
-                                </Button>
-                                <Button size="sm" variant="light" radius="md" color="red" onClick={deleteLink} leftSection={<IconTrash size={iconSize} />}>
-                                    Ta bort
-                                </Button>
+                                <MantineTooltip label="Kopiera kortlänk" withArrow>
+                                    <Button size="sm" variant="light" radius="md" onClick={copyShortLink}>
+                                        <IconClipboard size={iconSize}/>
+                                    </Button>
+                                </MantineTooltip>
+                                <MantineTooltip label="Kopiera originallänk" withArrow>
+                                    <Button size="sm" variant="light" radius="md" onClick={copyOriginalLink}>
+                                        <IconClipboardList size={iconSize}/>
+                                    </Button>
+                                </MantineTooltip>
+                                <MantineTooltip label="Ladda om" withArrow>
+                                    <Button size="sm" variant="light" radius="md" onClick={() => window.location.reload()}>
+                                        <IconRefresh size={iconSize}/>
+                                    </Button>
+                                </MantineTooltip>
+                                <MantineTooltip label="Ta bort" withArrow>
+                                    <Button size="sm" variant="light" radius="md" color="red" onClick={deleteLink}>
+                                        <IconTrash size={iconSize}/>
+                                    </Button>
+                                </MantineTooltip>
                             </Group>
                         </Card>
 
@@ -647,7 +660,7 @@ const LinkStats: React.FC = () => {
                                 </Box>
                             )}
                         </Card>
-                    </Box>
+                    </Box >
 
                     {/* RIGHT COLUMN: Statistics Charts */}
                     <Box>
@@ -695,7 +708,7 @@ const LinkStats: React.FC = () => {
                                             stroke="#adb5bd"
                                             tick={{ fontSize: 11 }}
                                         />
-                                        <Tooltip
+                                        <RechartsTooltip
                                             labelFormatter={(label) => formatAxisDate(label, granularity)}
                                             formatter={(value: number) => [value, "Klick"]}
                                         />
@@ -732,16 +745,16 @@ const LinkStats: React.FC = () => {
                                             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                                             <XAxis dataKey="language" tick={{ fontSize: 11 }} />
                                             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                                            <Tooltip formatter={(value: number) => [value, "Klick"]} />
+                                            <RechartsTooltip formatter={(value: number) => [value, "Klick"]} />
                                             <Bar dataKey="clicks" name="Klick" fill="#339AF0" />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 )
                             )}
                         </Card>
-                    </Box>
-                </Group>
-            </Box>
+                    </Box >
+                </Group >
+            </Box >
 
         </>
     );
