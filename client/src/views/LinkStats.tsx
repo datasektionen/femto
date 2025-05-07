@@ -38,6 +38,7 @@ import {
 import Configuration from "../configuration.ts";
 import { useForm } from '@mantine/form';
 import { useAuth } from "../autherization/useAuth.ts";
+import { QRCode } from "react-qrcode-logo";
 
 /**
  * Axios instance configured with the backend API URL.
@@ -544,22 +545,22 @@ const LinkStats: React.FC = () => {
                             <Group grow>
                                 <MantineTooltip label="Kopiera kortlänk" withArrow>
                                     <Button size="sm" variant="light" radius="md" onClick={copyShortLink}>
-                                        <IconClipboard size={iconSize}/>
+                                        <IconClipboard size={iconSize} />
                                     </Button>
                                 </MantineTooltip>
                                 <MantineTooltip label="Kopiera originallänk" withArrow>
                                     <Button size="sm" variant="light" radius="md" onClick={copyOriginalLink}>
-                                        <IconClipboardList size={iconSize}/>
+                                        <IconClipboardList size={iconSize} />
                                     </Button>
                                 </MantineTooltip>
                                 <MantineTooltip label="Ladda om" withArrow>
                                     <Button size="sm" variant="light" radius="md" onClick={() => window.location.reload()}>
-                                        <IconRefresh size={iconSize}/>
+                                        <IconRefresh size={iconSize} />
                                     </Button>
                                 </MantineTooltip>
                                 <MantineTooltip label="Ta bort" withArrow>
                                     <Button size="sm" variant="light" radius="md" color="red" onClick={deleteLink}>
-                                        <IconTrash size={iconSize}/>
+                                        <IconTrash size={iconSize} />
                                     </Button>
                                 </MantineTooltip>
                             </Group>
@@ -655,10 +656,24 @@ const LinkStats: React.FC = () => {
                                         }}
                                         leftSection={<IconEdit size={iconSize} />}
                                     >
-                                        Redigera
+                                        Redigera länkdetaljer
                                     </Button>
                                 </Box>
                             )}
+                        </Card>
+
+                        {/* QR-Code Card: Displays QR-Code for the link */}
+                        <Card radius="lg" shadow="xs" withBorder p="md">
+                            <Title order={3} mb="sm">QR-kod</Title>
+                            <Text size="sm" mb="sm">Skanna QR-koden för att öppna länken:</Text>
+                            <QRCode
+                                value={`${Configuration.backendApiUrl}/${linkDetails.slug}`}
+                                size={160}
+                                ecLevel="H"
+                                logoImage="/logo.svg"
+                                logoWidth={40}
+                                logoPadding={5}
+                            />
                         </Card>
                     </Box >
 
