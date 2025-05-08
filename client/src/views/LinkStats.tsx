@@ -74,15 +74,15 @@ const formatAxisDate = (
     if (isNaN(date.getTime())) return "Ogiltigt datum";
 
     if (granularity === "hour") {
-        return date.toLocaleTimeString("sv-SE", {
+        return date.toLocaleTimeString(undefined, {
             hour: "2-digit",
             minute: "2-digit",
         });
     }
     if (granularity === "week") {
-        return date.toLocaleDateString("sv-SE", { weekday: "short" });
+        return date.toLocaleDateString(undefined, { weekday: "short" });
     }
-    return date.toLocaleDateString("sv-SE", {
+    return date.toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
     });
@@ -339,8 +339,8 @@ const LinkStats: React.FC = () => {
                     <Text size="sm"><strong>Kortlänk:</strong> <span style={{ fontFamily: 'monospace' }}>{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</span></Text>
                     <Text size="sm" style={{ wordBreak: 'break-all' }}><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
                     <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "-"}</Text>
-                    <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
-                    <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
+                    <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString(undefined)}</Text>
+                    <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString(undefined) : "Aldrig"}</Text>
                     <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
                     <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "-"}</Text>
                     <Text size="sm"><strong>Grupp:</strong> {linkDetails.group_name || "-"}</Text>
