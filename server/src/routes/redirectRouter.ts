@@ -38,6 +38,7 @@ redirectRouter.get("/:slug", async (req: any, res: any) => {
   // Använd any för att undvika typfel, kan förbättras senare (detta är korkat eftersom vi har en typ för req och res i express)
   const slug = req.params.slug;
   const userAgent = req.get("User-Agent");
+  const acceptLanguage = req.get("Accept-Language") || "en-US,en;q=0.9";
 
   // Kontrollera om request är från en bot
   const isBot = isBotRequest(userAgent);
@@ -57,12 +58,14 @@ redirectRouter.get("/:slug", async (req: any, res: any) => {
     if (result.rows.length > 0) {
       const urlId = result.rows[0].id;
       const redirectUrl = result.rows[0].url;
+      const language = acceptLanguage.split(",")[0]; // Hämta det första språket i Accept-Language-headern
 
       if (!isBot) {
         // Logga klicket i url_clicks-tabellen endast om det inte är en bot
         console.log(`✅ Logging click for URL ID: ${urlId} 📁`);
-        await client.query("INSERT INTO url_clicks (url_id) VALUES ($1)", [
+        await client.query("INSERT INTO url_clicks (url_id, language) VALUES ($1, $2)", [
           urlId,
+          language,
         ]);
       }
 

@@ -1,11 +1,11 @@
 -- Test-data för urls
 INSERT INTO urls (slug, url, user_id, expires, description, group_name) 
 VALUES 
-  ('gh123', 'https://github.com/',         'alice',  '2025-12-31 23:59:59', 'GitHub homepage',       'opensource'),
+  ('gh123', 'https://github.com/',         'armanmo',  '2025-12-31 23:59:59', 'GitHub homepage',       'opensource'),
   ('goo456','https://www.google.com/',     'armanmo', NULL,                'Google search engine',  'search'),
-  ('nyt789','https://www.nytimes.com/',    'charlie','2025-06-30 23:59:59','The New York Times',    'news'),
-  ('ytube','https://www.youtube.com/',     'dave',   '2026-01-01 00:00:00',  'YouTube platform',      'videos'),
-  ('wiki1','https://en.wikipedia.org/wiki/Main_Page','eve',NULL,'Wikipedia main page','reference')
+  ('nyt789','https://www.nytimes.com/',    'mbene','2025-06-30 23:59:59','The New York Times',    'news'),
+  ('ytube','https://www.youtube.com/',     'mbene',   '2026-01-01 00:00:00',  'YouTube platform',      'videos'),
+  ('wiki1','https://en.wikipedia.org/wiki/Main_Page','mbene',NULL,'Wikipedia main page','reference')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Test-inserts för gh123 (url_id = 1), språk = 'sv-SE'
