@@ -517,11 +517,11 @@ export async function getLink(req: Request, res: Response): Promise<void> {
             res.status(404).send("Link not found");
         } else {
             const link = result.rows[0];
-            // Format timestamps before sending
+
             const responseLink = {
                 ...link,
-                date: formatTimestampToNaiveString(link.date, true),
-                expires: formatTimestampToNaiveString(link.expires),
+                date: link.date.toISOString(),
+                expires: link.expires?.toISOString() || null,
             };
             res.status(200).json(responseLink);
         }
