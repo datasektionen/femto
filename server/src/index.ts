@@ -3,6 +3,7 @@ import apiRouter from './routes/apiRouter';
 import redirectRouter from './routes/redirectRouter';
 import loginRouter from './routes/loginRouter';
 import cors from 'cors';
+import { scheduleCleanupJob } from './services/cleanupService';
 
 const app = express();
 const PORT = process.env.PORT;
@@ -17,4 +18,11 @@ app.use("/", redirectRouter); // General/catch-all routes last
 
 app.listen(PORT, () => {
     console.log(`✅ Server is running on port ${PORT} 🚀`);
+    
+    // Delay starting the cleanup service to give the DB time to start
+    console.log('⏱️ Waiting for database to start up...');
+    setTimeout(() => {
+        // Run every minute to clean up expired links
+        scheduleCleanupJob('* * * * *');
+    }, 10000); // 10 seconds delay
 });

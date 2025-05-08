@@ -109,17 +109,17 @@ const formatAxisDate = (
     if (isNaN(date.getTime())) return "Ogiltigt datum"; // Invalid date check
 
     if (granularity === "hour") {
-        return date.toLocaleTimeString("sv-SE", { // Swedish locale for time
+        return date.toLocaleTimeString(undefined, {
+
             hour: "2-digit",
             minute: "2-digit",
         });
     }
     if (granularity === "week") {
-        // For weekly view, show short weekday name
-        return date.toLocaleDateString("sv-SE", { weekday: "short" });
+
+        return date.toLocaleDateString(undefined, { weekday: "short" });
     }
-    // Default to month and day for daily/total view
-    return date.toLocaleDateString("sv-SE", {
+    return date.toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
     });
@@ -570,7 +570,7 @@ const LinkStats: React.FC = () => {
                         <Card radius="lg" shadow="xs" withBorder p="md" mb="lg">
                             <Title order={3} mb="sm">Länkdetaljer</Title>
                             <Text size="sm"><strong>Kortlänk:</strong> <a href={`${Configuration.backendApiUrl}/${linkDetails.slug}`} target="_blank" rel="noopener noreferrer">{`${Configuration.backendApiUrl}/${linkDetails.slug}`}</a></Text>
-                            <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString('sv-SE')}</Text>
+                            <Text size="sm"><strong>Skapad:</strong> {new Date(linkDetails.date).toLocaleString(undefined)}</Text>
                             <Text size="sm"><strong>Användare:</strong> {linkDetails.user_id || "Okänd"}</Text>
                             <Text size="sm"><strong>Totala klick:</strong> {linkDetails.clicks}</Text>
                             <Divider my="sm" />
@@ -641,7 +641,7 @@ const LinkStats: React.FC = () => {
                                 <Box>
                                     <Text size="sm"><strong>Ursprunglig URL:</strong> <a href={linkDetails.url} target="_blank" rel="noopener noreferrer">{linkDetails.url}</a></Text>
                                     <Text size="sm"><strong>Beskrivning:</strong> {linkDetails.description || "Ingen"}</Text>
-                                    <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString('sv-SE') : "Aldrig"}</Text>
+                                    <Text size="sm"><strong>Upphör:</strong> {linkDetails.expires ? new Date(linkDetails.expires).toLocaleString(undefined) : "Aldrig"}</Text>
                                     <Text size="sm"><strong>Grupp:</strong> {linkDetails.group_name || "Ingen"}</Text>
                                     {/* Display general errors if any occurred outside editing mode (e.g., stats fetch error) */}
                                     {error && !loadingStats && <Alert color="red" title="Fel" my="md">{error}</Alert>}
@@ -695,6 +695,7 @@ const LinkStats: React.FC = () => {
                                         { value: 'week', label: 'Senaste 7 dagarna (per dag)' },
                                     ]}
                                     radius="md"
+
                                 />
                             </Box>
                             {/* Display error specific to time-series stats if it's not a general save error */}

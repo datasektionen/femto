@@ -1,10 +1,35 @@
 import { raw, Request, Response } from "express";
 import pool from "../db";
-import { isBlacklistedDB } from "./blacklistController";
 
 interface PermissionObject {
     id: string;
     scope: string | null;
+}
+
+function formatTimestampToNaiveString(dateInput: Date | string | null, isCreatedDate: boolean = false): string | null {
+    if (!dateInput) {
+        return null;
+    }
+    // Ensure we have a Date object. If dateInput is a string from the DB like '2025-05-06 09:51:00',
+    // new Date() will interpret it in the server's local timezone (UTC in this assumed scenario).
+    const d = new Date(dateInput);
+
+    // If this is the created date field, add 2 hours to compensate for UTC vs local time
+    if (isCreatedDate) {
+        d.setUTCHours(d.getUTCHours() + 2);
+    }
+
+    // We construct the naive string using the UTC parts of this Date object.
+    // This works because if the server is UTC and DB stores 'HH:MM', the JS Date object's
+    // UTC hours will be HH, UTC minutes will be MM, etc.
+    const year = d.getUTCFullYear();
+    const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = d.getUTCDate().toString().padStart(2, '0');
+    const hours = d.getUTCHours().toString().padStart(2, '0');
+    const minutes = d.getUTCMinutes().toString().padStart(2, '0');
+    const seconds = d.getUTCSeconds().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
@@ -15,7 +40,15 @@ interface PermissionObject {
  * @returns {Promise<void>} - A promise that resolves when the link is generated and the response is sent.
  */
 export async function insertLink(req: Request, res: Response): Promise<void> {
-    const { slug, url, user_id, description, group, expires } = req.body;
+    const { slug, url, user_id, description, group, expires: expiresString } = req.body;
+
+    let expiresForDb: Date | null = null;
+    if (expiresString) {
+        // Parse the ISO string correctly to ensure UTC handling
+        expiresForDb = new Date(expiresString);
+        console.log(`Received expires string: ${expiresString}`);
+        console.log(`Parsed UTC time: ${expiresForDb.toISOString()}`);
+    }
 
     const userId = req.user?.sub;
 
@@ -39,12 +72,6 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     if (userId !== user_id) {
         console.error("❌ User ID mismatch");
         res.status(403).json({ error: "User ID mismatch" });
-        return;
-    }
-    
-    if (await isBlacklistedDB(url)) {
-        console.error("❌ URL is blacklisted");
-        res.status(403).json({ error: "URL is blacklisted" });
         return;
     }
 
@@ -115,9 +142,10 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         try {
             client = await pool.connect();
             // Insert the new link with the provided slug
-            const result = await client.query(
-                "INSERT INTO urls (slug, url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-                [slug, url, user_id, description, group, expires]
+            const query = `INSERT INTO urls (slug, url, user_id, description, group_name, expires) 
+                           VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING *`;
+            const result = await client.query(query, 
+              [slug, url, user_id, description, group, expiresForDb?.toISOString()]
             );
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
@@ -136,8 +164,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
             // Insert the new link without a slug, and retrieve the generated ID
             const idResult = await client.query(
-                "INSERT INTO urls (url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-                [url, user_id, description, group, expires]
+                "INSERT INTO urls (url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5::timestamptz) RETURNING id",
+                [url, user_id, description, group, expiresForDb?.toISOString()]  // FIX: Convert to ISO string
             );
             const id = idResult.rows[0].id;
             // Generate a a Slug from the ID
@@ -454,10 +482,16 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
         console.log("With parameters:", queryParams);
 
         const result = await pool.query(query, queryParams);
-        const links = result.rows;
+        
+        // Format timestamps for each link before sending
+        const formatted = result.rows.map(link => ({
+            ...link,
+            date: link.date.toISOString(),     // still UTC
+            expires: link.expires?.toISOString() || null
+        }));
 
-        console.log(`✅ Found ${links.length} links for user ${userId}`);
-        res.status(200).json(links);
+        console.log(`✅ Found ${formatted.length} links for user ${userId}`);
+        res.status(200).json(formatted);
     } catch (error) {
         console.error("❌ Error getting links:", error);
         res.status(500).json({ error: "Internal server error" });
@@ -471,32 +505,30 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
  * @param {any} res - Express response object.
  * @returns {Promise<void>} - A promise that resolves when the link is retrieved and the response is sent.
  */
+
 export async function getLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
     let client;
     try {
-        // Connect to the database
         client = await pool.connect();
+        const result = await client.query("SELECT * FROM urls WHERE slug = $1", [slug]);
 
-        // Execute the query to retrieve the link with the specified slug
-        const result = await client.query("SELECT * FROM urls WHERE slug = $1", [
-            slug,
-        ]);
-
-        // Check if the link was found
         if (result.rows.length === 0) {
-            // Send a 404 status code if the link was not found
             res.status(404).send("Link not found");
         } else {
-            // Send the retrieved link as a JSON response
-            res.status(200).json(result.rows[0]);
+            const link = result.rows[0];
+
+            const responseLink = {
+                ...link,
+                date: link.date.toISOString(),
+                expires: link.expires?.toISOString() || null,
+            };
+            res.status(200).json(responseLink);
         }
     } catch (err: any) {
-        // Log the error and send a 500 status code if an error occurs
         console.error("❌ Error getting link 📁", err.stack);
         res.status(500).send("Internal Server Error");
     } finally {
-        // Release the client back to the pool
         if (client) {
             client.release();
         }

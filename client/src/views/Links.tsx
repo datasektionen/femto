@@ -290,6 +290,8 @@ const Links: React.FC = () => {
                                     radius="lg"
                                     shadow="sm"
                                 >
+
+             
                                     <Group style={{ display: "flex", justifyContent: "space-between" }}>
                                         {/* Text (Slug, URL) on the LEFT */}
                                         <Group gap="sm" justify="flex-start">
@@ -373,6 +375,7 @@ const Links: React.FC = () => {
                                                 </Button>
                                             </Tooltip>
                                         </Group>
+
                                     </Group>
                                 </Card>
                             ))
