@@ -515,6 +515,12 @@ const LinkStats: React.FC = () => {
     // Determine if the stats data represents a zero-click line (for chart Y-axis scaling)
     const isZeroLine = statsData.length > 0 && statsData.every((d) => d.clicks === 0);
 
+    const minDateTimeLocal = () => {
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      };
+
     // --- Main Component JSX ---
     return (
         <>
@@ -598,6 +604,7 @@ const LinkStats: React.FC = () => {
                                         type="datetime-local"
                                         label="Upphör (valfritt)"
                                         {...form.getInputProps('expires')}
+                                        min={minDateTimeLocal()}    // ← disallow past times
                                         mb="sm"
                                     />
                                     {hasGroups && (

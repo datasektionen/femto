@@ -72,12 +72,14 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     const [result, setResult] = useState("");
     const [copied, setCopied] = useState(false);
     
-    // Minimum date-time for expiration
-  const minDateTime = new Date().toISOString().slice(0,16); 
-  // YYYY-MM-DDTHH:mm in local time
-
     // Create a ref to the result section
     const resultRef = useRef<HTMLDivElement>(null);
+
+    const minDateTimeLocal = () => {
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      };
 
     // Mantine form setup with initial values and validation
     const form = useForm<FormValues>({
@@ -93,8 +95,13 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                 /^https?:\/\/.*$/.test(value) ? null : "Invalid URL. Should include http:// or https://",
             expire: (value, values) => {
                 // Validate date only if expiration is enabled
-                if (values.hasExpiration && !value) {
-                    return "Vänligen välj ett utgångsdatum";
+                if (values.hasExpiration) {
+                    if (new Date(value) < new Date(minDateTimeLocal())) {
+                        return "Utgångsdatum kan inte vara i det förflutna";
+                    }
+                    if (!value) {
+                        return "Vänligen välj ett utgångsdatum";
+                    }
                 }
                 return null;
             }
@@ -267,7 +274,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     type="datetime-local"
                                     label="Välj datum och tid"
                                     {...form.getInputProps("expire")}
-                                    min={minDateTime}           // disable past dates
+                                    min={minDateTimeLocal()}       // ← disallow any date‐time before now
                                     withAsterisk
                                     disabled={fetching || disabled}
                                 />
