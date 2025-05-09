@@ -1,35 +1,10 @@
 import { raw, Request, Response } from "express";
 import pool from "../db";
+import { isBlacklistedDB } from "./blacklistController";
 
 interface PermissionObject {
     id: string;
     scope: string | null;
-}
-
-function formatTimestampToNaiveString(dateInput: Date | string | null, isCreatedDate: boolean = false): string | null {
-    if (!dateInput) {
-        return null;
-    }
-    // Ensure we have a Date object. If dateInput is a string from the DB like '2025-05-06 09:51:00',
-    // new Date() will interpret it in the server's local timezone (UTC in this assumed scenario).
-    const d = new Date(dateInput);
-
-    // If this is the created date field, add 2 hours to compensate for UTC vs local time
-    if (isCreatedDate) {
-        d.setUTCHours(d.getUTCHours() + 2);
-    }
-
-    // We construct the naive string using the UTC parts of this Date object.
-    // This works because if the server is UTC and DB stores 'HH:MM', the JS Date object's
-    // UTC hours will be HH, UTC minutes will be MM, etc.
-    const year = d.getUTCFullYear();
-    const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
-    const day = d.getUTCDate().toString().padStart(2, '0');
-    const hours = d.getUTCHours().toString().padStart(2, '0');
-    const minutes = d.getUTCMinutes().toString().padStart(2, '0');
-    const seconds = d.getUTCSeconds().toString().padStart(2, '0');
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
@@ -72,6 +47,12 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     if (userId !== user_id) {
         console.error("❌ User ID mismatch");
         res.status(403).json({ error: "User ID mismatch" });
+        return;
+    }
+
+    if (await isBlacklistedDB(url)) {
+        console.error("❌ URL is blacklisted");
+        res.status(403).json({ error: "URL is blacklisted" });
         return;
     }
 
@@ -305,6 +286,12 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     // Basic validation: At least one field must be provided for update
     if (url === undefined && description === undefined && group === undefined && expires === undefined) {
         res.status(400).json({ error: "No update fields provided" });
+        return;
+    }
+
+    if (await isBlacklistedDB(url)) {
+        console.error("❌ URL is blacklisted");
+        res.status(403).json({ error: "URL is blacklisted" });
         return;
     }
 
