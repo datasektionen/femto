@@ -396,9 +396,8 @@ const LinkStats: React.FC = () => {
      * @param values - The form values submitted by the user.
      */
     const handleSaveChanges = async (values: typeof form.values) => {
-        if (!linkDetails) return; // Should not happen if form is visible, but good guard
-
-        setError(null); // Clear previous general errors before attempting to save
+        if (!linkDetails) return;
+        setError(null);
 
         const payload = {
             url: values.url,
@@ -415,16 +414,17 @@ const LinkStats: React.FC = () => {
             const response = await api.patch<Link>(`/api/links/${linkDetails.slug}`, payload);
             setLinkDetails(response.data); // Update local state with the response from the server
             setEditing(false); // Exit editing mode on successful save
-            // Optionally, show a success notification here
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to update link:", err);
-            // Attempt to get a more specific error message from the backend response
-            const errorMessage =
-                axios.isAxiosError(err) && err.response?.data?.detail
-                    ? String(err.response.data.detail) // Use backend error message if available
-                    : "Kunde inte spara ändringarna. Kontrollera fälten och försök igen.";
-            setError(errorMessage); // Display error to the user
-            // Keep editing mode true so the user can see the error, correct inputs, and retry
+            let msg = "Kunde inte spara ändringarna. Kontrollera fälten och försök igen.";
+            if (axios.isAxiosError(err) && err.response) {
+                if (err.response.status === 403) {
+                    msg = err.response.data.error || "URL is blacklisted or forbidden.";
+                } else if (err.response.status === 409) {
+                    msg = err.response.data.error || "Slug conflict.";
+                }
+            }
+            setError(msg);
         }
     };
 

@@ -169,14 +169,33 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                 body: JSON.stringify(data),
             });
 
-            const resData = await response.json();
+            // read raw text first, then try JSON.parse, else wrap into an object
+            const raw = await response.text();
+            let resData: any;
+            try {
+                resData = JSON.parse(raw);
+            } catch {
+                resData = { error: raw, message: raw };
+            }
 
-            // Handle any HTTP error responses
             if (!response.ok) {
+                if (response.status === 403) {
+                    setError({
+                        title: "Förbjuden länk",
+                        message: resData.error || resData.message || "Denna länk är blacklistad",
+                    });
+                    return;
+                }
+                if (response.status === 409) {
+                    setError({
+                        title: "Redan tagen",
+                        message: resData.error || resData.message || "Denna slug är redan tagen.",
+                    });
+                    return;
+                }
                 throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
             }
 
-            // Extract short link identifier from response
             const slug = resData.slug || resData.short || resData.url;
             if (!slug) throw new Error("No valid slug returned");
 
@@ -184,7 +203,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             form.reset();
         } catch (err: any) {
             console.error("❌ Error inserting link 📁", err.stack);
-            setError({ title: "Error", message: "Internal Server Error" });
+            if (!error) {
+                setError({ title: "Error", message: "Internal Server Error" });
+            }
         } finally {
             setFetching(false);
         }
