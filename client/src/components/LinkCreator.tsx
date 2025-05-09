@@ -181,15 +181,15 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             if (!response.ok) {
                 if (response.status === 403) {
                     setError({
-                        title: "Forbidden",
-                        message: resData.error || resData.message || "You are not allowed to use this URL or slug.",
+                        title: "Förbjuden länk",
+                        message: resData.error || resData.message || "Denna länk är blacklistad",
                     });
                     return;
                 }
                 if (response.status === 409) {
                     setError({
-                        title: "Conflict",
-                        message: resData.error || resData.message || "Custom slug has already been taken.",
+                        title: "Redan tagen",
+                        message: resData.error || resData.message || "Denna slug är redan tagen.",
                     });
                     return;
                 }
