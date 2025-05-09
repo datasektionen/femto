@@ -51,7 +51,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     }
 
     if (await isBlacklistedDB(url)) {
-        console.error("❌ URL is blacklisted");
+        console.error("❌ Denna URL är blacklistad");
         res.status(403).json({ error: "Denna URL är blacklistad" });
         return;
     }
@@ -291,7 +291,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
 
     if (await isBlacklistedDB(url)) {
         console.error("❌ URL is blacklisted");
-        res.status(403).json({ error: "URL is blacklisted" });
+        res.status(403).json({ error: "Denna URL är blacklistad" });
         return;
     }
 
