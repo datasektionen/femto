@@ -24,6 +24,13 @@ import Configuration from "../configuration.ts";
 import type { ReactNode } from 'react';
 import { useAuth } from "../autherization/useAuth.ts";
 
+// Function to check if there are duplicate group names that require showing domains
+function hasDuplicateGroupNames(groups: any[]): boolean {
+    if (!groups || groups.length === 0) return false;
+    const groupNames = groups.map(g => g.group_name);
+    return groupNames.length !== new Set(groupNames).size;
+  }
+
 // Utility to construct a full short URL using the backend URL
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
 
@@ -37,6 +44,7 @@ interface FormValues {
     expire: string;         // This will hold the actual date
     hasExpiration: boolean; // New toggle field
     group: string | null;
+    group_domain: string | null;
 }
 
 interface ApiError {
@@ -49,7 +57,12 @@ interface LinkCreatorProps {
     desc?: string | ReactNode;
     custom?: boolean;
     disabled?: boolean;
-    userGroups?: string[]; // Changed from userMandates to userGroups which are strings
+    userGroups?: {
+        group_name: string;
+        group_id: string;
+        group_domain: string;
+        tag_content: string;
+    }[];
     showAdvancedOptions?: boolean;
 }
 
@@ -64,7 +77,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 }) => {
 
     // Get userData from auth context
-    const { userData } = useAuth();
+    const { userData, manageLinks } = useAuth();
 
     // Component state
     const [fetching, setFetching] = useState(false);
@@ -89,6 +102,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             expire: "",
             hasExpiration: false, // New field
             group: null,
+            group_domain: null,
         },
         validate: {
             url: (value) =>
@@ -145,6 +159,10 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         ? new Date(values.expire).toISOString()
         : null;
 
+        // Find the selected group's domain if a group is selected
+        const selectedGroup = values.group ? 
+        userGroups.find(g => g.group_name === values.group) : null;
+
       const data = {
       slug: values.short || "",
       url: values.url,
@@ -152,6 +170,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
       // Convert to UTC before sending to server
       expires: expiresUtc,
       group: values.group || null,
+      group_domain: selectedGroup?.group_domain || null,
       description: "" 
       };
   
@@ -218,10 +237,19 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         setTimeout(() => setCopied(false), 2000);
     };
 
+    // Check if there are duplicate group names
+    const hasDuplicates = hasDuplicateGroupNames(userGroups);
+    
+    // Only show domains if user has manage-all AND there are duplicate group names
+    const shouldShowDomains = manageLinks && hasDuplicates;
+
     // Prepare data for the Select component from the Mandate objects
     const groupSelectData = userGroups.map(group => ({
-        label: group,
-        value: group
+        label: shouldShowDomains
+            ? `${group.group_name}${group.group_domain ? ` (${group.group_domain})` : ''}`
+            : group.group_name,
+        value: group.group_name,
+        group_domain: group.group_domain
     }));
 
     // Check if we should show the group selector
@@ -307,14 +335,24 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {/* Group selector - only visible if user has groups */}
                                     {hasGroups && (
                                         <Select
-                                            label="Koppla till grupp (valfritt)"
-                                            placeholder="Välj grupp"
-                                            data={groupSelectData}
-                                            searchable
-                                            clearable
-                                            {...form.getInputProps("group")} // Reuse the mandate field for group
-                                            disabled={fetching || disabled}
-                                        />
+                                        label="Koppla till grupp (valfritt)"
+                                        placeholder="Välj grupp"
+                                        data={groupSelectData}
+                                        searchable
+                                        clearable
+                                        {...form.getInputProps("group")}
+                                        onChange={(value) => {
+                                            form.setFieldValue('group', value);
+                                            // Find and set the domain for the selected group
+                                            if (value) {
+                                                const selectedGroup = userGroups.find(g => g.group_name === value);
+                                                form.setFieldValue('group_domain', selectedGroup?.group_domain || null);
+                                            } else {
+                                                form.setFieldValue('group_domain', null);
+                                            }
+                                        }}
+                                        disabled={fetching || disabled}
+                                    />
                                     )}
                                 </>
                             )}
