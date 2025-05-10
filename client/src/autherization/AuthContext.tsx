@@ -111,11 +111,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Log groups for debugging
   useEffect(() => {
     console.log("Available groups:", groups);
-  }, [groups]);
+    console.log("Full group objects with domains:", userGroups);
+    console.log("Group names only:", groups);
+    // Log group with domain format examples
+    if (userGroups && userGroups.length > 0) {
+      const exampleGroup = userGroups[0];
+      console.log("Example group object:", exampleGroup);
+      console.log("Example group with domain format:", `${exampleGroup.group_name}@${exampleGroup.group_domain}`);
+    }
+  }, [groups, userGroups]);
 
-  // Check if user has a specific group
-  const hasGroup = (groupName: string): boolean => {
-    return groups.includes(groupName);
+  // Update the groups getter to provide the full group objects
+  const groupObjects = userGroups || [];
+
+  // Check if user has a specific group by name and optional domain
+  const hasGroup = (groupName: string, domain?: string): boolean => {
+    if (domain) {
+        return groupObjects.some(g => 
+            g.group_name === groupName && g.group_domain === domain
+        );
+    }
+    return groupObjects.some(g => g.group_name === groupName);
   };
 
   const customLinks = Boolean(

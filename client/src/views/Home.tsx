@@ -16,6 +16,7 @@ const Home = () => {
         customLinks,
         manageLinks,
         groups,
+        userGroups,
         refreshAuthData
     } = useAuth();
 
@@ -64,7 +65,7 @@ const Home = () => {
                         </>
                     }
                     custom={canCreateCustomLinks} // Only show custom field if user has permission
-                    userGroups={groups || []}
+                    userGroups={userGroups || []}
                     showAdvancedOptions={(groups && groups.length > 0) || canCreateCustomLinks}
 
                 />
