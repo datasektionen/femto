@@ -322,24 +322,18 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {/* Group selector - only visible if user has groups */}
                                     {hasGroups && (
                                         <Select
-                                        label="Koppla till grupp (valfritt)"
-                                        placeholder="Välj grupp"
-                                        data={groupSelectData}
-                                        searchable
-                                        clearable
-                                        {...form.getInputProps("group")}
-                                        onChange={(value) => {
-                                            form.setFieldValue('group', value);
-                                            // Find and set the domain for the selected group
-                                            if (value) {
-                                                const selectedGroup = userGroups.find(g => g.group_name === value);
-                                                form.setFieldValue('group_domain', selectedGroup?.group_domain || null);
-                                            } else {
-                                                form.setFieldValue('group_domain', null);
+                                            label="Grupp"
+                                            placeholder="Välj en grupp"
+                                            value={form.values.group}
+                                            onChange={(value) => form.setFieldValue('group', value)}
+                                            data={
+                                                userGroups.map(group => ({
+                                                    value: `${group.group_name}@${group.group_domain}`, // Full identifier as value
+                                                    label: group.group_name // Just the name part as display label
+                                                }))
                                             }
-                                        }}
-                                        disabled={fetching || disabled}
-                                    />
+                                            clearable
+                                        />
                                     )}
                                 </>
                             )}

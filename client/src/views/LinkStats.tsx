@@ -407,8 +407,7 @@ const LinkStats: React.FC = () => {
             url: linkDetails.url || '',
             description: linkDetails.description || '',
             expires: linkDetails.expires ? toLocalISOString(linkDetails.expires) : '',
-            // Extract just the group name portion without domain
-            group_name: linkDetails.group_name ? extractGroupName(linkDetails.group_name) : '',
+            group_name: linkDetails.group_name || '', // Keep full identifier in form value
         });
     }
 }, [linkDetails, form.setValues]);
@@ -446,25 +445,35 @@ const LinkStats: React.FC = () => {
   const handleSaveChanges = async (values: typeof form.values) => {
     if (!linkDetails) return;
     setError(null);
-
-    // Find the selected group's domain if a group is selected
-    const selectedGroup = values.group_name ? 
-        userGroups?.find(g => g.group_name === values.group_name) : null;
-
-    console.log("Saving changes with group name:", values.group_name);
-    console.log("Selected group object:", selectedGroup);
-    console.log("Group domain to use:", selectedGroup?.group_domain);
+    
+    // Parse group_name to extract the group name and domain
+    let group = null;
+    let group_domain = null;
+    
+    if (values.group_name) {
+        // Check if it's already in the format "name@domain"
+        if (values.group_name.includes('@')) {
+            const parts = values.group_name.split('@');
+            group = parts[0] || null;
+            group_domain = parts[1] || null;
+        } else {
+            // If it's just a name without domain, try to find matching group
+            const selectedGroup = userGroups?.find(g => g.group_name === values.group_name);
+            group = values.group_name;
+            group_domain = selectedGroup?.group_domain || null;
+        }
+    }
 
     const payload = {
         url: values.url,
         description: values.description,
         expires: values.expires ? new Date(values.expires).toISOString() : null,
-        group: values.group_name || null,
-        group_domain: selectedGroup?.group_domain || null
+        group: group,
+        group_domain: group_domain
     };
 
     console.log("Final payload with group info:", payload);
-
+    
     try {
         const response = await api.patch<Link>(`/api/links/${linkDetails.slug}`, payload);
         setLinkDetails(response.data);
@@ -735,10 +744,8 @@ const LinkStats: React.FC = () => {
                       radius="md"
                       placeholder="Välj grupp"
                       data={userGroups?.map((g) => ({
-                        value: g.group_name,
-                        label: `${g.group_name}${
-                          g.group_domain ? ` (${g.group_domain})` : ""
-                        }`,
+                          value: `${g.group_name}@${g.group_domain}`, // Full identifier as value
+                          label: g.group_name // Just the name as label
                       }))}
                       searchable
                       clearable
