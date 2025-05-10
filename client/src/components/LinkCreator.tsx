@@ -24,12 +24,7 @@ import Configuration from "../configuration.ts";
 import type { ReactNode } from 'react';
 import { useAuth } from "../autherization/useAuth.ts";
 
-// Function to check if there are duplicate group names that require showing domains
-function hasDuplicateGroupNames(groups: any[]): boolean {
-    if (!groups || groups.length === 0) return false;
-    const groupNames = groups.map(g => g.group_name);
-    return groupNames.length !== new Set(groupNames).size;
-  }
+
 
 // Utility to construct a full short URL using the backend URL
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
@@ -77,7 +72,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 }) => {
 
     // Get userData from auth context
-    const { userData, manageLinks } = useAuth();
+    const { userData } = useAuth();
 
     // Component state
     const [fetching, setFetching] = useState(false);
@@ -237,17 +232,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // Check if there are duplicate group names
-    const hasDuplicates = hasDuplicateGroupNames(userGroups);
-    
-    // Only show domains if user has manage-all AND there are duplicate group names
-    const shouldShowDomains = manageLinks && hasDuplicates;
-
     // Prepare data for the Select component from the Mandate objects
     const groupSelectData = userGroups.map(group => ({
-        label: shouldShowDomains
-            ? `${group.group_name}${group.group_domain ? ` (${group.group_domain})` : ''}`
-            : group.group_name,
+        label: `${group.group_name}${group.group_domain ? ` (${group.group_domain})` : ''}`,
         value: group.group_name,
         group_domain: group.group_domain
     }));

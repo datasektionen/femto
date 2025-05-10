@@ -281,16 +281,9 @@ const LinkStats: React.FC = () => {
 
   const {
     groups,
-    userGroups,
-    manageLinks,
+    userGroups, // List of available groups for the user
     // refreshAuthData // Function to refresh user's authentication data (like groups)
   } = useAuth();
-
-  function hasDuplicateGroupNames(groups: any[]): boolean {
-    if (!groups || groups.length === 0) return false;
-    const groupNames = groups.map((g) => g.group_name);
-    return groupNames.length !== new Set(groupNames).size;
-  }
 
   const hasGroups = groups && groups.length > 0; // Check if the user has any groups
 
@@ -410,19 +403,15 @@ const LinkStats: React.FC = () => {
   // Populate form fields when linkDetails are fetched or updated.
   useEffect(() => {
     if (linkDetails) {
-      form.setValues({
-        url: linkDetails.url || "",
-        description: linkDetails.description || "",
-        expires: linkDetails.expires
-          ? toLocalISOString(linkDetails.expires)
-          : "",
-        // Extract just the group name portion without domain
-        group_name: linkDetails.group_name
-          ? extractGroupName(linkDetails.group_name)
-          : "",
-      });
+        form.setValues({
+            url: linkDetails.url || '',
+            description: linkDetails.description || '',
+            expires: linkDetails.expires ? toLocalISOString(linkDetails.expires) : '',
+            // Extract just the group name portion without domain
+            group_name: linkDetails.group_name ? extractGroupName(linkDetails.group_name) : '',
+        });
     }
-  }, [linkDetails, form.setValues]);
+}, [linkDetails, form.setValues]);
 
   // Fetch language-based click statistics when linkDetails changes.
   useEffect(() => {
@@ -443,13 +432,10 @@ const LinkStats: React.FC = () => {
   useEffect(() => {
     console.log("LinkStats - userGroups with domains:", userGroups);
     console.log("LinkStats - simple group names:", groups);
-
+    
     if (linkDetails?.group_name) {
       console.log("Current link group (with domain):", linkDetails.group_name);
-      console.log(
-        "Current link group (extracted):",
-        extractGroupName(linkDetails.group_name)
-      );
+      console.log("Current link group (extracted):", extractGroupName(linkDetails.group_name));
     }
   }, [userGroups, groups, linkDetails]);
 
@@ -462,31 +448,27 @@ const LinkStats: React.FC = () => {
     setError(null);
 
     // Find the selected group's domain if a group is selected
-    const selectedGroup = values.group_name
-      ? userGroups?.find((g) => g.group_name === values.group_name)
-      : null;
+    const selectedGroup = values.group_name ? 
+        userGroups?.find(g => g.group_name === values.group_name) : null;
 
     console.log("Saving changes with group name:", values.group_name);
     console.log("Selected group object:", selectedGroup);
     console.log("Group domain to use:", selectedGroup?.group_domain);
 
     const payload = {
-      url: values.url,
-      description: values.description,
-      expires: values.expires ? new Date(values.expires).toISOString() : null,
-      group: values.group_name || null,
-      group_domain: selectedGroup?.group_domain || null,
+        url: values.url,
+        description: values.description,
+        expires: values.expires ? new Date(values.expires).toISOString() : null,
+        group: values.group_name || null,
+        group_domain: selectedGroup?.group_domain || null
     };
 
     console.log("Final payload with group info:", payload);
 
     try {
-      const response = await api.patch<Link>(
-        `/api/links/${linkDetails.slug}`,
-        payload
-      );
-      setLinkDetails(response.data);
-      setEditing(false);
+        const response = await api.patch<Link>(`/api/links/${linkDetails.slug}`, payload);
+        setLinkDetails(response.data);
+        setEditing(false);
     } catch (err: any) {
       console.error("Failed to update link:", err);
       let msg =
@@ -611,9 +593,6 @@ const LinkStats: React.FC = () => {
   // Determine if the stats data represents a zero-click line (for chart Y-axis scaling)
   const isZeroLine =
     statsData.length > 0 && statsData.every((d) => d.clicks === 0);
-
-  const hasDuplicates = hasDuplicateGroupNames(userGroups || []);
-  const shouldShowDomains = manageLinks && hasDuplicates;
 
   const minDateTimeLocal = () => {
     const now = new Date();
@@ -750,7 +729,6 @@ const LinkStats: React.FC = () => {
                     min={minDateTimeLocal()} // ← disallow past times
                     mb="sm"
                   />
-
                   {hasGroups && (
                     <Select
                       label="Grupp (valfritt)"
@@ -758,11 +736,9 @@ const LinkStats: React.FC = () => {
                       placeholder="Välj grupp"
                       data={userGroups?.map((g) => ({
                         value: g.group_name,
-                        label: shouldShowDomains
-                          ? `${g.group_name}${
-                              g.group_domain ? ` (${g.group_domain})` : ""
-                            }`
-                          : g.group_name,
+                        label: `${g.group_name}${
+                          g.group_domain ? ` (${g.group_domain})` : ""
+                        }`,
                       }))}
                       searchable
                       clearable
