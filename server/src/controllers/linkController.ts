@@ -79,18 +79,15 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
   // Mandate/group permission check
   if (group) {
-    const user_Groups = userGroups.map((m) => m.group_name);
     const user_GroupsWithDomain = userGroups.map(
       (m) => `${m.group_name}@${m.group_domain}`
     );
 
     // Format the combined group identifier
-    const groupWithDomain = group_domain ? `${group}@${group_domain}` : group;
+    const groupWithDomain = `${group}@${group_domain}`;
 
     // Check if user has access to this group
-    const belongsToGroup =
-      user_Groups.includes(group) ||
-      user_GroupsWithDomain.includes(groupWithDomain);
+    const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
 
     if (!belongsToGroup) {
       console.error(`❌ User doesn't belong to the group: ${groupWithDomain}`);
@@ -143,7 +140,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     try {
       client = await pool.connect();
       // Insert the new link with the provided slug
-      const groupIdentifier = group_domain ? `${group}@${group_domain}` : group;
+      const groupIdentifier = `${group}@${group_domain}`;
       const query = `INSERT INTO urls (slug, url, user_id, description, group_name, expires) 
                VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING *`;
       const result = await client.query(query, [
@@ -169,7 +166,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     try {
       client = await pool.connect();
 
-      const groupIdentifier = group_domain ? `${group}@${group_domain}` : group;
+      const groupIdentifier = `${group}@${group_domain}`;
 
       // Insert the new link without a slug, and retrieve the generated ID
       const idResult = await client.query(
@@ -370,20 +367,15 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     if (group !== undefined) {
       // Check if user belongs to the new mandate group if they don't have manage-all
       if (!userPermissions.includes("manage-all") && group !== null) {
-        const user_Groups = userGroups.map((m) => m.group_name);
         const user_GroupsWithDomain = userGroups.map(
           (m) => `${m.group_name}@${m.group_domain}`
         );
 
         // Format the combined group identifier
-        const groupWithDomain = group_domain
-          ? `${group}@${group_domain}`
-          : group;
+        const groupWithDomain = `${group}@${group_domain}`;
 
         // Check if user has access to this group
-        const belongsToGroup =
-          user_Groups.includes(group) ||
-          user_GroupsWithDomain.includes(groupWithDomain);
+        const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
 
         if (!belongsToGroup) {
           console.warn(
@@ -395,7 +387,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
           return;
         }
       }
-      const groupIdentifier = group_domain ? `${group}@${group_domain}` : group;
+      const groupIdentifier = `${group}@${group_domain}`;
       setClauses.push(`group_name = $${paramIndex++}`);
       queryParams.push(groupIdentifier); // Allow setting group to null
     }
