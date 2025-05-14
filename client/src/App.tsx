@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Link, Navigate } from "react-router-dom";
 import Methone /*, { Header } */ from "methone"; // Import Methone (Header is optional)
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
@@ -15,24 +15,25 @@ import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
 
 // This component renders the main application content, including Methone bar and routes
 const AppContent = () => {
-  const { hasToken } = useAuth(); // Get authentication status
-
-  // Define the configuration for Methone, as per the documentation
-  const config = {
-    system_name: "link-shortener",
-    color_scheme: 'light-green', // Switched to light-green to make Raf happy
-    login_href: hasToken ? "/logout" : "/login",
-    login_text: hasToken ? "Logga ut" : "Logga in",
-    links: [
-      // Use React Router <Link> components as shown in the docs
-      <Link to="/shorten" key="methone-link-1">Förkorta</Link>,
-      // Conditionally add links based on auth status
-      ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>, <Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
-
-    ],
-  };
-
-  return (
+    const { hasToken, manageLinks } = useAuth(); // Get authentication status
+  
+    // Define the configuration for Methone, as per the documentation
+    const config = {
+      system_name: "link-shortener",
+      color_scheme: 'light-green', // Switched to light-green to make Raf happy
+      login_href: hasToken ? "/logout" : "/login",
+      login_text: hasToken ? "Logga ut" : "Logga in",
+      links: [
+        // Use React Router <Link> components as shown in the docs
+        <Link to="/shorten" key="methone-link-1">Förkorta</Link>,
+        // Conditionally add "Länkar" link if user is authenticated
+        ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>] : []),
+        // Conditionally add "Svartlista" link if user is authenticated and has manageLinks permission
+        ...(hasToken && manageLinks ? [<Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
+      ],
+    };
+  
+    return (
     // This div wraps Methone and the page content.
     // The className should match the color_scheme for styling.
     <div id="application" className='light-green'>
@@ -47,9 +48,20 @@ const AppContent = () => {
 
       {/* Define the application routes */}
       <Routes>
-        <Route path="/" element={<Home />} />
+      <Route path="/" element={<Home />} />
         <Route path="/shorten" element={<Home />} />
-        <Route path="/blacklist" element={<Blacklist />} />
+        <Route
+          path="/blacklist"
+          element={
+            !hasToken ? (
+              <Navigate to="/login" replace />
+            ) : manageLinks ? (
+              <Blacklist />
+            ) : (
+              <Navigate to="/" replace /> // Redirect to home if logged in but no manageLinks permission
+            )
+          }
+        />
         <Route path="/login" element={<LoginRedirect />} />
         <Route path="/logout" element={<Logout />} />
         <Route
