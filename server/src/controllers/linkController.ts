@@ -383,7 +383,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
           );
           res
             .status(403)
-            .send(`Forbidden: You do not belong to the group '${group}'.`);
+            .json({ error: `You don't belong to the group: ${group}` });
           return;
         }
       }

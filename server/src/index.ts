@@ -22,7 +22,7 @@ app.listen(PORT, () => {
     // Delay starting the cleanup service to give the DB time to start
     console.log('⏱️ Waiting for database to start up...');
     setTimeout(() => {
-        // Run every minute to clean up expired links
-        scheduleCleanupJob('* * * * *');
+        // Run every hour to clean up expired links
+        scheduleCleanupJob('0 * * * *');
     }, 10000); // 10 seconds delay
 });

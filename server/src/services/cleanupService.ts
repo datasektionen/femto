@@ -29,11 +29,31 @@ async function cleanupExpiredLinks(): Promise<void> {
   }
 }
 
+export async function checkExpiredLink(slug:string): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(
+      "DELETE FROM urls WHERE slug = $1 AND expires < NOW() RETURNING slug",
+      [slug]
+    );
+
+    if (result.rows.length > 0) {
+      console.log(`✅ Deleted expired link with slug: ${result.rows[0].slug}`);
+    } else {
+      console.log(`⚠️ No expired link found for slug: ${slug}`);
+    }
+
+  } finally {
+    client.release();
+  }
+}
+
 /**
  * Schedules the cleanup job to run at regular intervals
  * @param cronSchedule - cron expression for the schedule (default: every day at midnight)
  */
-export function scheduleCleanupJob(cronSchedule = '0 0 * * *'): void {
+export function scheduleCleanupJob(cronSchedule: string): void {
   
   // Schedule the job according to the cron expression
   cron.schedule(cronSchedule, () => {

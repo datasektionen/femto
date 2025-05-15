@@ -318,10 +318,6 @@ const Links: React.FC = () => {
                       </a>
                       <Badge
                         color={(() => {
-                          console.log(
-                            "Full group identifier for color:",
-                            link.group_name
-                          );
                           return link.group_name
                             ? stringToColor(link.group_name)
                             : "gray";

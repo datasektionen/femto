@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import pool from "../db";
+import { checkExpiredLink } from "../services/cleanupService";
 
 const redirectRouter = Router();
 
@@ -36,9 +37,12 @@ redirectRouter.get("/", (req, res) => {
 // GET /:slug => Hämta länk, logga klick och omdirigera
 redirectRouter.get("/:slug", async (req: any, res: any) => {
   // Använd any för att undvika typfel, kan förbättras senare (detta är korkat eftersom vi har en typ för req och res i express)
+
   const slug = req.params.slug;
   const userAgent = req.get("User-Agent");
   const acceptLanguage = req.get("Accept-Language") || "en-US,en;q=0.9";
+
+  await checkExpiredLink(slug); // Kontrollera om länken är utgången
 
   // Kontrollera om request är från en bot
   const isBot = isBotRequest(userAgent);
