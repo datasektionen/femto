@@ -374,6 +374,23 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
         // Format the combined group identifier
         const groupWithDomain = `${group}@${group_domain}`;
 
+        // Check if the group exists in Hive memberships
+        const isGroupFromHive = userGroups.some(
+          (g) => g.group_name === group && g.group_domain === group_domain
+        );
+
+        if (!isGroupFromHive) {
+          console.warn(
+            `🚫 User ${userId} tried to assign link ${slug} to a group (${groupWithDomain}) that is not part of Hive memberships.`
+          );
+          res
+            .status(400)
+            .json({
+              error: `The group ${groupWithDomain} is not part of your Hive memberships.`,
+            });
+          return;
+        }
+
         // Check if user has access to this group
         const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
 
@@ -436,8 +453,9 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
       const linkGroup = linkResult.rows[0].group_name;
 
       const isOwner = linkOwnerId === userId;
-      const linkGroupName = linkGroup ? linkGroup.split('@')[0] : null;
-      const hasGroupAccess = linkGroup && userGroupNames.includes(linkGroupName);
+      const linkGroupName = linkGroup ? linkGroup.split("@")[0] : null;
+      const hasGroupAccess =
+        linkGroup && userGroupNames.includes(linkGroupName);
 
       if (isOwner || hasGroupAccess) {
         // Updated condition
@@ -484,12 +502,10 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     // Handle potential unique constraint violation if changing URL/description makes it non-unique if needed
     if (err.code === "23505") {
       // Unique violation error code in PostgreSQL
-      res
-        .status(409)
-        .json({
-          error:
-            "Update failed due to conflicting data (e.g., unique constraint).",
-        });
+      res.status(409).json({
+        error:
+          "Update failed due to conflicting data (e.g., unique constraint).",
+      });
     } else {
       res.status(500).send("Internal Server Error");
     }
