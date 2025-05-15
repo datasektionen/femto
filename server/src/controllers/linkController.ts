@@ -386,7 +386,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
           res
             .status(400)
             .json({
-              error: `The group ${groupWithDomain} is not part of your Hive memberships.`,
+              error: `Gruppen ${group} är inte en del av dina HIVE grupper.`,
             });
           return;
         }

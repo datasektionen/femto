@@ -445,49 +445,39 @@ const LinkStats: React.FC = () => {
   const handleSaveChanges = async (values: typeof form.values) => {
     if (!linkDetails) return;
     setError(null);
-    
+
     // Parse group_name to extract the group name and domain
     let group = null;
     let group_domain = null;
-    
+
     if (values.group_name) {
-        // Check if it's already in the format "name@domain"
-        if (values.group_name.includes('@')) {
-            const parts = values.group_name.split('@');
-            group = parts[0] || null;
-            group_domain = parts[1] || null;
-        } else {
-            // If it's just a name without domain, try to find matching group
-            const selectedGroup = userGroups?.find(g => g.group_name === values.group_name);
-            group = values.group_name;
-            group_domain = selectedGroup?.group_domain || null;
-        }
+        const parts = values.group_name.split("@");
+        group = parts[0] || null;
+        group_domain = parts[1] || null;
     }
 
     const payload = {
-        url: values.url,
-        description: values.description,
-        expires: values.expires ? new Date(values.expires).toISOString() : null,
-        group: group,
-        group_domain: group_domain
+      url: values.url,
+      description: values.description,
+      expires: values.expires ? new Date(values.expires).toISOString() : null,
+      group: group,
+      group_domain: group_domain,
     };
 
-    console.log("Final payload with group info:", payload);
-    
     try {
-        const response = await api.patch<Link>(`/api/links/${linkDetails.slug}`, payload);
-        setLinkDetails(response.data);
-        setEditing(false);
+      const response = await api.patch<Link>(
+        `/api/links/${linkDetails.slug}`,
+        payload
+      );
+      setLinkDetails(response.data);
+      setEditing(false);
     } catch (err: any) {
       console.error("Failed to update link:", err);
-      let msg =
-        "Kunde inte spara ändringarna. Kontrollera fälten och försök igen.";
+
+      let msg = "Kunde inte spara ändringarna. Kontrollera fälten och försök igen.";
       if (axios.isAxiosError(err) && err.response) {
-        if (err.response.status === 403) {
-          msg = err.response.data.error || "URL is blacklisted or forbidden.";
-        } else if (err.response.status === 409) {
-          msg = err.response.data.error || "Slug conflict.";
-        }
+        // Extract the error message from the backend response
+        msg = err.response.data.error || msg;
       }
       setError(msg);
     }
