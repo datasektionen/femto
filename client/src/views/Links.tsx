@@ -25,6 +25,8 @@ import {
     IconClipboardFilled, // Added IconCopyCheck as a hover alternative for IconCopy
     IconClipboardCheck, // Added IconCopyCheck as a hover alternative for IconCopy
     IconClipboardCheckFilled,
+    IconUser,
+    IconUsersGroup,
 } from "@tabler/icons-react"; // Importera ikoner från Tabler Icons
 import { Header } from "methone";
 import axios from "axios";
@@ -69,6 +71,7 @@ const Links: React.FC = () => {
     const itemsPerPage = 5;
     const { hasToken } = useAuth(); // Get authentication state from your auth context
     const iconSize = 22; // Define icon size for consistency
+    const badgeIconSize = 14; // Define badge icon size for consistency
 
     // State for button hover effects - store the slug of the hovered link
     const [hoveredCopyLinkSlug, setHoveredCopyLinkSlug] = useState<string | null>(
@@ -307,38 +310,47 @@ const Links: React.FC = () => {
                                 <Card key={link.id} withBorder radius="lg" shadow="sm">
                                     <Group
                                         style={{ display: "flex", justifyContent: "space-between" }}
+                                        wrap="nowrap" // Ensure items stay on one line
                                     >
                                         {/* Text (Slug, URL) on the LEFT */}
-                                        <Group gap="sm" justify="flex-start">
+                                        {/* Apply flex: 1 and minWidth: 0 here */}
+                                        <Group gap="sm" justify="flex-start" style={{ flex: 1, minWidth: 0 }} wrap="nowrap">
                                             <Text fw={500}>{link.slug}</Text>
                                             <a
                                                 href={link.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 title={link.url}
+                                                style={{
+                                                    textDecoration: 'none',
+                                                    color: 'inherit',
+                                                    overflow: 'hidden', // Added to assist truncation within the link
+                                                }}
                                             >
-                                                {link.url}
+                                                <Text truncate>{link.url}</Text>
                                             </a>
                                             {/* Valde blå men kan byta */}
                                             {link.user_id && (
-                                                <Badge color="blue" variant="light">
+                                                <Badge leftSection={<IconUser size={badgeIconSize} />} color="blue" variant="light" style={{ flexShrink: 0 }}>
                                                     {link.user_id}
                                                 </Badge>
                                             )}
                                             <Badge
+                                                leftSection={<IconUsersGroup size={badgeIconSize} />}
                                                 color={(() => {
                                                     return link.group_name
                                                         ? stringToColor(link.group_name)
                                                         : "gray";
                                                 })()}
                                                 variant="light"
+                                                style={{ flexShrink: 0 }}
                                             >
                                                 {extractGroupName(link.group_name)}
                                             </Badge>
                                         </Group>
 
                                         {/* Buttons on the RIGHT */}
-                                        <Group gap="sm" justify="flex-end">
+                                        <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }}> {/* Prevent buttons from shrinking */}
                                             <Tooltip label="Se detaljer" withArrow>
                                                 <Button
                                                     size="sm"
