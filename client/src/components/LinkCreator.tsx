@@ -372,11 +372,10 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                 </Tooltip>
                                 <QRCode
                                     value={constructShortUrl(result)}
-                                    size={160}
+                                    size={300}
                                     ecLevel="H"
                                     logoImage="/logo.svg"
-                                    logoWidth={40}
-                                    logoPadding={5}
+                                    logoWidth={100}
                                 />
                             </Stack>
                         </div>
