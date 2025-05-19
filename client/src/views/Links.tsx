@@ -202,24 +202,23 @@ const Links: React.FC = () => {
       console.warn("Input string is null or undefined. Using default value.");
       str = "default";
     }
-  
+
     // Ensure we're working with a clean string
     const fullIdentifier = String(str);
-    
-    
+
     let hash = 0;
     // Use a different hashing algorithm that's more sensitive to string differences
     for (let i = 0; i < fullIdentifier.length; i++) {
       const char = fullIdentifier.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
-    
+
     // Create more distinct colors with better distribution
-    const r = Math.abs(hash % 200 + 55) & 255;  // Range 55-255
-    const g = Math.abs((hash >> 8) % 200 + 55) & 255;
-    const b = Math.abs((hash >> 16) % 200 + 55) & 255;
-    
+    const r = Math.abs((hash % 200) + 55) & 255; // Range 55-255
+    const g = Math.abs(((hash >> 8) % 200) + 55) & 255;
+    const b = Math.abs(((hash >> 16) % 200) + 55) & 255;
+
     return `rgb(${r}, ${g}, ${b})`;
   }
 
@@ -316,6 +315,12 @@ const Links: React.FC = () => {
                       >
                         {link.url}
                       </a>
+                      {/* Valde blå men kan byta */}
+                      {link.user_id && (
+                        <Badge color="blue" variant="light"> 
+                          {link.user_id}
+                        </Badge>
+                      )}
                       <Badge
                         color={(() => {
                           return link.group_name
