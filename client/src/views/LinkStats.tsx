@@ -13,6 +13,7 @@ import {
     TextInput,
     Box,
     Divider,
+    Grid,
 } from "@mantine/core";
 import { Tooltip as MantineTooltip } from "@mantine/core";
 import { Header } from "methone";
@@ -613,7 +614,7 @@ const LinkStats: React.FC = () => {
             />
 
             {/* Main content area: Link details and actions, statistics charts */}
-            <Box id="content" mb="x1">
+            <Box id="content" p="md">
                 {/* Back Navigation Button */}
                 <Button
                     size="sm"
@@ -627,9 +628,10 @@ const LinkStats: React.FC = () => {
                 </Button>
 
                 {/* Main content area: Link details and actions, statistics charts */}
-                <Group grow align="flex-start">
+                <Grid gutter="md" align="flex-start">
                     {/* LEFT COLUMN: Link Information and Actions */}
-                    <Box>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+
                         {/* Action Buttons Card: Copy, Delete */}
                         <Card radius="lg" shadow="xs" withBorder p="md" mb="lg">
                             <Group grow>
@@ -848,10 +850,11 @@ const LinkStats: React.FC = () => {
                                 />
                             </Group>
                         </Card>
-                    </Box>
+                    </Grid.Col>
 
                     {/* RIGHT COLUMN: Statistics Charts */}
-                    <Box>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+
                         {/* Time-Series Click Statistics Card */}
                         <Card radius="lg" shadow="xs" withBorder p="md">
                             <Title order={3} mb="sm">
@@ -964,8 +967,8 @@ const LinkStats: React.FC = () => {
                                     </ResponsiveContainer>
                                 ))}
                         </Card>
-                    </Box>
-                </Group>
+                    </Grid.Col>
+                </Grid>
             </Box>
         </>
     );
