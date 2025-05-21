@@ -16,6 +16,7 @@ import {
     Stack,
     Divider,
     Anchor,
+    Box,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
@@ -79,15 +80,15 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     const [error, setError] = useState<ApiError | null>(null);
     const [result, setResult] = useState("");
     const [copied, setCopied] = useState(false);
-    
+
     // Create a ref to the result section
     const resultRef = useRef<HTMLDivElement>(null);
 
     const minDateTimeLocal = () => {
         const now = new Date();
         const pad = (n: number) => n.toString().padStart(2, "0");
-        return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      };
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    };
 
     // Mantine form setup with initial values and validation
     const form = useForm<FormValues>({
@@ -151,27 +152,27 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         }
 
         const expiresUtc = values.hasExpiration
-        ? new Date(values.expire).toISOString()
-        : null;
+            ? new Date(values.expire).toISOString()
+            : null;
 
         // Find the selected group's domain if a group is selected
-        const selectedGroup = values.group ? 
-        userGroups.find(g => g.group_name === values.group) : null;
+        const selectedGroup = values.group ?
+            userGroups.find(g => g.group_name === values.group) : null;
 
-      const data = {
-      slug: values.short || "",
-      url: values.url,
-      user_id: userId,
-      // Convert to UTC before sending to server
-      expires: expiresUtc,
-      group: values.group || null,
-      group_domain: selectedGroup?.group_domain || null,
-      description: "" 
-      };
-  
-    console.log("Submitting link with data:", data);
-    console.log("Local time selected:", values.expire);
-    console.log("Converted to UTC:", data.expires);
+        const data = {
+            slug: values.short || "",
+            url: values.url,
+            user_id: userId,
+            // Convert to UTC before sending to server
+            expires: expiresUtc,
+            group: values.group || null,
+            group_domain: selectedGroup?.group_domain || null,
+            description: ""
+        };
+
+        console.log("Submitting link with data:", data);
+        console.log("Local time selected:", values.expire);
+        console.log("Converted to UTC:", data.expires);
 
         try {
             const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
@@ -254,7 +255,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
     // Render the UI
     return (
-        <Center py="xl">
+        <Center p="md">
             <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
                 <Stack gap="lg">
                     <Title order={2}>{title}</Title>
