@@ -16,7 +16,6 @@ import {
     Stack,
     Divider,
     Anchor,
-    Box,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { QRCode } from "react-qrcode-logo";
@@ -255,7 +254,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
     // Render the UI
     return (
-        <Center p="md">
+        <Center>
             <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
                 <Stack gap="lg">
                     <Title order={2}>{title}</Title>
