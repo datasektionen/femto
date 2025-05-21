@@ -1,4 +1,4 @@
-import { Alert } from "@mantine/core";
+import { Alert, Box } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
 import { useEffect } from "react";
@@ -16,6 +16,7 @@ const Home = () => {
         customLinks,
         manageLinks,
         groups,
+        userGroups,
         refreshAuthData
     } = useAuth();
 
@@ -38,7 +39,7 @@ const Home = () => {
     return (
         <>
             <Header title="Länkförkortare" />
-            <div id="content">
+            <Box id="content" p="md">
                 {!hasToken && (
                     <Alert title="Du är inte inloggad" color="blue">
                         Logga in för att förkorta länkar
@@ -64,11 +65,11 @@ const Home = () => {
                         </>
                     }
                     custom={canCreateCustomLinks} // Only show custom field if user has permission
-                    userGroups={groups || []}
+                    userGroups={userGroups || []}
                     showAdvancedOptions={(groups && groups.length > 0) || canCreateCustomLinks}
 
                 />
-            </div>
+            </Box>
         </>
     );
 };

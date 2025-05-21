@@ -1,6 +1,6 @@
 // Links.tsx (Komplett Översiktsvy - Vite + Axios Instance)
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react"; // Added useMemo
 import {
     Button,
     Alert,
@@ -8,10 +8,10 @@ import {
     Pagination,
     Text,
     Group,
-    Container,
     Badge,
     Box,
     Stack,
+    Loader,
     Card,
     Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter
@@ -25,6 +25,9 @@ import {
     IconClipboardFilled, // Added IconCopyCheck as a hover alternative for IconCopy
     IconClipboardCheck, // Added IconCopyCheck as a hover alternative for IconCopy
     IconClipboardCheckFilled,
+    IconUser,
+    IconUsersGroup,
+    IconPointer,
 } from "@tabler/icons-react"; // Importera ikoner från Tabler Icons
 import { Header } from "methone";
 import axios from "axios";
@@ -33,6 +36,13 @@ import { useAuth } from "../autherization/useAuth"; // Import your authenticatio
 import Configuration from "../configuration.ts";
 import { toCanvas } from "qrcode";
 
+// Function to extract just the group name from "group_name@group_domain" format
+function extractGroupName(groupWithDomain: string | null): string {
+    if (!groupWithDomain) return "Ingen grupp";
+
+    const parts = groupWithDomain.split("@");
+    return parts[0] || "Okänd grupp";
+}
 
 // Create axios instance with base URL - we'll add the token dynamically in the requests
 const api = axios.create({
@@ -41,7 +51,6 @@ const api = axios.create({
 
 // Interface för Link
 interface Link {
-
     id: string;
     slug: string;
     url: string;
@@ -58,16 +67,24 @@ const Links: React.FC = () => {
     const [linksData, setLinksData] = useState<Link[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [filter, setFilter] = useState<string>("newest-oldest");
+    const [filter, setFilter] = useState<string>("newest-oldest"); // For sorting
+    const [propertyFilter, setPropertyFilter] = useState<string>("all"); // New state for property filtering
     const [activePage, setActivePage] = useState(1);
     const itemsPerPage = 5;
     const { hasToken } = useAuth(); // Get authentication state from your auth context
     const iconSize = 22; // Define icon size for consistency
+    const badgeIconSize = 14; // Define badge icon size for consistency
 
     // State for button hover effects - store the slug of the hovered link
-    const [hoveredCopyLinkSlug, setHoveredCopyLinkSlug] = useState<string | null>(null);
-    const [hoveredDetailsLinkSlug, setHoveredDetailsLinkSlug] = useState<string | null>(null);
-    const [hoveredRemoveLinkSlug, setHoveredRemoveLinkSlug] = useState<string | null>(null);
+    const [hoveredCopyLinkSlug, setHoveredCopyLinkSlug] = useState<string | null>(
+        null
+    );
+    const [hoveredDetailsLinkSlug, setHoveredDetailsLinkSlug] = useState<
+        string | null
+    >(null);
+    const [hoveredRemoveLinkSlug, setHoveredRemoveLinkSlug] = useState<
+        string | null
+    >(null);
 
     // State to track which link has been copied and show the check icon
     const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
@@ -115,6 +132,109 @@ const Links: React.FC = () => {
             });
     }, [hasToken, navigate]); // Added dependencies
 
+    // Generate options for the property filter select
+    const propertyFilterOptions = useMemo(() => {
+        const options: { value: string; label: string }[] = [{ value: "all", label: "Alla länkar" }];
+        options.push({ value: "expires_null", label: "Utgår aldrig" });
+
+        const uniqueUserIds = new Set<string>();
+        linksData.forEach(link => {
+            if (link.user_id && link.user_id.toUpperCase() !== "NULL") {
+                uniqueUserIds.add(link.user_id);
+            }
+        });
+        uniqueUserIds.forEach(userId => {
+            options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
+        });
+
+        const uniqueGroupNames = new Set<string>();
+        linksData.forEach(link => {
+            const groupName = extractGroupName(link.group_name);
+            if (groupName && groupName !== "Ingen grupp" && groupName !== "Okänd grupp" && groupName.toUpperCase() !== "NULL") {
+                uniqueGroupNames.add(groupName);
+            }
+        });
+        uniqueGroupNames.forEach(groupName => {
+            options.push({ value: `group_${groupName}`, label: `Grupp: ${groupName}` });
+        });
+
+        return options;
+    }, [linksData]);
+
+    // Apply property filter first
+    const filteredByPropertyLinks = useMemo(() => {
+        if (propertyFilter === "all") {
+            return linksData;
+        }
+        if (propertyFilter === "expires_null") {
+            return linksData.filter(link => link.expires === null);
+        }
+        if (propertyFilter.startsWith("user_")) {
+            const userIdToFilter = propertyFilter.substring(5);
+            return linksData.filter(link => link.user_id === userIdToFilter);
+        }
+        if (propertyFilter.startsWith("group_")) {
+            const groupNameToFilter = propertyFilter.substring(6);
+            return linksData.filter(link => extractGroupName(link.group_name) === groupNameToFilter);
+        }
+        return linksData;
+    }, [linksData, propertyFilter]);
+
+    const sortedLinks = useMemo(() => [...filteredByPropertyLinks].sort((a, b) => {
+        switch (filter) {
+            case "newest-oldest":
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            case "oldest-newest":
+                return new Date(a.date).getTime() - new Date(b.date).getTime();
+            case "clicks-ascending":
+                return a.clicks - b.clicks;
+            case "clicks-descending":
+                return b.clicks - a.clicks;
+            case "slug-a-z":
+                return a.slug.localeCompare(b.slug);
+            case "slug-z-a":
+                return b.slug.localeCompare(a.slug);
+            default:
+                return 0;
+        }
+    }), [filteredByPropertyLinks, filter]); // Added useMemo and dependencies
+
+    const paginatedLinks = useMemo(() => sortedLinks.slice(
+        (activePage - 1) * itemsPerPage,
+        activePage * itemsPerPage
+    ), [sortedLinks, activePage, itemsPerPage]); // Added useMemo and dependencies
+
+    const totalPages = useMemo(() => Math.ceil(sortedLinks.length / itemsPerPage), [sortedLinks, itemsPerPage]); // Added useMemo and dependencies
+
+
+    // Conditional returns are now AFTER all hook calls
+    if (loading) {
+        return (
+            <>
+                <Header title="Länkar - Laddar..." />
+                <Box id="content" p="md">
+                    <Stack align="center" justify="center" style={{ height: "50vh" }}>
+                        <Loader size="lg" />
+                        <Text c="dimmed" >Laddar länkar...</Text>
+                    </Stack>
+                </Box>
+            </>
+        );
+    }
+
+    if (error) {
+        return (
+            <>
+                <Header title="Fel" />
+                <Box id="content" p="md">
+                    <Alert color="red" title="Fel">
+                        {error}
+                    </Alert>
+                </Box>
+            </>
+        );
+    }
+
     const handleCopy = (slug: string) => {
         const shortUrl = `${Configuration.backendApiUrl}/${slug}`;
         navigator.clipboard
@@ -137,198 +257,223 @@ const Links: React.FC = () => {
         }
         api.delete(`/api/links/${slug}`, {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}` // Use the JWT token from login
-            }
+                Authorization: `Bearer ${localStorage.getItem("token")}`, // Use the JWT token from login
+            },
         });
         // refresh the links list after deletion
         setLinksData((prevLinks) => prevLinks.filter((link) => link.slug !== slug));
     };
 
     const handleQRCode = async (slug: string): Promise<void> => {
-        const canvas = document.createElement('canvas');
-        const logoSrc = '/logo.svg';
-        const url = `${Configuration.backendApiUrl}/${slug}`;
+        const canvas = document.createElement("canvas");
+        const logoSrc = "/logo.svg"; // Corresponds to QRCode component's logoImage prop
+        const url = `${Configuration.backendApiUrl}/${slug}`; // Corresponds to QRCode component's value prop
+
+        const qrCanvasSize = 300; // Corresponds to QRCode component's size prop
+        const errorCorrectionLevel = "H"; // Corresponds to QRCode component's ecLevel prop
+        const logoDisplaySize = 100; // Corresponds to QRCode component's logoWidth prop
+
+        // Explicitly set canvas dimensions.
+        // The `toCanvas` function's `width` option also influences the final QR code size.
+        canvas.width = qrCanvasSize;
+        canvas.height = qrCanvasSize;
 
         // Generate QR with high error correction
         await toCanvas(canvas, url, {
-            width: 160,
-            margin: 1,
-            errorCorrectionLevel: 'H', // Match ecLevel="H"
+            width: qrCanvasSize, // Ensure QR code is drawn at the specified size
+            margin: 1, // Minimal margin for the QR code pattern
+            errorCorrectionLevel: errorCorrectionLevel,
         });
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
         const logo = new Image();
-        logo.crossOrigin = 'anonymous';
+        logo.crossOrigin = "anonymous"; // Recommended for loading images, especially if they could be external
         logo.onload = () => {
-            const logoSize = 40;
-            const padding = 5;
-            const sizeWithPadding = logoSize + padding * 2;
-            const x = (canvas.width - sizeWithPadding) / 2;
-            const y = (canvas.height - sizeWithPadding) / 2;
+            // Calculate top-left coordinates to center the logo and its background
+            const logoX = (canvas.width - logoDisplaySize) / 2;
+            const logoY = (canvas.height - logoDisplaySize) / 2;
 
-            // Draw white background (padding effect)
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x, y, sizeWithPadding, sizeWithPadding);
-
-            // Draw logo centered
-            ctx.drawImage(logo, x + padding, y + padding, logoSize, logoSize);
+            // Draw logo centered, scaled to logoDisplaySize x logoDisplaySize
+            // This will stretch the logo if it's not square.
+            ctx.drawImage(logo, logoX, logoY, logoDisplaySize, logoDisplaySize);
 
             // Trigger download
-            const link = document.createElement('a');
-            link.href = canvas.toDataURL('image/png');
+            const link = document.createElement("a");
+            link.href = canvas.toDataURL("image/png");
             link.download = `${slug}.png`;
             link.click();
         };
-        logo.src = logoSrc;
+        logo.src = logoSrc; // Start loading the logo image
     };
 
-    function stringToColor(str: string | null | undefined): string {
-        // Handle null or undefined input
+    function stringToHexColor(str: string | null | undefined, brightness = 1): string {
         if (!str) {
             console.warn("Input string is null or undefined. Using default value.");
-            str = "default"; // Default value if input is null or undefined
+            str = "default";
         }
 
+        const fullIdentifier = String(str);
         let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+
+        for (let i = 0; i < fullIdentifier.length; i++) {
+            const char = fullIdentifier.charCodeAt(i);
+            hash = (hash << 5) - hash + char;
+            hash |= 0; // Convert to 32bit integer
         }
 
-        // Generate color components based on the hash
-        const r = (hash & 0xff0000) >> 16;
-        const g = (hash & 0x00ff00) >> 8;
-        const b = hash & 0x0000ff;
+        // Base RGB components in 55-255 range
+        let r = Math.abs((hash % 200) + 55) & 255;
+        let g = Math.abs(((hash >> 8) % 200) + 55) & 255;
+        let b = Math.abs(((hash >> 16) % 200) + 55) & 255;
 
-        // Return the color as an RGB string
-        return `rgb(${r}, ${g}, ${b})`;
+        // Brightness adjustment: blend toward white (brightness > 1) or black (brightness < 1)
+        const applyBrightness = (channel: number): number => {
+            if (brightness === 1) return channel;
+            if (brightness > 1) return Math.round(channel + (255 - channel) * (brightness - 1));
+            return Math.round(channel * brightness);
+        };
+
+        r = applyBrightness(r);
+        g = applyBrightness(g);
+        b = applyBrightness(b);
+
+        const toHex = (value: number) => value.toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
 
-
-    if (loading) {
-        return (
-            <div id="content">
-                <Text>Laddar länkar...</Text>
-            </div>
-        );
-    }
-    if (error) {
-        return (
-            <>
-                <Header title="Fel" />
-                <div id="content">
-                    <Alert color="red" title="Fel">
-                        {error}
-                    </Alert>
-                </div>
-            </>
-        );
-    }
-
-    const sortedLinks = [...linksData].sort((a, b) => {
-        switch (filter) {
-            case "newest-oldest":
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-            case "oldest-newest":
-                return new Date(a.date).getTime() - new Date(b.date).getTime();
-            case "clicks-ascending":
-                return a.clicks - b.clicks;
-            case "clicks-descending":
-                return b.clicks - a.clicks;
-            case "slug-a-z":
-                return a.slug.localeCompare(b.slug);
-            case "slug-z-a":
-                return b.slug.localeCompare(a.slug);
-            default:
-                return 0;
-        }
-    });
-
-    const totalPages = Math.ceil(sortedLinks.length / itemsPerPage);
-    const paginatedLinks = sortedLinks.slice(
-        (activePage - 1) * itemsPerPage,
-        activePage * itemsPerPage
-    );
 
     return (
         <>
             <Header title="Länkar - Översikt" />
-            <Container>
-                <Box mb="md" mt="md">
-                    {!hasToken && (
-                        <Alert title="Du är inte inloggad" color="blue" mb="md">
-                            Logga in för att förkorta länkar
-                        </Alert>
-                    )}
-                    <Select
-                        label="Sortera efter"
-                        value={filter}
-                        radius="lg"
-                        onChange={(value) => {
-                            setFilter(value || "newest-oldest");
-                            setActivePage(1);
-                        }}
-                        data={[
-                            { value: "newest-oldest", label: "Nyast först" },
-                            { value: "oldest-newest", label: "Äldst först" },
-                            { value: "clicks-descending", label: "Mest klick (fallande)" },
-                            { value: "clicks-ascending", label: "Minst klick (stigande)" },
-                            { value: "slug-a-z", label: "Slug (A-Ö)" },
-                            { value: "slug-z-a", label: "Slug (Ö-A)" },
-                        ]}
-                    />
-                </Box>
+            <Box id="content" p="md">
+
+                <Group justify="space-between"> {/* Parent group to space out children */}
+                    <Group wrap="nowrap"> {/* Group for the Select components */}
+                        <Select
+                            value={filter}
+                            label="Sortera"
+                            radius="lg"
+                            onChange={(value) => {
+                                setFilter(value || "newest-oldest");
+                                setActivePage(1);
+                            }}
+                            data={[
+                                { value: "newest-oldest", label: "Nyast först" },
+                                { value: "oldest-newest", label: "Äldst först" },
+                                { value: "clicks-descending", label: "Mest klick (fallande)" },
+                                { value: "clicks-ascending", label: "Minst klick (stigande)" },
+                                { value: "slug-a-z", label: "Slug (A-Ö)" },
+                                { value: "slug-z-a", label: "Slug (Ö-A)" },
+                            ]}
+                        />
+
+                        <Select
+                            label="Filtrera"
+                            value={propertyFilter}
+                            onChange={(value) => {
+                                setPropertyFilter(value || "all");
+                                setActivePage(1); // Reset pagination when filter changes
+                            }}
+                            data={propertyFilterOptions}
+                            radius="lg"
+                        />
+                    </Group>
+
+                    <Badge size="xl" variant="default" style={{ alignSelf: 'flex-end' }}> {/* Badge aligned to the end of its flex line */}
+                        {sortedLinks.length} resultat
+                    </Badge>
+                </Group>
+
 
                 <Box mb="md" mt="md">
                     <Stack gap="xs">
                         {paginatedLinks.length > 0 ? (
                             paginatedLinks.map((link) => (
-                                <Card
-                                    key={link.id}
-                                    withBorder
-                                    radius="lg"
-                                    shadow="sm"
-                                >
-                                    <Group style={{ display: "flex", justifyContent: "space-between" }}>
-                                        {/* Text (Slug, URL) on the LEFT */}
-                                        <Group gap="sm" justify="flex-start">
-                                            <Text
-                                                fw={500}
-                                            >
-                                                {link.slug}
-                                            </Text>
-                                            <a
-                                                href={link.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                title={link.url}
-                                            >
-                                                {link.url}
-                                            </a>
-                                            <Badge color={link.group_name ? stringToColor(link.group_name) : 'gray'} variant="light">
-                                                {link.group_name || 'Ingen grupp'}
-                                            </Badge>
+                                <Card key={link.id} withBorder radius="lg" shadow="sm">
+                                    <Group justify="space-between" align="center" wrap="wrap">
+                                        {/* LEFT: Text and Badges */}
+                                        <Group gap="sm" align="center" wrap="wrap">
+                                            <Group gap="sm" justify="flex-start" style={{ minWidth: 0, flexShrink: 1 }}>
+                                                <Text fw={500} style={{ whiteSpace: 'nowrap' }}>{link.slug}</Text>
+                                                <a
+                                                    href={link.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title={link.url}
+                                                    style={{
+                                                        textDecoration: 'none',
+                                                        color: 'inherit',
+                                                        minWidth: 0,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        maxWidth: '250px', // Optional: you can tweak this based on layout
+                                                    }}
+                                                >
+                                                    <Text truncate>{link.url}</Text>
+                                                </a>
+                                            </Group>
+
+                                            <Group justify="flex-start" gap="xs">
+                                                <Tooltip label="Antal klick" withArrow>
+                                                    <Badge size="lg" leftSection={<IconPointer size={badgeIconSize} />} variant="gradient">
+                                                        {link.clicks}
+                                                    </Badge>
+                                                </Tooltip>
+                                                {link.user_id && (
+                                                    <Tooltip label="Ägare" withArrow>
+                                                        <Badge
+                                                            size="lg"
+                                                            leftSection={<IconUser size={badgeIconSize} />}
+                                                            variant="gradient"
+                                                            gradient={{ from: "blue", to: "blue", deg: 0 }}
+                                                        >
+                                                            {link.user_id}
+                                                        </Badge>
+                                                    </Tooltip>
+                                                )}
+                                                {extractGroupName(link.group_name) !== "null" && (
+                                                    <Tooltip label="Grupp" withArrow>
+                                                        <Badge
+                                                            size="lg"
+                                                            leftSection={<IconUsersGroup size={badgeIconSize} />}
+                                                            variant="gradient"
+                                                            gradient={{
+                                                                from: stringToHexColor(link.group_name),
+                                                                to: stringToHexColor(link.group_name, 1.4),
+                                                            }}
+                                                        >
+                                                            {extractGroupName(link.group_name)}
+                                                        </Badge>
+                                                    </Tooltip>
+                                                )}
+                                            </Group>
                                         </Group>
 
-                                        {/* Buttons on the RIGHT */}
-                                        <Group gap="sm" justify="flex-end">
-                                        <Tooltip label="Se detaljer" withArrow>
+                                        {/* RIGHT: Buttons */}
+                                        <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }}>
+                                            <Tooltip label="Se detaljer" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="light"
+                                                    variant="filled"
                                                     radius="md"
                                                     onClick={() => handleShowDetails(link.slug)}
                                                     onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredDetailsLinkSlug(null)}
                                                 >
-                                                    {hoveredDetailsLinkSlug === link.slug ? <IconInfoSquareFilled size={iconSize} /> : <IconInfoSquare size={iconSize} />}
+                                                    {hoveredDetailsLinkSlug === link.slug ? (
+                                                        <IconInfoSquareFilled size={iconSize} />
+                                                    ) : (
+                                                        <IconInfoSquare size={iconSize} />
+                                                    )}
                                                 </Button>
                                             </Tooltip>
                                             <Tooltip label="Kopiera förkortad länk" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
+                                                    variant="light"
                                                     radius="md"
                                                     onClick={() => handleCopy(link.slug)}
                                                     onMouseEnter={() => setHoveredCopyLinkSlug(link.slug)}
@@ -340,19 +485,17 @@ const Links: React.FC = () => {
                                                         ) : (
                                                             <IconClipboardCheck size={iconSize} />
                                                         )
+                                                    ) : hoveredCopyLinkSlug === link.slug ? (
+                                                        <IconClipboardFilled size={iconSize} />
                                                     ) : (
-                                                        hoveredCopyLinkSlug === link.slug ? (
-                                                            <IconClipboardFilled size={iconSize} />
-                                                        ) : (
-                                                            <IconClipboard size={iconSize} />
-                                                        )
+                                                        <IconClipboard size={iconSize} />
                                                     )}
                                                 </Button>
                                             </Tooltip>
                                             <Tooltip label="Ladda ner QR-kod" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
+                                                    variant="light"
                                                     radius="md"
                                                     onClick={() => handleQRCode(link.slug)}
                                                 >
@@ -362,14 +505,18 @@ const Links: React.FC = () => {
                                             <Tooltip label="Ta bort länk" withArrow>
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
+                                                    variant="light"
                                                     color="red"
                                                     radius="md"
                                                     onClick={() => handleRemove(link.slug)}
                                                     onMouseEnter={() => setHoveredRemoveLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredRemoveLinkSlug(null)}
                                                 >
-                                                    {hoveredRemoveLinkSlug === link.slug ? <IconTrashFilled size={iconSize} /> : <IconTrash size={iconSize} />}
+                                                    {hoveredRemoveLinkSlug === link.slug ? (
+                                                        <IconTrashFilled size={iconSize} />
+                                                    ) : (
+                                                        <IconTrash size={iconSize} />
+                                                    )}
                                                 </Button>
                                             </Tooltip>
                                         </Group>
@@ -396,7 +543,7 @@ const Links: React.FC = () => {
                         />
                     )}
                 </Box>
-            </Container>
+            </Box>
         </>
     );
 };

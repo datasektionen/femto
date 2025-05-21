@@ -24,6 +24,8 @@ import Configuration from "../configuration.ts";
 import type { ReactNode } from 'react';
 import { useAuth } from "../autherization/useAuth.ts";
 
+
+
 // Utility to construct a full short URL using the backend URL
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
 
@@ -37,6 +39,7 @@ interface FormValues {
     expire: string;         // This will hold the actual date
     hasExpiration: boolean; // New toggle field
     group: string | null;
+    group_domain: string | null;
 }
 
 interface ApiError {
@@ -49,7 +52,12 @@ interface LinkCreatorProps {
     desc?: string | ReactNode;
     custom?: boolean;
     disabled?: boolean;
-    userGroups?: string[]; // Changed from userMandates to userGroups which are strings
+    userGroups?: {
+        group_name: string;
+        group_id: string;
+        group_domain: string;
+        tag_content: string;
+    }[];
     showAdvancedOptions?: boolean;
 }
 
@@ -75,6 +83,12 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     // Create a ref to the result section
     const resultRef = useRef<HTMLDivElement>(null);
 
+    const minDateTimeLocal = () => {
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    };
+
     // Mantine form setup with initial values and validation
     const form = useForm<FormValues>({
         initialValues: {
@@ -83,14 +97,20 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             expire: "",
             hasExpiration: false, // New field
             group: null,
+            group_domain: null,
         },
         validate: {
             url: (value) =>
                 /^https?:\/\/.*$/.test(value) ? null : "Invalid URL. Should include http:// or https://",
             expire: (value, values) => {
                 // Validate date only if expiration is enabled
-                if (values.hasExpiration && !value) {
-                    return "Vänligen välj ett utgångsdatum";
+                if (values.hasExpiration) {
+                    if (new Date(value) < new Date(minDateTimeLocal())) {
+                        return "Utgångsdatum kan inte vara i det förflutna";
+                    }
+                    if (!value) {
+                        return "Vänligen välj ett utgångsdatum";
+                    }
                 }
                 return null;
             }
@@ -130,17 +150,28 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             return;
         }
 
+        const expiresUtc = values.hasExpiration
+            ? new Date(values.expire).toISOString()
+            : null;
+
+        // Find the selected group's domain if a group is selected
+        const selectedGroup = values.group ?
+            userGroups.find(g => g.group_name === values.group) : null;
+
         const data = {
             slug: values.short || "",
             url: values.url,
             user_id: userId,
-            // Only include expire if hasExpiration is true
-            expires: values.hasExpiration ? values.expire : null,
+            // Convert to UTC before sending to server
+            expires: expiresUtc,
             group: values.group || null,
+            group_domain: selectedGroup?.group_domain || null,
             description: ""
         };
 
         console.log("Submitting link with data:", data);
+        console.log("Local time selected:", values.expire);
+        console.log("Converted to UTC:", data.expires);
 
         try {
             const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
@@ -152,14 +183,33 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                 body: JSON.stringify(data),
             });
 
-            const resData = await response.json();
+            // read raw text first, then try JSON.parse, else wrap into an object
+            const raw = await response.text();
+            let resData: any;
+            try {
+                resData = JSON.parse(raw);
+            } catch {
+                resData = { error: raw, message: raw };
+            }
 
-            // Handle any HTTP error responses
             if (!response.ok) {
+                if (response.status === 403) {
+                    setError({
+                        title: "Förbjuden länk",
+                        message: resData.error || resData.message || "Denna länk är blacklistad",
+                    });
+                    return;
+                }
+                if (response.status === 409) {
+                    setError({
+                        title: "Redan tagen",
+                        message: resData.error || resData.message || "Denna slug är redan tagen.",
+                    });
+                    return;
+                }
                 throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
             }
 
-            // Extract short link identifier from response
             const slug = resData.slug || resData.short || resData.url;
             if (!slug) throw new Error("No valid slug returned");
 
@@ -167,7 +217,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             form.reset();
         } catch (err: any) {
             console.error("❌ Error inserting link 📁", err.stack);
-            setError({ title: "Error", message: "Internal Server Error" });
+            if (!error) {
+                setError({ title: "Error", message: "Internal Server Error" });
+            }
         } finally {
             setFetching(false);
         }
@@ -182,8 +234,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
     // Prepare data for the Select component from the Mandate objects
     const groupSelectData = userGroups.map(group => ({
-        label: group,
-        value: group
+        label: `${group.group_name}${group.group_domain ? ` (${group.group_domain})` : ''}`,
+        value: group.group_name,
+        group_domain: group.group_domain
     }));
 
     // Check if we should show the group selector
@@ -201,7 +254,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
     // Render the UI
     return (
-        <Center py="xl">
+        <Center>
             <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
                 <Stack gap="lg">
                     <Title order={2}>{title}</Title>
@@ -218,6 +271,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                         <Stack gap={16}>
                             {/* Input for long URL */}
                             <TextInput
+                                radius="md"
                                 placeholder="https://din-länk.se"
                                 label="Lång länk"
                                 required
@@ -228,6 +282,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Optional short link slug */}
                             {custom && (
                                 <TextInput
+                                    radius="md"
                                     placeholder="Valfri kortlänk"
                                     label="Anpassad kortlänk"
                                     {...form.getInputProps("short")}
@@ -254,9 +309,11 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Expiration date/time input if enabled */}
                             {form.values.hasExpiration && (
                                 <TextInput
+                                    radius="md"
                                     type="datetime-local"
                                     label="Välj datum och tid"
                                     {...form.getInputProps("expire")}
+                                    min={minDateTimeLocal()}       // ← disallow any date‐time before now
                                     withAsterisk
                                     disabled={fetching || disabled}
                                 />
@@ -268,13 +325,18 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {/* Group selector - only visible if user has groups */}
                                     {hasGroups && (
                                         <Select
-                                            label="Koppla till grupp (valfritt)"
-                                            placeholder="Välj grupp"
-                                            data={groupSelectData}
-                                            searchable
+                                            radius="md"
+                                            label="Grupp"
+                                            placeholder="Välj en grupp"
+                                            value={form.values.group}
+                                            onChange={(value) => form.setFieldValue('group', value)}
+                                            data={
+                                                userGroups.map(group => ({
+                                                    value: `${group.group_name}@${group.group_domain}`, // Full identifier as value
+                                                    label: group.group_name // Just the name part as display label
+                                                }))
+                                            }
                                             clearable
-                                            {...form.getInputProps("group")} // Reuse the mandate field for group
-                                            disabled={fetching || disabled}
                                         />
                                     )}
                                 </>
@@ -282,6 +344,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
                             {/* Submit button */}
                             <Button
+                                radius="md"
                                 type="submit"
                                 fullWidth
                                 loading={fetching}
@@ -308,17 +371,16 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {constructShortUrl(result)}
                                 </Anchor>
                                 <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
-                                    <Button variant="light" onClick={handleCopy}>
+                                    <Button variant="light" radius="md" onClick={handleCopy}>
                                         Kopiera länk
                                     </Button>
                                 </Tooltip>
                                 <QRCode
                                     value={constructShortUrl(result)}
-                                    size={160}
+                                    size={300}
                                     ecLevel="H"
                                     logoImage="/logo.svg"
-                                    logoWidth={40}
-                                    logoPadding={5}
+                                    logoWidth={100}
                                 />
                             </Stack>
                         </div>
@@ -327,6 +389,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             </Card>
         </Center>
     );
+
 };
 
 export default LinkCreator;
