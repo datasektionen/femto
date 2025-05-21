@@ -1,6 +1,6 @@
 // Links.tsx (Komplett Översiktsvy - Vite + Axios Instance)
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react"; // Added useMemo
 import {
     Button,
     Alert,
@@ -66,7 +66,8 @@ const Links: React.FC = () => {
     const [linksData, setLinksData] = useState<Link[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [filter, setFilter] = useState<string>("newest-oldest");
+    const [filter, setFilter] = useState<string>("newest-oldest"); // For sorting
+    const [propertyFilter, setPropertyFilter] = useState<string>("all"); // New state for property filtering
     const [activePage, setActivePage] = useState(1);
     const itemsPerPage = 5;
     const { hasToken } = useAuth(); // Get authentication state from your auth context
@@ -129,6 +130,102 @@ const Links: React.FC = () => {
                 setLoading(false);
             });
     }, [hasToken, navigate]); // Added dependencies
+
+    // Generate options for the property filter select
+    const propertyFilterOptions = useMemo(() => {
+        const options: { value: string; label: string }[] = [{ value: "all", label: "Alla länkar" }];
+        options.push({ value: "expires_null", label: "Utgår aldrig" });
+
+        const uniqueUserIds = new Set<string>();
+        linksData.forEach(link => {
+            if (link.user_id && link.user_id.toUpperCase() !== "NULL") {
+                uniqueUserIds.add(link.user_id);
+            }
+        });
+        uniqueUserIds.forEach(userId => {
+            options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
+        });
+
+        const uniqueGroupNames = new Set<string>();
+        linksData.forEach(link => {
+            const groupName = extractGroupName(link.group_name);
+            if (groupName && groupName !== "Ingen grupp" && groupName !== "Okänd grupp" && groupName.toUpperCase() !== "NULL") {
+                uniqueGroupNames.add(groupName);
+            }
+        });
+        uniqueGroupNames.forEach(groupName => {
+            options.push({ value: `group_${groupName}`, label: `Grupp: ${groupName}` });
+        });
+
+        return options;
+    }, [linksData]);
+
+    // Apply property filter first
+    const filteredByPropertyLinks = useMemo(() => {
+        if (propertyFilter === "all") {
+            return linksData;
+        }
+        if (propertyFilter === "expires_null") {
+            return linksData.filter(link => link.expires === null);
+        }
+        if (propertyFilter.startsWith("user_")) {
+            const userIdToFilter = propertyFilter.substring(5);
+            return linksData.filter(link => link.user_id === userIdToFilter);
+        }
+        if (propertyFilter.startsWith("group_")) {
+            const groupNameToFilter = propertyFilter.substring(6);
+            return linksData.filter(link => extractGroupName(link.group_name) === groupNameToFilter);
+        }
+        return linksData;
+    }, [linksData, propertyFilter]);
+
+    const sortedLinks = useMemo(() => [...filteredByPropertyLinks].sort((a, b) => {
+        switch (filter) {
+            case "newest-oldest":
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            case "oldest-newest":
+                return new Date(a.date).getTime() - new Date(b.date).getTime();
+            case "clicks-ascending":
+                return a.clicks - b.clicks;
+            case "clicks-descending":
+                return b.clicks - a.clicks;
+            case "slug-a-z":
+                return a.slug.localeCompare(b.slug);
+            case "slug-z-a":
+                return b.slug.localeCompare(a.slug);
+            default:
+                return 0;
+        }
+    }), [filteredByPropertyLinks, filter]); // Added useMemo and dependencies
+
+    const paginatedLinks = useMemo(() => sortedLinks.slice(
+        (activePage - 1) * itemsPerPage,
+        activePage * itemsPerPage
+    ), [sortedLinks, activePage, itemsPerPage]); // Added useMemo and dependencies
+
+    const totalPages = useMemo(() => Math.ceil(sortedLinks.length / itemsPerPage), [sortedLinks, itemsPerPage]); // Added useMemo and dependencies
+
+
+    // Conditional returns are now AFTER all hook calls
+    if (loading) {
+        return (
+            <div id="content">
+                <Text>Laddar länkar...</Text>
+            </div>
+        );
+    }
+    if (error) {
+        return (
+            <>
+                <Header title="Fel" />
+                <div id="content">
+                    <Alert color="red" title="Fel">
+                        {error}
+                    </Alert>
+                </div>
+            </>
+        );
+    }
 
     const handleCopy = (slug: string) => {
         const shortUrl = `${Configuration.backendApiUrl}/${slug}`;
@@ -239,80 +336,50 @@ const Links: React.FC = () => {
     }
 
 
-    if (loading) {
-        return (
-            <div id="content">
-                <Text>Laddar länkar...</Text>
-            </div>
-        );
-    }
-    if (error) {
-        return (
-            <>
-                <Header title="Fel" />
-                <div id="content">
-                    <Alert color="red" title="Fel">
-                        {error}
-                    </Alert>
-                </div>
-            </>
-        );
-    }
-
-    const sortedLinks = [...linksData].sort((a, b) => {
-        switch (filter) {
-            case "newest-oldest":
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-            case "oldest-newest":
-                return new Date(a.date).getTime() - new Date(b.date).getTime();
-            case "clicks-ascending":
-                return a.clicks - b.clicks;
-            case "clicks-descending":
-                return b.clicks - a.clicks;
-            case "slug-a-z":
-                return a.slug.localeCompare(b.slug);
-            case "slug-z-a":
-                return b.slug.localeCompare(a.slug);
-            default:
-                return 0;
-        }
-    });
-
-    const totalPages = Math.ceil(sortedLinks.length / itemsPerPage);
-    const paginatedLinks = sortedLinks.slice(
-        (activePage - 1) * itemsPerPage,
-        activePage * itemsPerPage
-    );
-
     return (
         <>
             <Header title="Länkar - Översikt" />
             <Box id="content" p="md">
-                <Box mb="md" mt="md">
-                    {!hasToken && (
-                        <Alert title="Du är inte inloggad" color="blue" mb="md">
-                            Logga in för att förkorta länkar
-                        </Alert>
-                    )}
-                    <Select
-                        label="Sortera efter"
-                        value={filter}
-                        radius="lg"
-                        onChange={(value) => {
-                            setFilter(value || "newest-oldest");
-                            setActivePage(1);
-                        }}
-                        data={[
-                            { value: "newest-oldest", label: "Nyast först" },
-                            { value: "oldest-newest", label: "Äldst först" },
-                            { value: "clicks-descending", label: "Mest klick (fallande)" },
-                            { value: "clicks-ascending", label: "Minst klick (stigande)" },
-                            { value: "slug-a-z", label: "Slug (A-Ö)" },
-                            { value: "slug-z-a", label: "Slug (Ö-A)" },
-                        ]}
-                    />
-                    <Badge mt="md" size="lg">{sortedLinks.length} resultat</Badge>
-                </Box>
+
+                <Group justify="space-between"> {/* Parent group to space out children */}
+                    <Group wrap="nowrap"> {/* Group for the Select components */}
+                        <Select
+                            value={filter}
+                            label="Sortera"
+                            radius="lg"
+                            comboboxProps={{ transitionProps: { transition: 'fade' } }} // This is vital to prevent that weird animation bug
+                            onChange={(value) => {
+                                setFilter(value || "newest-oldest");
+                                setActivePage(1);
+                            }}
+                            data={[
+                                { value: "newest-oldest", label: "Nyast först" },
+                                { value: "oldest-newest", label: "Äldst först" },
+                                { value: "clicks-descending", label: "Mest klick (fallande)" },
+                                { value: "clicks-ascending", label: "Minst klick (stigande)" },
+                                { value: "slug-a-z", label: "Slug (A-Ö)" },
+                                { value: "slug-z-a", label: "Slug (Ö-A)" },
+                            ]}
+                        />
+
+                        <Select
+                            label="Filtrera"
+                            value={propertyFilter}
+                            comboboxProps={{ transitionProps: { transition: 'fade' } }} // This is vital to prevent that weird animation bug
+                            onChange={(value) => {
+                                setPropertyFilter(value || "all");
+                                setActivePage(1); // Reset pagination when filter changes
+                            }}
+                            data={propertyFilterOptions}
+                            radius="lg"
+                        />
+                    </Group>
+
+                    <Badge size="xl" variant="default" style={{ alignSelf: 'flex-end' }}> {/* Badge aligned to the end of its flex line */}
+                        {sortedLinks.length} resultat
+                    </Badge>
+                </Group>
+
 
                 <Box mb="md" mt="md">
                     <Stack gap="xs">
@@ -345,13 +412,14 @@ const Links: React.FC = () => {
 
                                             <Group justify="flex-start" gap="xs">
                                                 <Tooltip label="Antal klick" withArrow>
-                                                    <Badge leftSection={<IconPointer size={badgeIconSize} />} variant="gradient">
+                                                    <Badge size="lg" leftSection={<IconPointer size={badgeIconSize} />} variant="gradient">
                                                         {link.clicks}
                                                     </Badge>
                                                 </Tooltip>
                                                 {link.user_id && (
                                                     <Tooltip label="Ägare" withArrow>
                                                         <Badge
+                                                            size="lg"
                                                             leftSection={<IconUser size={badgeIconSize} />}
                                                             variant="gradient"
                                                             gradient={{ from: "blue", to: "blue", deg: 0 }}
@@ -363,6 +431,7 @@ const Links: React.FC = () => {
                                                 {extractGroupName(link.group_name) !== "null" && (
                                                     <Tooltip label="Grupp" withArrow>
                                                         <Badge
+                                                            size="lg"
                                                             leftSection={<IconUsersGroup size={badgeIconSize} />}
                                                             variant="gradient"
                                                             gradient={{
