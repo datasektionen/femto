@@ -79,15 +79,15 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     const [error, setError] = useState<ApiError | null>(null);
     const [result, setResult] = useState("");
     const [copied, setCopied] = useState(false);
-    
+
     // Create a ref to the result section
     const resultRef = useRef<HTMLDivElement>(null);
 
     const minDateTimeLocal = () => {
         const now = new Date();
         const pad = (n: number) => n.toString().padStart(2, "0");
-        return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      };
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    };
 
     // Mantine form setup with initial values and validation
     const form = useForm<FormValues>({
@@ -151,27 +151,27 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         }
 
         const expiresUtc = values.hasExpiration
-        ? new Date(values.expire).toISOString()
-        : null;
+            ? new Date(values.expire).toISOString()
+            : null;
 
         // Find the selected group's domain if a group is selected
-        const selectedGroup = values.group ? 
-        userGroups.find(g => g.group_name === values.group) : null;
+        const selectedGroup = values.group ?
+            userGroups.find(g => g.group_name === values.group) : null;
 
-      const data = {
-      slug: values.short || "",
-      url: values.url,
-      user_id: userId,
-      // Convert to UTC before sending to server
-      expires: expiresUtc,
-      group: values.group || null,
-      group_domain: selectedGroup?.group_domain || null,
-      description: "" 
-      };
-  
-    console.log("Submitting link with data:", data);
-    console.log("Local time selected:", values.expire);
-    console.log("Converted to UTC:", data.expires);
+        const data = {
+            slug: values.short || "",
+            url: values.url,
+            user_id: userId,
+            // Convert to UTC before sending to server
+            expires: expiresUtc,
+            group: values.group || null,
+            group_domain: selectedGroup?.group_domain || null,
+            description: ""
+        };
+
+        console.log("Submitting link with data:", data);
+        console.log("Local time selected:", values.expire);
+        console.log("Converted to UTC:", data.expires);
 
         try {
             const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
@@ -254,7 +254,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
     // Render the UI
     return (
-        <Center py="xl">
+        <Center>
             <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
                 <Stack gap="lg">
                     <Title order={2}>{title}</Title>
@@ -271,6 +271,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                         <Stack gap={16}>
                             {/* Input for long URL */}
                             <TextInput
+                                radius="md"
                                 placeholder="https://din-länk.se"
                                 label="Lång länk"
                                 required
@@ -281,6 +282,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Optional short link slug */}
                             {custom && (
                                 <TextInput
+                                    radius="md"
                                     placeholder="Valfri kortlänk"
                                     label="Anpassad kortlänk"
                                     {...form.getInputProps("short")}
@@ -307,6 +309,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Expiration date/time input if enabled */}
                             {form.values.hasExpiration && (
                                 <TextInput
+                                    radius="md"
                                     type="datetime-local"
                                     label="Välj datum och tid"
                                     {...form.getInputProps("expire")}
@@ -322,6 +325,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {/* Group selector - only visible if user has groups */}
                                     {hasGroups && (
                                         <Select
+                                            radius="md"
                                             label="Grupp"
                                             placeholder="Välj en grupp"
                                             value={form.values.group}
@@ -340,6 +344,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
                             {/* Submit button */}
                             <Button
+                                radius="md"
                                 type="submit"
                                 fullWidth
                                 loading={fetching}
@@ -366,7 +371,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {constructShortUrl(result)}
                                 </Anchor>
                                 <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
-                                    <Button variant="light" onClick={handleCopy}>
+                                    <Button variant="light" radius="md" onClick={handleCopy}>
                                         Kopiera länk
                                     </Button>
                                 </Tooltip>

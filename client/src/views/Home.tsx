@@ -1,4 +1,4 @@
-import { Alert } from "@mantine/core";
+import { Alert, Box } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
 import { useEffect } from "react";
@@ -39,7 +39,7 @@ const Home = () => {
     return (
         <>
             <Header title="Länkförkortare" />
-            <div id="content">
+            <Box id="content" p="md">
                 {!hasToken && (
                     <Alert title="Du är inte inloggad" color="blue">
                         Logga in för att förkorta länkar
@@ -69,7 +69,7 @@ const Home = () => {
                     showAdvancedOptions={(groups && groups.length > 0) || canCreateCustomLinks}
 
                 />
-            </div>
+            </Box>
         </>
     );
 };
