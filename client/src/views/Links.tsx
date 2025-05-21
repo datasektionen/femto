@@ -347,7 +347,6 @@ const Links: React.FC = () => {
                             value={filter}
                             label="Sortera"
                             radius="lg"
-                            comboboxProps={{ transitionProps: { transition: 'fade' } }} // This is vital to prevent that weird animation bug
                             onChange={(value) => {
                                 setFilter(value || "newest-oldest");
                                 setActivePage(1);
@@ -365,7 +364,6 @@ const Links: React.FC = () => {
                         <Select
                             label="Filtrera"
                             value={propertyFilter}
-                            comboboxProps={{ transitionProps: { transition: 'fade' } }} // This is vital to prevent that weird animation bug
                             onChange={(value) => {
                                 setPropertyFilter(value || "all");
                                 setActivePage(1); // Reset pagination when filter changes
