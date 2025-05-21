@@ -27,6 +27,7 @@ import {
     IconClipboardCheckFilled,
     IconUser,
     IconUsersGroup,
+    IconPointer,
 } from "@tabler/icons-react"; // Importera ikoner från Tabler Icons
 import { Header } from "methone";
 import axios from "axios";
@@ -203,31 +204,41 @@ const Links: React.FC = () => {
         logo.src = logoSrc; // Start loading the logo image
     };
 
-    function stringToColor(str: string | null | undefined): string {
-        // Handle null or undefined input
+    function stringToHexColor(str: string | null | undefined, brightness = 1): string {
         if (!str) {
             console.warn("Input string is null or undefined. Using default value.");
             str = "default";
         }
 
-        // Ensure we're working with a clean string
         const fullIdentifier = String(str);
-
         let hash = 0;
-        // Use a different hashing algorithm that's more sensitive to string differences
+
         for (let i = 0; i < fullIdentifier.length; i++) {
             const char = fullIdentifier.charCodeAt(i);
             hash = (hash << 5) - hash + char;
-            hash = hash & hash; // Convert to 32bit integer
+            hash |= 0; // Convert to 32bit integer
         }
 
-        // Create more distinct colors with better distribution
-        const r = Math.abs((hash % 200) + 55) & 255; // Range 55-255
-        const g = Math.abs(((hash >> 8) % 200) + 55) & 255;
-        const b = Math.abs(((hash >> 16) % 200) + 55) & 255;
+        // Base RGB components in 55-255 range
+        let r = Math.abs((hash % 200) + 55) & 255;
+        let g = Math.abs(((hash >> 8) % 200) + 55) & 255;
+        let b = Math.abs(((hash >> 16) % 200) + 55) & 255;
 
-        return `rgb(${r}, ${g}, ${b})`;
+        // Brightness adjustment: blend toward white (brightness > 1) or black (brightness < 1)
+        const applyBrightness = (channel: number): number => {
+            if (brightness === 1) return channel;
+            if (brightness > 1) return Math.round(channel + (255 - channel) * (brightness - 1));
+            return Math.round(channel * brightness);
+        };
+
+        r = applyBrightness(r);
+        g = applyBrightness(g);
+        b = applyBrightness(b);
+
+        const toHex = (value: number) => value.toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
+
 
     if (loading) {
         return (
@@ -329,24 +340,37 @@ const Links: React.FC = () => {
                                             >
                                                 <Text truncate>{link.url}</Text>
                                             </a>
+                                            <Tooltip label="Antal klick" withArrow>
+                                                <Badge leftSection={<IconPointer size={badgeIconSize} />} variant="gradient" style={{ flexShrink: 0 }}>
+                                                    {link.clicks}
+                                                </Badge>
+                                            </Tooltip>
                                             {/* Valde blå men kan byta */}
                                             {link.user_id && (
-                                                <Badge leftSection={<IconUser size={badgeIconSize} />} color="blue" variant="light" style={{ flexShrink: 0 }}>
-                                                    {link.user_id}
-                                                </Badge>
+                                                <Tooltip label="Ägare" withArrow>
+                                                    <Badge
+                                                        leftSection={<IconUser size={badgeIconSize} />}
+                                                        variant="gradient"
+                                                        gradient={{ from: "blue", to: "blue", deg: 0 }}
+                                                        style={{ flexShrink: 0 }}
+                                                    >
+                                                        {link.user_id}
+                                                    </Badge>
+                                                </Tooltip>
                                             )}
-                                            <Badge
-                                                leftSection={<IconUsersGroup size={badgeIconSize} />}
-                                                color={(() => {
-                                                    return link.group_name
-                                                        ? stringToColor(link.group_name)
-                                                        : "gray";
-                                                })()}
-                                                variant="light"
-                                                style={{ flexShrink: 0 }}
-                                            >
-                                                {extractGroupName(link.group_name)}
-                                            </Badge>
+                                            {/* Fixade så att gruppnamn inte syns för länkar utan en grupp*/}
+                                            {extractGroupName(link.group_name) !== "null" && (
+                                                <Tooltip label="Grupp" withArrow>
+                                                    <Badge
+                                                        leftSection={<IconUsersGroup size={badgeIconSize} />}
+                                                        variant="gradient"
+                                                        gradient={{ from: stringToHexColor(link.group_name), to: stringToHexColor(link.group_name, 1.4) }}
+                                                        style={{ flexShrink: 0 }}
+                                                    >
+                                                        {extractGroupName(link.group_name)}
+                                                    </Badge>
+                                                </Tooltip>
+                                            )}
                                         </Group>
 
                                         {/* Buttons on the RIGHT */}

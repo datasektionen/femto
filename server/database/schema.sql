@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS urls (
     user_id VARCHAR(255),
     expires TIMESTAMPTZ DEFAULT NULL,     -- UTC timestamp
     description TEXT,
-    group_name VARCHAR(255)
+    group_name VARCHAR(255),
+    clicks BIGINT DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS url_clicks (
@@ -22,6 +23,23 @@ CREATE TABLE IF NOT EXISTS url_clicks (
     --ip_address INET,      
     --user_agent TEXT       
 );
+
+-- Function to increment clicks in the urls table
+CREATE OR REPLACE FUNCTION increment_url_clicks()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE urls
+    SET clicks = clicks + 1
+    WHERE id = NEW.url_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to call the function after insert on url_clicks
+CREATE TRIGGER url_click_insert_trigger
+AFTER INSERT ON url_clicks
+FOR EACH ROW
+EXECUTE FUNCTION increment_url_clicks();
 
 CREATE TABLE IF NOT EXISTS blockedurls (
     url varchar(255) PRIMARY KEY

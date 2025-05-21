@@ -18,6 +18,8 @@ app.use("/", redirectRouter); // General/catch-all routes last
 
 app.listen(PORT, () => {
     console.log(`✅ Server is running on port ${PORT} 🚀`);
+
+    console.log(`💻 Client URL: ${process.env.CLIENT_URL}`);
     
     // Delay starting the cleanup service to give the DB time to start
     console.log('⏱️ Waiting for database to start up...');
