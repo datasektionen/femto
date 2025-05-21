@@ -11,6 +11,8 @@ import {
     Badge,
     Box,
     Stack,
+    Loader,
+    Center,
     Card,
     Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter
@@ -209,20 +211,27 @@ const Links: React.FC = () => {
     // Conditional returns are now AFTER all hook calls
     if (loading) {
         return (
-            <div id="content">
-                <Text>Laddar länkar...</Text>
-            </div>
+            <>
+                <Header title="Länkar - Översikt" />
+                <Box id="content" p="md">
+                    <Stack align="center" justify="center" style={{ height: "50vh" }}>
+                        <Loader size="lg" />
+                        <Text c="dimmed" >Laddar länkar...</Text>
+                    </Stack>
+                </Box>
+            </>
         );
     }
+
     if (error) {
         return (
             <>
                 <Header title="Fel" />
-                <div id="content">
+                <Box id="content" p="md">
                     <Alert color="red" title="Fel">
                         {error}
                     </Alert>
-                </div>
+                </Box>
             </>
         );
     }
