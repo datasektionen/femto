@@ -12,7 +12,6 @@ import {
     Box,
     Stack,
     Loader,
-    Center,
     Card,
     Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter

@@ -271,6 +271,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                         <Stack gap={16}>
                             {/* Input for long URL */}
                             <TextInput
+                                radius="md"
                                 placeholder="https://din-länk.se"
                                 label="Lång länk"
                                 required
@@ -281,6 +282,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Optional short link slug */}
                             {custom && (
                                 <TextInput
+                                    radius="md"
                                     placeholder="Valfri kortlänk"
                                     label="Anpassad kortlänk"
                                     {...form.getInputProps("short")}
@@ -307,6 +309,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Expiration date/time input if enabled */}
                             {form.values.hasExpiration && (
                                 <TextInput
+                                    radius="md"
                                     type="datetime-local"
                                     label="Välj datum och tid"
                                     {...form.getInputProps("expire")}
@@ -322,6 +325,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {/* Group selector - only visible if user has groups */}
                                     {hasGroups && (
                                         <Select
+                                            radius="md"
                                             label="Grupp"
                                             placeholder="Välj en grupp"
                                             value={form.values.group}
@@ -340,6 +344,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
                             {/* Submit button */}
                             <Button
+                                radius="md"
                                 type="submit"
                                 fullWidth
                                 loading={fetching}
@@ -366,7 +371,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                     {constructShortUrl(result)}
                                 </Anchor>
                                 <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
-                                    <Button variant="light" onClick={handleCopy}>
+                                    <Button variant="light" radius="md" onClick={handleCopy}>
                                         Kopiera länk
                                     </Button>
                                 </Tooltip>
