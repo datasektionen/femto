@@ -12,7 +12,15 @@ import pool from "../db";
 * @async
 */
 export async function isBlacklistedDB(link: string): Promise<boolean> {
-   const host = new URL(link).host;
+   let host;
+   try {
+       host = new URL(link).host;
+   } catch (err: any) {
+       // If the link is not a valid URL, it cannot be processed further.
+       // Log the error and treat it as not blacklisted.
+       console.error(`Invalid URL format: ${link}`, err);
+       return false; 
+   }
    const linkVariants = [host, `www.${host}`, host.replace(/www[.]/, "")];
 
    let client;
