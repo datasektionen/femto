@@ -8,7 +8,6 @@ import {
     Pagination,
     Text,
     Group,
-    Container,
     Badge,
     Box,
     Stack,
@@ -288,7 +287,7 @@ const Links: React.FC = () => {
     return (
         <>
             <Header title="Länkar - Översikt" />
-            <Container>
+            <Box id="content" p="md">
                 <Box mb="md" mt="md">
                     {!hasToken && (
                         <Alert title="Du är inte inloggad" color="blue" mb="md">
@@ -312,6 +311,7 @@ const Links: React.FC = () => {
                             { value: "slug-z-a", label: "Slug (Ö-A)" },
                         ]}
                     />
+                    <Badge mt="md" size="lg">{sortedLinks.length} resultat</Badge>
                 </Box>
 
                 <Box mb="md" mt="md">
@@ -319,71 +319,73 @@ const Links: React.FC = () => {
                         {paginatedLinks.length > 0 ? (
                             paginatedLinks.map((link) => (
                                 <Card key={link.id} withBorder radius="lg" shadow="sm">
-                                    <Group
-                                        style={{ display: "flex", justifyContent: "space-between" }}
-                                        wrap="nowrap" // Ensure items stay on one line
-                                    >
-                                        {/* Text (Slug, URL) on the LEFT */}
-                                        {/* Apply flex: 1 and minWidth: 0 here */}
-                                        <Group gap="sm" justify="flex-start" style={{ flex: 1, minWidth: 0 }} wrap="nowrap">
-                                            <Text fw={500}>{link.slug}</Text>
-                                            <a
-                                                href={link.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                title={link.url}
-                                                style={{
-                                                    textDecoration: 'none',
-                                                    color: 'inherit',
-                                                    overflow: 'hidden', // Added to assist truncation within the link
-                                                }}
-                                            >
-                                                <Text truncate>{link.url}</Text>
-                                            </a>
-                                            <Tooltip label="Antal klick" withArrow>
-                                                <Badge leftSection={<IconPointer size={badgeIconSize} />} variant="gradient" style={{ flexShrink: 0 }}>
-                                                    {link.clicks}
-                                                </Badge>
-                                            </Tooltip>
-                                            {/* Valde blå men kan byta */}
-                                            {link.user_id && (
-                                                <Tooltip label="Ägare" withArrow>
-                                                    <Badge
-                                                        leftSection={<IconUser size={badgeIconSize} />}
-                                                        variant="gradient"
-                                                        gradient={{ from: "blue", to: "blue", deg: 0 }}
-                                                        style={{ flexShrink: 0 }}
-                                                    >
-                                                        {link.user_id}
+                                    <Group justify="space-between" align="center" wrap="wrap">
+                                        {/* LEFT: Text and Badges */}
+                                        <Group gap="sm" align="center" wrap="wrap">
+                                            <Group gap="sm" justify="flex-start" style={{ minWidth: 0, flexShrink: 1 }}>
+                                                <Text fw={500} style={{ whiteSpace: 'nowrap' }}>{link.slug}</Text>
+                                                <a
+                                                    href={link.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title={link.url}
+                                                    style={{
+                                                        textDecoration: 'none',
+                                                        color: 'inherit',
+                                                        minWidth: 0,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        maxWidth: '250px', // Optional: you can tweak this based on layout
+                                                    }}
+                                                >
+                                                    <Text truncate>{link.url}</Text>
+                                                </a>
+                                            </Group>
+
+                                            <Group justify="flex-start" gap="xs">
+                                                <Tooltip label="Antal klick" withArrow>
+                                                    <Badge leftSection={<IconPointer size={badgeIconSize} />} variant="gradient">
+                                                        {link.clicks}
                                                     </Badge>
                                                 </Tooltip>
-                                            )}
-                                            {/* Fixade så att gruppnamn inte syns för länkar utan en grupp*/}
-                                            {extractGroupName(link.group_name) !== "null" && (
-                                                <Tooltip label="Grupp" withArrow>
-                                                    <Badge
-                                                        leftSection={<IconUsersGroup size={badgeIconSize} />}
-                                                        variant="gradient"
-                                                        gradient={{ from: stringToHexColor(link.group_name), to: stringToHexColor(link.group_name, 1.4) }}
-                                                        style={{ flexShrink: 0 }}
-                                                    >
-                                                        {extractGroupName(link.group_name)}
-                                                    </Badge>
-                                                </Tooltip>
-                                            )}
+                                                {link.user_id && (
+                                                    <Tooltip label="Ägare" withArrow>
+                                                        <Badge
+                                                            leftSection={<IconUser size={badgeIconSize} />}
+                                                            variant="gradient"
+                                                            gradient={{ from: "blue", to: "blue", deg: 0 }}
+                                                        >
+                                                            {link.user_id}
+                                                        </Badge>
+                                                    </Tooltip>
+                                                )}
+                                                {extractGroupName(link.group_name) !== "null" && (
+                                                    <Tooltip label="Grupp" withArrow>
+                                                        <Badge
+                                                            leftSection={<IconUsersGroup size={badgeIconSize} />}
+                                                            variant="gradient"
+                                                            gradient={{
+                                                                from: stringToHexColor(link.group_name),
+                                                                to: stringToHexColor(link.group_name, 1.4),
+                                                            }}
+                                                        >
+                                                            {extractGroupName(link.group_name)}
+                                                        </Badge>
+                                                    </Tooltip>
+                                                )}
+                                            </Group>
                                         </Group>
 
-                                        {/* Buttons on the RIGHT */}
-                                        <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }}> {/* Prevent buttons from shrinking */}
+                                        {/* RIGHT: Buttons */}
+                                        <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }}>
                                             <Tooltip label="Se detaljer" withArrow>
                                                 <Button
                                                     size="sm"
                                                     variant="filled"
                                                     radius="md"
                                                     onClick={() => handleShowDetails(link.slug)}
-                                                    onMouseEnter={() =>
-                                                        setHoveredDetailsLinkSlug(link.slug)
-                                                    }
+                                                    onMouseEnter={() => setHoveredDetailsLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredDetailsLinkSlug(null)}
                                                 >
                                                     {hoveredDetailsLinkSlug === link.slug ? (
@@ -432,9 +434,7 @@ const Links: React.FC = () => {
                                                     color="red"
                                                     radius="md"
                                                     onClick={() => handleRemove(link.slug)}
-                                                    onMouseEnter={() =>
-                                                        setHoveredRemoveLinkSlug(link.slug)
-                                                    }
+                                                    onMouseEnter={() => setHoveredRemoveLinkSlug(link.slug)}
                                                     onMouseLeave={() => setHoveredRemoveLinkSlug(null)}
                                                 >
                                                     {hoveredRemoveLinkSlug === link.slug ? (
@@ -468,7 +468,7 @@ const Links: React.FC = () => {
                         />
                     )}
                 </Box>
-            </Container>
+            </Box>
         </>
     );
 };
