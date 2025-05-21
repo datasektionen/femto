@@ -212,7 +212,7 @@ const Links: React.FC = () => {
     if (loading) {
         return (
             <>
-                <Header title="Länkar - Översikt" />
+                <Header title="Länkar - Laddar..." />
                 <Box id="content" p="md">
                     <Stack align="center" justify="center" style={{ height: "50vh" }}>
                         <Loader size="lg" />

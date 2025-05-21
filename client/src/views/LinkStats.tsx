@@ -11,6 +11,7 @@ import {
     Group,
     Title,
     TextInput,
+    Stack,
     Box,
     Divider,
     Grid,
@@ -535,17 +536,15 @@ const LinkStats: React.FC = () => {
     // --- Conditional Rendering for Loading/Error States ---
     if (loadingDetails) {
         return (
-            <Box
-                id="content"
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    minHeight: 300,
-                }}
-            >
-                <Loader />
-            </Box>
+            <>
+                <Header title="Detaljer - Laddar..." />
+                <Box id="content" p="md">
+                    <Stack align="center" justify="center" style={{ height: "50vh" }}>
+                        <Loader size="lg" />
+                        <Text c="dimmed" >Laddar länk...</Text>
+                    </Stack>
+                </Box>
+            </>
         );
     }
 
