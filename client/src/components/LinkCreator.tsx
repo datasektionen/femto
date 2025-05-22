@@ -270,7 +270,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {/* Input for long URL */}
                             <TextInput
                                 radius="md"
-                                placeholder="https://länk-som-du-vill-förkorta.se/lång-sökväg"
+                                placeholder="https://länk-som-du-vill-förkorta.se/jätte-lång-sökväg"
                                 label="Lång länk"
                                 required
                                 {...form.getInputProps("url")}
@@ -281,11 +281,34 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {custom && (
                                 <TextInput
                                     radius="md"
-                                    placeholder="Specifiera sökväg (valfritt)"
+                                    placeholder="Specifiera egen sökväg (valfritt)"
                                     label="Anpassad sökväg"
                                     {...form.getInputProps("short")}
                                     disabled={fetching || disabled}
                                 />
+                            )}
+
+                            {/* Advanced options section - only visible with permissions */}
+                            {showAdvancedOptions && (
+                                <>
+                                    {/* Group selector - only visible if user has groups */}
+                                    {hasGroups && (
+                                        <Select
+                                            radius="md"
+                                            label="Grupp"
+                                            placeholder="Tilldela länk till en grupp (valfritt)"
+                                            value={form.values.group}
+                                            onChange={(value) => form.setFieldValue('group', value)}
+                                            data={
+                                                userGroups.map(group => ({
+                                                    value: `${group.group_name}@${group.group_domain}`, // Full identifier as value
+                                                    label: group.group_name // Just the name part as display label
+                                                }))
+                                            }
+                                            clearable
+                                        />
+                                    )}
+                                </>
                             )}
 
                             {/* Optional expiration toggle */}
@@ -317,29 +340,6 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                 />
                             )}
 
-                            {/* Advanced options section - only visible with permissions */}
-                            {showAdvancedOptions && (
-                                <>
-                                    {/* Group selector - only visible if user has groups */}
-                                    {hasGroups && (
-                                        <Select
-                                            radius="md"
-                                            label="Grupp"
-                                            placeholder="Tilldela länk till en grupp (valfritt)"
-                                            value={form.values.group}
-                                            onChange={(value) => form.setFieldValue('group', value)}
-                                            data={
-                                                userGroups.map(group => ({
-                                                    value: `${group.group_name}@${group.group_domain}`, // Full identifier as value
-                                                    label: group.group_name // Just the name part as display label
-                                                }))
-                                            }
-                                            clearable
-                                        />
-                                    )}
-                                </>
-                            )}
-
                             {/* Submit Button */}
                             <Button
                                 radius="md"
@@ -348,11 +348,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                 loading={fetching}
                                 disabled={!form.values.url || fetching || disabled}
                             >
-
                                 {form.values.short
                                     ? `Förkorta länk - ${constructShortUrlWithoutProtocol(form.values.short)}`
                                     : `Förkorta länk - ${constructShortUrlWithoutProtocol("[automatisk sökväg]")}`}
-
                             </Button>
                         </Stack>
                     </form>
