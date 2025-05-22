@@ -13,6 +13,7 @@ import {
     Stack,
     Loader,
     Card,
+    Anchor,
     Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter
 import {
@@ -364,8 +365,8 @@ const Links: React.FC = () => {
                                 { value: "oldest-newest", label: "Äldst först" },
                                 { value: "clicks-descending", label: "Mest klick (fallande)" },
                                 { value: "clicks-ascending", label: "Minst klick (stigande)" },
-                                { value: "slug-a-z", label: "Slug (A-Ö)" },
-                                { value: "slug-z-a", label: "Slug (Ö-A)" },
+                                { value: "slug-a-z", label: "Sökväg (A-Ö)" },
+                                { value: "slug-z-a", label: "Sökväg (Ö-A)" },
                             ]}
                         />
 
@@ -396,24 +397,22 @@ const Links: React.FC = () => {
                                         {/* LEFT: Text and Badges */}
                                         <Group gap="sm" align="center" wrap="wrap">
                                             <Group gap="sm" justify="flex-start" style={{ minWidth: 0, flexShrink: 1 }}>
-                                                <Text fw={500} style={{ whiteSpace: 'nowrap' }}>{link.slug}</Text>
-                                                <a
-                                                    href={link.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    title={link.url}
-                                                    style={{
-                                                        textDecoration: 'none',
-                                                        color: 'inherit',
-                                                        minWidth: 0,
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                        maxWidth: '250px', // Optional: you can tweak this based on layout
-                                                    }}
-                                                >
-                                                    <Text truncate>{link.url}</Text>
-                                                </a>
+                                                <Tooltip label="Sökväg" withArrow>
+                                                    <Text fw={1000} style={{ whiteSpace: 'nowrap' }}>
+                                                        {link.slug}
+                                                    </Text>
+                                                </Tooltip>
+                                                <Tooltip label="Långlänk" withArrow>
+                                                    <Anchor
+                                                        href={link.url}
+                                                        target="_blank" // Open in new tab
+                                                        rel="noopener noreferrer"
+                                                        title={link.url}
+                                                        style={{ maxWidth: 250 }} // Limit width for long URLs
+                                                    >
+                                                        <Text truncate>{link.url}</Text>
+                                                    </Anchor>
+                                                </Tooltip>
                                             </Group>
 
                                             <Group justify="flex-start" gap="xs">
