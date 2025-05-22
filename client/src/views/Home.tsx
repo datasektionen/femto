@@ -47,23 +47,7 @@ const Home = () => {
                 )}
                 {/* LinkCreator Component */}
                 <LinkCreator
-                    title="Förkorta en länk"
                     disabled={!hasToken}
-                    desc={
-                        <>
-                            <p>Välkommen till datasektionens länkförkortare!</p>
-                            <h3>Hur man gör:</h3>
-                            <ol>
-                                <li>Klistra in en lång länk i fältet nedan.</li>
-                                {canCreateCustomLinks && (
-                                    <li>Specifiera en egen kort länk (valfritt).</li>
-                                )}
-                                <li>Bestäm ett utgångsdatum för den förkortade länken (valfritt).</li>
-                                <li>Tilldela länken en grupp (valfritt).</li>
-                                <li>Klicka på knappen för att förkorta länken.</li>
-                            </ol>
-                        </>
-                    }
                     custom={canCreateCustomLinks} // Only show custom field if user has permission
                     userGroups={userGroups || []}
                     showAdvancedOptions={(groups && groups.length > 0) || canCreateCustomLinks}

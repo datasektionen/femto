@@ -3,7 +3,6 @@ import {
     Card,
     Button,
     Title,
-    Text,
     TextInput,
     Alert,
     Radio,
@@ -28,6 +27,9 @@ import { useAuth } from "../autherization/useAuth.ts";
 
 // Utility to construct a full short URL using the backend URL
 const constructShortUrl = (slug: string) => `${Configuration.backendApiUrl}/${slug}`;
+
+// Utility to construct a short URL for display purposes
+const constructShortUrlWithoutProtocol = (slug: string) => constructShortUrl(slug).replace(/https?:\/\//, '');
 
 // Copies the constructed short URL to the clipboard
 const copyShortUrlToClipboard = (slug: string) => navigator.clipboard.writeText(`${Configuration.backendApiUrl}/${slug}`);
@@ -63,8 +65,6 @@ interface LinkCreatorProps {
 
 // Main component
 const LinkCreator: React.FC<LinkCreatorProps> = ({
-    title = "Förkorta en länk",
-    desc = "Klistra in en länk för att förkorta den.",
     custom = true,
     disabled = false,
     userGroups = [],
@@ -257,9 +257,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         <Center>
             <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
                 <Stack gap="lg">
-                    <Title order={2}>{title}</Title>
-
-                    <Text>{desc}</Text>
+                    <Title order={2}>Förkorta en länk</Title>
 
                     {error && (
                         <Alert color="red" title={error.title} withCloseButton onClose={() => setError(null)}>
@@ -268,11 +266,11 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                     )}
 
                     <form onSubmit={form.onSubmit(submit)}>
-                        <Stack gap={16}>
+                        <Stack>
                             {/* Input for long URL */}
                             <TextInput
                                 radius="md"
-                                placeholder="https://din-länk.se"
+                                placeholder="https://länk-som-du-vill-förkorta.se/lång-sökväg"
                                 label="Lång länk"
                                 required
                                 {...form.getInputProps("url")}
@@ -283,8 +281,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                             {custom && (
                                 <TextInput
                                     radius="md"
-                                    placeholder="Valfri kortlänk"
-                                    label="Anpassad kortlänk"
+                                    placeholder="Specifiera sökväg (valfritt)"
+                                    label="Anpassad sökväg"
                                     {...form.getInputProps("short")}
                                     disabled={fetching || disabled}
                                 />
@@ -292,7 +290,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
                             {/* Optional expiration toggle */}
                             <RadioGroup
-                                label="Utgångsdatum (valfritt)"
+                                label="Utgångsdatum"
                                 value={form.values.hasExpiration ? "yes" : "no"}
                                 onChange={(value) => {
                                     form.setFieldValue('hasExpiration', value === 'yes');
@@ -327,7 +325,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                         <Select
                                             radius="md"
                                             label="Grupp"
-                                            placeholder="Välj en grupp"
+                                            placeholder="Tilldela länk till en grupp (valfritt)"
                                             value={form.values.group}
                                             onChange={(value) => form.setFieldValue('group', value)}
                                             data={
@@ -342,7 +340,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                 </>
                             )}
 
-                            {/* Submit button */}
+                            {/* Submit Button */}
                             <Button
                                 radius="md"
                                 type="submit"
@@ -350,7 +348,11 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
                                 loading={fetching}
                                 disabled={!form.values.url || fetching || disabled}
                             >
-                                Förkorta länk
+
+                                {form.values.short
+                                    ? `Förkorta länk - ${constructShortUrlWithoutProtocol(form.values.short)}`
+                                    : `Förkorta länk - ${constructShortUrlWithoutProtocol("[automatisk sökväg]")}`}
+
                             </Button>
                         </Stack>
                     </form>
