@@ -41,7 +41,6 @@ interface FormValues {
     expire: string;         // This will hold the actual date
     hasExpiration: boolean; // New toggle field
     group: string | null;
-    group_domain: string | null;
 }
 
 interface ApiError {
@@ -61,6 +60,22 @@ interface LinkCreatorProps {
         tag_content: string;
     }[];
     showAdvancedOptions?: boolean;
+}
+
+// Function to extract just the group name from "group_name@group_domain" format
+function extractGroupName(groupWithDomain: string | null): string {
+    if (!groupWithDomain) return "Ingen grupp";
+
+    const parts = groupWithDomain.split("@");
+    return parts[0] || "Okänd grupp";
+}
+
+// Function to extract just the group domain from "group_name@group_domain" format
+function extractGroupDomain(groupWithDomain: string | null): string {
+    if (!groupWithDomain) return "Ingen grupp";
+
+    const parts = groupWithDomain.split("@");
+    return parts[1] || "Okänd domän";
 }
 
 // Main component
@@ -97,7 +112,6 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             expire: "",
             hasExpiration: false, // New field
             group: null,
-            group_domain: null,
         },
         validate: {
             url: (value) =>
@@ -154,18 +168,14 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             ? new Date(values.expire).toISOString()
             : null;
 
-        // Find the selected group's domain if a group is selected
-        const selectedGroup = values.group ?
-            userGroups.find(g => g.group_name === values.group) : null;
-
         const data = {
             slug: values.short || "",
             url: values.url,
             user_id: userId,
             // Convert to UTC before sending to server
             expires: expiresUtc,
-            group: values.group || null,
-            group_domain: selectedGroup?.group_domain || null,
+            group: values.group ? extractGroupName(values.group) : null,
+            group_domain: values.group ? extractGroupDomain(values.group) : null,
             description: ""
         };
 
