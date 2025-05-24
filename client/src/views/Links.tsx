@@ -33,7 +33,7 @@ import {
 import { Header } from "methone";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
+import { useAuth } from "../authorization/useAuth.ts"; // Import your authentication hook
 import Configuration from "../configuration.ts";
 import { toCanvas } from "qrcode";
 
@@ -249,7 +249,7 @@ const Links: React.FC = () => {
     };
 
     const handleShowDetails = (slug: string) => {
-        navigate(`/links/${slug}/stats`);
+        navigate(`/links/${slug}/details`);
     };
 
     const handleRemove = (slug: string) => {
@@ -344,7 +344,6 @@ const Links: React.FC = () => {
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
 
-
     return (
         <>
             <Header title="Länkar - Översikt" />
@@ -398,9 +397,9 @@ const Links: React.FC = () => {
                                         <Group gap="sm" align="center" wrap="wrap">
                                             <Group gap="sm" justify="flex-start" style={{ minWidth: 0, flexShrink: 1 }}>
                                                 <Tooltip label="Sökväg" withArrow>
-                                                    <Text fw={1000} style={{ whiteSpace: 'nowrap' }}>
+                                                    <Anchor onClick={() => handleShowDetails(link.slug)} fw={1000} style={{ whiteSpace: 'nowrap' }}>
                                                         {link.slug}
-                                                    </Text>
+                                                    </Anchor>
                                                 </Tooltip>
                                                 <Tooltip label="Långlänk" withArrow>
                                                     <Anchor

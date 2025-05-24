@@ -3,14 +3,14 @@ import Methone /*, { Header } */ from "methone"; // Import Methone (Header is op
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
-import LinkStats from "./views/LinkStats.tsx";
-import { AuthProvider } from "./autherization/AuthContext.tsx";
-import { useAuth } from "./autherization/useAuth.ts";
+import { AuthProvider } from "./authorization/AuthContext.tsx";
+import { useAuth } from "./authorization/useAuth.ts";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
 import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
 import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
+import LinkDetails from "./views/LinkDetails.tsx";
 
 // This component renders the main application content, including Methone bar and routes
 const AppContent = () => {
@@ -71,7 +71,7 @@ const AppContent = () => {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/links/:id/stats" element={<ProtectedRoute><LinkStats /></ProtectedRoute>} />
+                <Route path="/links/:id/details" element={<ProtectedRoute><LinkDetails /></ProtectedRoute>} />
                 <Route path="/auth/oidc-callback" element={<OIDCCallback />} />
             </Routes>
         </div>

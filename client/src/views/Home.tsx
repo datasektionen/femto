@@ -2,7 +2,7 @@ import { Alert, Box } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
 import { useEffect } from "react";
-import { useAuth } from "../autherization/useAuth.ts";
+import { useAuth } from "../authorization/useAuth.ts";
 
 /**
  * Homepage for Femto, using placeholder functions (not yet implemeted) 
