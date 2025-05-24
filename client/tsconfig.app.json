@@ -22,10 +22,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"],
-  "exclude": [
-    // Add this line to exclude the specific file
-    "src/components/QRCodeGenerator.tsx"
-    // ... other excluded paths like node_modules if not already excluded ...
-  ]
+  "include": ["src"]
 }
