@@ -52,9 +52,7 @@ const AppContent = () => {
                 <Route
                     path="/blacklist"
                     element={
-                        !hasToken ? (
-                            <Navigate to="/login" replace />
-                        ) : manageLinks ? (
+                        manageLinks ? (
                             <Blacklist />
                         ) : (
                             <Navigate to="/" replace /> // Redirect to home if logged in but no manageLinks permission
