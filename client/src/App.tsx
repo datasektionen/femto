@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes, Link, Navigate } from "react-router-dom";
-import Methone /*, { Header } */ from "methone"; // Import Methone (Header is optional)
+import Methone from "methone"; // Import Methone (Header is optional)
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
