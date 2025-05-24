@@ -118,8 +118,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         },
         validate: {
             url: (value) =>
-                urlRegex.test(value) ? null : "Invalid URL. Should include http:// or https://",
-            short: (value) => slugRegex.test(value) ? null : "Invalid slug. Only lowercase letters, numbers, and hyphens are allowed.",
+                urlRegex.test(value) ? null : "Ogiltig URL. Ska inkludera http:// eller https://",
+            short: (value) => slugRegex.test(value) ? null : "Ogiltig sökväg. Endast små bokstäver, siffror och bindestreck är tillåtna.",
             expire: (value, values) => {
                 // Validate date only if expiration is enabled
                 if (values.hasExpiration) {
@@ -149,8 +149,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         // If token doesn't exist, show error
         if (!token) {
             setError({
-                title: "Authentication Error",
-                message: "You must be logged in to create links."
+                title: "Autentiseringsfel",
+                message: "Du måste vara inloggad för att skapa länkar."
             });
             setFetching(false);
             return;
@@ -161,8 +161,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
 
         if (!userId) {
             setError({
-                title: "Authentication Error",
-                message: "Could not determine user ID. Please try logging in again."
+                title: "Autentiseringsfel",
+                message: "Kunde inte hitta användar-ID. Vänligen försök logga in igen."
             });
             setFetching(false);
             return;
@@ -243,7 +243,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         } catch (err: any) {
             console.error("❌ Error inserting link 📁", err.stack);
             if (!error) {
-                setError({ title: "Error", message: "Internal Server Error" });
+                setError({ title: "Fel", message: "Internt serverfel" });
             }
         } finally {
             setFetching(false);
