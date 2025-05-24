@@ -105,7 +105,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     };
 
     const urlRegex: RegExp = /^https?:\/\/.*$/;
-    const slugRegex: RegExp = /^[a-z0-9-]+$/;
+    const slugRegex: RegExp = /^[a-z0-9-]*$/; // Allow lowercase letters, numbers, and hyphens only
 
     // Mantine form setup with initial values and validation
     const form = useForm<FormValues>({
