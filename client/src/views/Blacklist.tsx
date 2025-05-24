@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Configuration from "../configuration";
-import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
+import { useAuth } from "../authorization/useAuth"; // Import your authentication hook
 import { useNavigate } from "react-router-dom"; // Import navigate for redirection
 import {
     Button,

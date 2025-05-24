@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../autherization/useAuth.ts";
-import { loginWithCode } from "../../autherization/authApi.ts";
+import { useAuth } from "../../authorization/useAuth.ts";
+import { loginWithCode } from "../../authorization/authApi.ts";
 import { Center, Loader } from "@mantine/core";
 
 export const OIDCCallback = () => {

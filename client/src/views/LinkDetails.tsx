@@ -39,7 +39,7 @@ import {
 } from "recharts";
 import Configuration from "../configuration.ts";
 import { useForm } from "@mantine/form";
-import { useAuth } from "../autherization/useAuth.ts";
+import { useAuth } from "../authorization/useAuth.ts";
 import { QRCode } from "react-qrcode-logo";
 
 /**
@@ -240,10 +240,10 @@ const toLocalISOString = (dateInput: string | Date | null): string => {
 // --- Component ---
 
 /**
- * `LinkStats` component displays detailed statistics and allows editing for a specific short link.
+ * `LinkDetails` component displays detailed statistics and allows editing for a specific short link.
  * It fetches link details, time-series click data, and language-based click data.
  */
-const LinkStats: React.FC = () => {
+const LinkDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>(); // Get link 'id' (slug) from URL
     const navigate = useNavigate();
 
@@ -973,4 +973,4 @@ const LinkStats: React.FC = () => {
     );
 };
 
-export default LinkStats;
+export default LinkDetails;

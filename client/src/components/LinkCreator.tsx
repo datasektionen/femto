@@ -21,7 +21,7 @@ import { QRCode } from "react-qrcode-logo";
 import '@mantine/core/styles.css';
 import Configuration from "../configuration.ts";
 import type { ReactNode } from 'react';
-import { useAuth } from "../autherization/useAuth.ts";
+import { useAuth } from "../authorization/useAuth.ts";
 
 
 
