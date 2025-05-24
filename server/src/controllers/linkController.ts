@@ -2,10 +2,7 @@ import { raw, Request, Response } from "express";
 import pool from "../db";
 import { isBlacklistedDB } from "./blacklistController";
 
-interface PermissionObject {
-    id: string;
-    scope: string | null;
-}
+const slugRegex: RegExp = /^[a-z0-9-]+$/; // Regex to validate slugs (lowercase alphanumeric and hyphens)
 
 /**
  * Generates a short link, either using a provided slug or generating a new one.
@@ -46,6 +43,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
     console.log(`🔍 Processing link creation for user: ${userId || "unknown"}`);
 
+
     if (!userId) {
         console.error("❌ User ID not found in token");
         res.status(400).json({ error: "User ID not found in token" });
@@ -73,6 +71,13 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             res
                 .status(403)
                 .json({ error: "You don't have permission to create custom slugs" });
+            return;
+        }
+
+        // Validate the slug format
+        if (!slugRegex.test(slug)) {
+            console.error("❌ Invalid slug format");
+            res.status(400).json({ error: "Invalid slug format" });
             return;
         }
     }

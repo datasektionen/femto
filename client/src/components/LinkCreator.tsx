@@ -104,6 +104,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
     };
 
+    const urlRegex: RegExp = /^https?:\/\/.*$/;
+    const slugRegex: RegExp = /^[a-z0-9-]+$/;
+
     // Mantine form setup with initial values and validation
     const form = useForm<FormValues>({
         initialValues: {
@@ -115,7 +118,8 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
         },
         validate: {
             url: (value) =>
-                /^https?:\/\/.*$/.test(value) ? null : "Invalid URL. Should include http:// or https://",
+                urlRegex.test(value) ? null : "Invalid URL. Should include http:// or https://",
+            short: (value) => slugRegex.test(value) ? null : "Invalid slug. Only lowercase letters, numbers, and hyphens are allowed.",
             expire: (value, values) => {
                 // Validate date only if expiration is enabled
                 if (values.hasExpiration) {
@@ -203,21 +207,32 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             }
 
             if (!response.ok) {
-                if (response.status === 403) {
-                    setError({
-                        title: "Förbjuden länk",
-                        message: resData.error || resData.message || "Denna länk är blacklistad",
-                    });
-                    return;
+                switch (response.status) {
+                    case 400:
+                        setError({
+                            title: "Ogiltig länk",
+                            message: resData.error || resData.message || "Länken är ogiltig eller saknar nödvändig information.",
+                        });
+                        break;
+
+                    case 403:
+                        setError({
+                            title: "Förbjuden länk",
+                            message: resData.error || resData.message || "Denna länk är förbjuden",
+                        });
+                        break;
+
+                    case 409:
+                        setError({
+                            title: "Redan tagen",
+                            message: resData.error || resData.message || "Denna slug är redan tagen.",
+                        });
+                        break;
+
+                    default:
+                        throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
                 }
-                if (response.status === 409) {
-                    setError({
-                        title: "Redan tagen",
-                        message: resData.error || resData.message || "Denna slug är redan tagen.",
-                    });
-                    return;
-                }
-                throw new Error(resData.message || `HTTP error! Status: ${response.status}`);
+                return;
             }
 
             const slug = resData.slug || resData.short || resData.url;
