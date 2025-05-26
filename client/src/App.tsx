@@ -14,7 +14,7 @@ import LinkDetails from "./views/LinkDetails.tsx";
 
 // This component renders the main application content, including Methone bar and routes
 const AppContent = () => {
-    const { hasToken } = useAuth(); // Get authentication status
+    const { hasToken, manageBlacklist } = useAuth(); // Get authentication status
 
     // Define the configuration for Methone, as per the documentation
     const config = {
@@ -27,8 +27,8 @@ const AppContent = () => {
             <Link to="/shorten" key="methone-link-1">Förkorta</Link>,
             // Conditionally add "Länkar" link if user is authenticated
             ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>] : []),
-            // Conditionally add "Svartlista" link if user is authenticated and has manageLinks permission
-            ...(hasToken && true ? [<Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
+            // Conditionally add "Svartlista" link if user is authenticated and has manageBlacklist permission
+            ...(hasToken && manageBlacklist ? [<Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
         ],
     };
 

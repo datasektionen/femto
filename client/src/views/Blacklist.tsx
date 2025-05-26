@@ -55,16 +55,16 @@ const BlacklistUploadPage: React.FC = () => {
     const [uploading, setUploading] = useState<boolean>(false);
     const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { hasToken } = useAuth();
+    const { hasToken, manageBlacklist } = useAuth();
     const navigate = useNavigate();
     const iconSize = 18;
 
     // Redirect to login if not authenticated
     React.useEffect(() => {
-        if (!hasToken) {
+        if (!hasToken || !manageBlacklist) {
             navigate('/login');
         }
-    }, [hasToken, navigate]);
+    }, [hasToken, manageBlacklist, navigate]);
 
     const handleFileChange = (selectedFile: File | null): void => {
         setFile(selectedFile);

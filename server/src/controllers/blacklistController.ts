@@ -92,7 +92,7 @@ interface DatabaseInsertResult {
  * @param {string[]} domains - The domains to add to the blacklist.
  * @returns {Promise<DatabaseInsertResult>} - Result with counts of processed, inserted, and skipped domains
  */
-export async function databaseInsertBlacklist(domains: string[]): Promise<DatabaseInsertResult> {
+async function databaseInsertBlacklist(domains: string[]): Promise<DatabaseInsertResult> {
     const BATCH_SIZE = 100;
     const PROGRESS_INTERVAL = 10000;
     
@@ -170,19 +170,31 @@ export async function databaseInsertBlacklist(domains: string[]): Promise<Databa
  */
 export async function blacklistFile(req: MulterRequest, res: Response): Promise<void> {
     console.log('Processing blacklist file upload...');
-    
+
+    // Simplified permission handling
+    const userPermissions = Array.isArray(req.user?.permissions)
+        ? req.user.permissions.map((perm: string | { id: string }) =>
+            typeof perm === "string" ? perm : (perm as { id: string }).id
+        )
+        : [];
+
+    if (!userPermissions.includes('manage-blacklist')) {
+        res.status(403).json({ error: 'Otillräckliga behörigheter' });
+        return;
+    }
+
     try {
         // Validate file upload
         if (!req.file) {
-            res.status(400).json({ error: 'No file uploaded' });
+            res.status(400).json({ error: 'Ingen fil' });
             return;
         }
         
         if (!req.file.buffer || req.file.buffer.length === 0) {
-            res.status(400).json({ error: 'Uploaded file is empty' });
+            res.status(400).json({ error: 'Den uppladdade filen är tom' });
             return;
         }
-        
+
         // Convert buffer to readable stream
         const bufferStream = new Readable();
         bufferStream.push(req.file.buffer);
@@ -223,7 +235,7 @@ export async function blacklistFile(req: MulterRequest, res: Response): Promise<
         
         // Send response with detailed statistics
         res.status(200).json({
-            message: 'File processed successfully',
+            message: 'Fil bearbetad framgångsrikt',
             totalLines: domains.length,
             uniqueDomains: uniqueDomains.length,
             invalidLines: invalidLines.length,
@@ -235,7 +247,7 @@ export async function blacklistFile(req: MulterRequest, res: Response): Promise<
     } catch (error: any) {
         console.error('Error processing blacklist file:', error.message);
         res.status(500).json({ 
-            error: 'Failed to process file',
+            error: 'Lyckades inte bearbeta filen',
             details: error.message 
         });
     }
