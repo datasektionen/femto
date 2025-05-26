@@ -19,8 +19,8 @@ const pool = new Pool({
 });
 
 // Read the SQL statements from the schema.sql and insert.sql file
-const schemaPath = path.join(__dirname, '../database/schema.sql');
-const insertPath = path.join(__dirname, '../database/insert.sql');
+const schemaPath = path.join(__dirname, '../../database/schema.sql');
+const insertPath = path.join(__dirname, '../../database/insert.sql');
 const schemaStatement = fs.readFileSync(schemaPath, 'utf8');
 const insertStatement = fs.readFileSync(insertPath, 'utf8');
 
@@ -68,8 +68,10 @@ async function connectWithRetry(maxRetries: number = 5, delay: number = 2000) {
         try {
             await pool.connect();
             console.log('✅ Connected to the database 📁');
+
             await createTables();
-            await insertData();
+            if (process.env.NODE_ENV === 'development') await insertData();
+
             return; // Exit the function if connection is successful
         } catch (err: any) {
             console.error(`⛔ Attempt ${retries + 1} failed to connect to the database 📁`, err.stack);

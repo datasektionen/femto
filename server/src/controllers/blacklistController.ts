@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import * as readline from 'readline';
-import pool from "../db";
+import pool from "../services/db";
 import multer from 'multer';
 
 // Multer configuration for file uploads

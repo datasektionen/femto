@@ -1,5 +1,5 @@
 import { raw, Request, Response } from "express";
-import pool from "../db";
+import pool from "../services/db";
 import { isBlacklistedDB } from "./blacklistController";
 
 const slugRegex: RegExp = /^[a-z0-9-]+$/; // Regex to validate slugs (lowercase alphanumeric and hyphens)

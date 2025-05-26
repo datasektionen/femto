@@ -1,7 +1,5 @@
-DROP TABLE IF EXISTS url_clicks; -- TODO: remove in production?
-DROP TABLE IF EXISTS urls; -- TODO: remove in production?
-DROP TABLE IF EXISTS blockedurls; -- TODO: remove in production?
 
+-- PostgreSQL schema for shortened links
 CREATE TABLE IF NOT EXISTS urls (
     id BIGSERIAL PRIMARY KEY,
     slug VARCHAR(255) UNIQUE,
@@ -14,6 +12,7 @@ CREATE TABLE IF NOT EXISTS urls (
     clicks BIGINT DEFAULT 0
 );
 
+-- Table to store URL clicks
 CREATE TABLE IF NOT EXISTS url_clicks (
     id BIGSERIAL PRIMARY KEY,
     url_id BIGINT REFERENCES urls(id) ON DELETE CASCADE,
@@ -24,6 +23,7 @@ CREATE TABLE IF NOT EXISTS url_clicks (
     --user_agent TEXT       
 );
 
+-- Table to store blocked URLs
 CREATE TABLE IF NOT EXISTS blockedurls (
     url VARCHAR(255) PRIMARY KEY
 
@@ -41,7 +41,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger to call the function after insert on url_clicks
-CREATE TRIGGER url_click_insert_trigger
+CREATE OR REPLACE TRIGGER url_click_insert_trigger
 AFTER INSERT ON url_clicks
 FOR EACH ROW
 EXECUTE FUNCTION increment_url_clicks();

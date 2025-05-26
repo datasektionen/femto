@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import pool from '../db';
+import pool from './db';
 
 /**
  * Removes expired links from the database

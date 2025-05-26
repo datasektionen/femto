@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import pool from '../db';
+import pool from '../services/db';
 
 /**
  * Function to get the status of the API.

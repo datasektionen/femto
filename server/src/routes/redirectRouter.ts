@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import pool from "../db";
+import pool from "../services/db";
 import { checkExpiredLink } from "../services/cleanupService";
 
 const redirectRouter = Router();
