@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../autherization/useAuth.ts';
-import { logout } from '../../autherization/authApi.ts';
+import { useAuth } from '../../authorization/useAuth.ts';
+import { logout } from '../../authorization/authApi.ts';
 
 export const Logout = () => {
   const navigate = useNavigate();

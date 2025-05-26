@@ -13,6 +13,7 @@ import {
     Stack,
     Loader,
     Card,
+    Anchor,
     Tooltip, // Added Tooltip
 } from "@mantine/core"; // Använder Mantine v4-komponenter
 import {
@@ -32,7 +33,7 @@ import {
 import { Header } from "methone";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../autherization/useAuth"; // Import your authentication hook
+import { useAuth } from "../authorization/useAuth.ts"; // Import your authentication hook
 import Configuration from "../configuration.ts";
 import { toCanvas } from "qrcode";
 
@@ -113,11 +114,11 @@ const Links: React.FC = () => {
             })
             .then((res) => {
                 setLinksData(res.data);
-                console.log("Hämtade länkar:", res.data);
+                console.log("[Links] ℹ️ Fetched links:", res.data);
                 setLoading(false);
             })
             .catch((err) => {
-                console.error("Fel vid hämtning av länkar:", err);
+                console.error("[Links] ❌ Error fetching links:", err);
                 if (axios.isAxiosError(err)) {
                     if (err.response?.status === 401 || err.response?.status === 403) {
                         setError("Åtkomst nekad. Du behöver logga in igen.");
@@ -240,15 +241,15 @@ const Links: React.FC = () => {
         navigator.clipboard
             .writeText(shortUrl)
             .then(() => {
-                console.log("Kopierad kort länk:", shortUrl);
+                console.log("[Links] ℹ️ Copied short link:", shortUrl);
                 setCopiedSlug(slug); // Set the copied slug
                 setTimeout(() => setCopiedSlug(null), 2000); // Clear after 2 seconds
             })
-            .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
+            .catch((err) => console.error("[Links] ❌ Could not copy short link:", err));
     };
 
     const handleShowDetails = (slug: string) => {
-        navigate(`/links/${slug}/stats`);
+        navigate(`/links/${slug}/details`);
     };
 
     const handleRemove = (slug: string) => {
@@ -310,7 +311,7 @@ const Links: React.FC = () => {
 
     function stringToHexColor(str: string | null | undefined, brightness = 1): string {
         if (!str) {
-            console.warn("Input string is null or undefined. Using default value.");
+            console.warn("[Links] ℹ️ Input string is null or undefined. Using default value.");
             str = "default";
         }
 
@@ -343,7 +344,6 @@ const Links: React.FC = () => {
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
 
-
     return (
         <>
             <Header title="Länkar - Översikt" />
@@ -364,8 +364,8 @@ const Links: React.FC = () => {
                                 { value: "oldest-newest", label: "Äldst först" },
                                 { value: "clicks-descending", label: "Mest klick (fallande)" },
                                 { value: "clicks-ascending", label: "Minst klick (stigande)" },
-                                { value: "slug-a-z", label: "Slug (A-Ö)" },
-                                { value: "slug-z-a", label: "Slug (Ö-A)" },
+                                { value: "slug-a-z", label: "Sökväg (A-Ö)" },
+                                { value: "slug-z-a", label: "Sökväg (Ö-A)" },
                             ]}
                         />
 
@@ -396,24 +396,22 @@ const Links: React.FC = () => {
                                         {/* LEFT: Text and Badges */}
                                         <Group gap="sm" align="center" wrap="wrap">
                                             <Group gap="sm" justify="flex-start" style={{ minWidth: 0, flexShrink: 1 }}>
-                                                <Text fw={500} style={{ whiteSpace: 'nowrap' }}>{link.slug}</Text>
-                                                <a
-                                                    href={link.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    title={link.url}
-                                                    style={{
-                                                        textDecoration: 'none',
-                                                        color: 'inherit',
-                                                        minWidth: 0,
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                        maxWidth: '250px', // Optional: you can tweak this based on layout
-                                                    }}
-                                                >
-                                                    <Text truncate>{link.url}</Text>
-                                                </a>
+                                                <Tooltip label="Sökväg" withArrow>
+                                                    <Anchor onClick={() => handleShowDetails(link.slug)} fw={1000} style={{ whiteSpace: 'nowrap' }}>
+                                                        {link.slug}
+                                                    </Anchor>
+                                                </Tooltip>
+                                                <Tooltip label="Långlänk" withArrow>
+                                                    <Anchor
+                                                        href={link.url}
+                                                        target="_blank" // Open in new tab
+                                                        rel="noopener noreferrer"
+                                                        title={link.url}
+                                                        style={{ maxWidth: 250 }} // Limit width for long URLs
+                                                    >
+                                                        <Text truncate>{link.url}</Text>
+                                                    </Anchor>
+                                                </Tooltip>
                                             </Group>
 
                                             <Group justify="flex-start" gap="xs">

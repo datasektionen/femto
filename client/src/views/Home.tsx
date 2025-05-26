@@ -1,20 +1,14 @@
-import { Alert, Box } from "@mantine/core";
+import { Box } from "@mantine/core";
 import LinkCreator from "../components/LinkCreator.tsx";
 import { Header } from "methone";
 import { useEffect } from "react";
-import { useAuth } from "../autherization/useAuth.ts";
+import { useAuth } from "../authorization/useAuth.ts";
 
-/**
- * Homepage for Femto, using placeholder functions (not yet implemeted) 
- * hasPermissionsOr and LinkCreator component which also uses placeholder functions
- */
 
 const Home = () => {
     const {
         hasToken,
-        userPermissions,
         customLinks,
-        manageLinks,
         groups,
         userGroups,
         refreshAuthData
@@ -28,42 +22,13 @@ const Home = () => {
     // Check if user can create custom links
     const canCreateCustomLinks = customLinks;
 
-    const canManageLinks = manageLinks;
-
-    console.log("User permissions:", userPermissions);
-    console.log("User groups:", groups);
-    console.log("User can create custom links:", customLinks);
-    console.log("User has token:", hasToken);
-    console.log("User can manage all links:", canManageLinks);
-
     return (
         <>
             <Header title="Länkförkortare" />
             <Box id="content" p="md">
-                {!hasToken && (
-                    <Alert title="Du är inte inloggad" color="blue">
-                        Logga in för att förkorta länkar
-                    </Alert>
-                )}
                 {/* LinkCreator Component */}
                 <LinkCreator
-                    title="Förkorta en länk"
                     disabled={!hasToken}
-                    desc={
-                        <>
-                            <p>Välkommen till datasektionens länkförkortare!</p>
-                            <h3>Hur man gör:</h3>
-                            <ol>
-                                <li>Klistra in en lång länk i fältet nedan.</li>
-                                {canCreateCustomLinks && (
-                                    <li>Specifiera en egen kort länk (valfritt).</li>
-                                )}
-                                <li>Bestäm ett utgångsdatum för den förkortade länken (valfritt).</li>
-                                <li>Tilldela länken en grupp (valfritt).</li>
-                                <li>Klicka på knappen för att förkorta länken.</li>
-                            </ol>
-                        </>
-                    }
                     custom={canCreateCustomLinks} // Only show custom field if user has permission
                     userGroups={userGroups || []}
                     showAdvancedOptions={(groups && groups.length > 0) || canCreateCustomLinks}

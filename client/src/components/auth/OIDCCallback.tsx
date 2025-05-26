@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../autherization/useAuth.ts";
-import { loginWithCode } from "../../autherization/authApi.ts";
+import { useAuth } from "../../authorization/useAuth.ts";
+import { loginWithCode } from "../../authorization/authApi.ts";
 import { Center, Loader } from "@mantine/core";
 
 export const OIDCCallback = () => {
@@ -10,23 +10,23 @@ export const OIDCCallback = () => {
   const { setHasToken, refreshAuthData } = useAuth();
 
   useEffect(() => {
-    console.log("🔄 [1] OIDCCallback mounted");
+    console.log("[Auth] 🔄 [1] OIDCCallback mounted");
     const params = new URLSearchParams(location.search);
     const code = params.get("code");
 
     // Check if we're already processing
     if (sessionStorage.getItem("processingAuth")) {
-      console.log("⚠️ [2] Auth already processing, preventing loop");
+      console.log("[Auth] ⚠️ [2] Auth already processing, preventing loop");
       return;
     }
 
     if (code) {
-      console.log("🔑 [3] Authorization Code Received:", code);
+      console.log("[Auth] 🔑 [3] Authorization Code Received:", code);
       sessionStorage.setItem("processingAuth", "true");
 
       loginWithCode(code)
         .then(() => {  // Remove the unused 'token' parameter
-          console.log("✅ [4] Login successful");
+          console.log("[Auth] ✅ [4] Login successful");
           
           // Set token flag in context
           setHasToken(true);
@@ -38,7 +38,7 @@ export const OIDCCallback = () => {
           navigate("/", { replace: true });
         })
         .catch(error => {
-          console.error("❌ [5] Auth error:", error);
+          console.error("[Auth] ❌ Auth error:", error);
           setHasToken(false);
           navigate("/login", { replace: true });
         })
@@ -46,7 +46,7 @@ export const OIDCCallback = () => {
           sessionStorage.removeItem("processingAuth");
         });
     } else {
-      console.log("❌ [6] No code received in callback");
+      console.log("[Auth] ❌ No code received in callback");
       navigate("/login", { replace: true });
     }
   }, []);

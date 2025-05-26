@@ -39,7 +39,7 @@ import {
 } from "recharts";
 import Configuration from "../configuration.ts";
 import { useForm } from "@mantine/form";
-import { useAuth } from "../autherization/useAuth.ts";
+import { useAuth } from "../authorization/useAuth.ts";
 import { QRCode } from "react-qrcode-logo";
 
 /**
@@ -240,10 +240,10 @@ const toLocalISOString = (dateInput: string | Date | null): string => {
 // --- Component ---
 
 /**
- * `LinkStats` component displays detailed statistics and allows editing for a specific short link.
+ * `LinkDetails` component displays detailed statistics and allows editing for a specific short link.
  * It fetches link details, time-series click data, and language-based click data.
  */
-const LinkStats: React.FC = () => {
+const LinkDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>(); // Get link 'id' (slug) from URL
     const navigate = useNavigate();
 
@@ -309,7 +309,7 @@ const LinkStats: React.FC = () => {
             .get<Link>(`/api/links/${id}`)
             .then((res) => setLinkDetails(res.data))
             .catch((err) => {
-                console.error("Failed to fetch link details:", err);
+                console.error("[Link] ❌ Failed to fetch link details:", err);
                 setError(
                     axios.isAxiosError(err) && err.response?.status === 404
                         ? `Länken "${id}" hittades inte.`
@@ -396,7 +396,7 @@ const LinkStats: React.FC = () => {
                 setStatsData(processedData);
             })
             .catch((err) => {
-                console.error("Failed to fetch time-series stats:", err);
+                console.error("[Link] ❌ Failed to fetch time-series stats:", err);
                 setError("Kunde inte hämta statistikdata."); // Set error specific to stats fetching
             })
             .finally(() => setLoadingStats(false));
@@ -424,19 +424,19 @@ const LinkStats: React.FC = () => {
             .get<LangData[]>(`/api/links/${linkDetails.slug}/lang-stats`)
             .then((res) => setLangData(res.data))
             .catch((err) => {
-                console.error("Failed to fetch language stats:", err);
+                console.error("[Link] ❌ Failed to fetch language stats:", err);
                 setErrorLang("Kunde inte hämta språkstatistik.");
             })
             .finally(() => setLoadingLang(false));
     }, [linkDetails]); // Re-run if linkDetails changes
 
     useEffect(() => {
-        console.log("LinkStats - userGroups with domains:", userGroups);
-        console.log("LinkStats - simple group names:", groups);
+        console.log("[Auth] ℹ️ userGroups with domains:", userGroups);
+        console.log("[Auth] ℹ️ simple group names:", groups);
 
         if (linkDetails?.group_name) {
-            console.log("Current link group (with domain):", linkDetails.group_name);
-            console.log("Current link group (extracted):", extractGroupName(linkDetails.group_name));
+            console.log("[Auth] ℹ️ Current link group (with domain):", linkDetails.group_name);
+            console.log("[Auth] ℹ️ Current link group (extracted):", extractGroupName(linkDetails.group_name));
         }
     }, [userGroups, groups, linkDetails]);
 
@@ -474,7 +474,7 @@ const LinkStats: React.FC = () => {
             setLinkDetails(response.data);
             setEditing(false);
         } catch (err: any) {
-            console.error("Failed to update link:", err);
+            console.error("[Link] ❌ Failed to update link:", err);
 
             let msg = "Kunde inte spara ändringarna. Kontrollera fälten och försök igen.";
             if (axios.isAxiosError(err) && err.response) {
@@ -493,8 +493,8 @@ const LinkStats: React.FC = () => {
             const shortUrl = `${Configuration.backendApiUrl}/${linkDetails.slug}`;
             navigator.clipboard
                 .writeText(shortUrl)
-                .then(() => console.log("Kopierade kort länk:", shortUrl)) // User feedback (optional: use notifications)
-                .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
+                .then(() => console.log("[Link] ℹ️ Kopierade kort länk:", shortUrl)) // User feedback (optional: use notifications)
+                .catch((err) => console.error("[Link] ❌ Kunde inte kopiera kort länk:", err));
         }
     };
 
@@ -505,8 +505,8 @@ const LinkStats: React.FC = () => {
         if (!linkDetails) return;
         navigator.clipboard
             .writeText(linkDetails.url)
-            .then(() => console.log("Kopierade originallänk:", linkDetails.url)) // User feedback
-            .catch((err) => console.error("Kunde inte kopiera originallänk:", err));
+            .then(() => console.log("[Link] ℹ️ Kopierade originallänk:", linkDetails.url)) // User feedback
+            .catch((err) => console.error("[Link] ❌ Kunde inte kopiera originallänk:", err));
     };
 
     /**
@@ -527,7 +527,7 @@ const LinkStats: React.FC = () => {
                     navigate("/links"); // Navigate away after successful deletion
                 })
                 .catch((err) => {
-                    console.error("Failed to delete link:", err);
+                    console.error("[Link] ❌ Failed to delete link:", err);
                     setError("Kunde inte ta bort länken.");
                 });
         }
@@ -973,4 +973,4 @@ const LinkStats: React.FC = () => {
     );
 };
 
-export default LinkStats;
+export default LinkDetails;

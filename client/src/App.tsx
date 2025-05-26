@@ -1,20 +1,20 @@
-import { BrowserRouter, Route, Routes, Link, Navigate } from "react-router-dom";
-import Methone /*, { Header } */ from "methone"; // Import Methone (Header is optional)
+import { BrowserRouter, Route, Routes, Link} from "react-router-dom";
+import Methone from "methone"; // Import Methone (Header is optional)
 import { MantineProvider } from "@mantine/core";
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
-import LinkStats from "./views/LinkStats.tsx";
-import { AuthProvider } from "./autherization/AuthContext.tsx";
-import { useAuth } from "./autherization/useAuth.ts";
+import { AuthProvider } from "./authorization/AuthContext.tsx";
+import { useAuth } from "./authorization/useAuth.ts";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
 import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
 import { Logout } from "./components/auth/Logout.tsx";
 import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
 import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
+import LinkDetails from "./views/LinkDetails.tsx";
 
 // This component renders the main application content, including Methone bar and routes
 const AppContent = () => {
-    const { hasToken, manageLinks } = useAuth(); // Get authentication status
+    const { hasToken, manageBlacklist } = useAuth(); // Get authentication status
 
     // Define the configuration for Methone, as per the documentation
     const config = {
@@ -27,8 +27,8 @@ const AppContent = () => {
             <Link to="/shorten" key="methone-link-1">Förkorta</Link>,
             // Conditionally add "Länkar" link if user is authenticated
             ...(hasToken ? [<Link to="/links" key="methone-link-2">Länkar</Link>] : []),
-            // Conditionally add "Svartlista" link if user is authenticated and has manageLinks permission
-            ...(hasToken && manageLinks ? [<Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
+            // Conditionally add "Svartlista" link if user is authenticated and has manageBlacklist permission
+            ...(hasToken && manageBlacklist ? [<Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
         ],
     };
 
@@ -39,30 +39,19 @@ const AppContent = () => {
             {/* Render the Methone component with the config */}
             <Methone config={config} />
 
-            {/* Optional: Add the Methone Header component here if needed */}
-            {/* <Header title="Your Page Title"> */}
-            {/*   Optional back link */}
-            {/*   <Link to="/">« Tillbaka</Link> */}
-            {/* </Header> */}
-
             {/* Define the application routes */}
             <Routes>
+                {/* Public Routes - Accessible to all users */}
                 <Route path="/" element={<Home />} />
                 <Route path="/shorten" element={<Home />} />
-                <Route
-                    path="/blacklist"
-                    element={
-                        !hasToken ? (
-                            <Navigate to="/login" replace />
-                        ) : manageLinks ? (
-                            <Blacklist />
-                        ) : (
-                            <Navigate to="/" replace /> // Redirect to home if logged in but no manageLinks permission
-                        )
-                    }
-                />
+
+                {/* Authentication Routes - Handle login/logout flow */}
                 <Route path="/login" element={<LoginRedirect />} />
                 <Route path="/logout" element={<Logout />} />
+                <Route path="/auth/oidc-callback" element={<OIDCCallback />} />
+
+                {/* Protected Routes - Require authentication */}
+                {/* User Links Management */}
                 <Route
                     path="/links"
                     element={
@@ -71,8 +60,24 @@ const AppContent = () => {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/links/:id/stats" element={<ProtectedRoute><LinkStats /></ProtectedRoute>} />
-                <Route path="/auth/oidc-callback" element={<OIDCCallback />} />
+                <Route
+                    path="/links/:id/details"
+                    element={
+                        <ProtectedRoute>
+                            <LinkDetails />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Admin/Management Routes - Require authentication and permissions */}
+                <Route
+                    path="/blacklist"
+                    element={
+                        <ProtectedRoute>
+                            <Blacklist />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </div>
     );

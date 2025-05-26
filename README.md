@@ -14,8 +14,9 @@ A simple **link-shortening** service built with **TypeScript**, **React (Vite)**
 - **Automatic Slug Generation** if none is provided.
 - **Custom Slug Support** (if slug is available).
 - **Optional Expiry Dates** for links.
-- **Optional Mandate Association** for links.
+- **Optional Group Association** for links.
 - **QR Code Generation** for shortened links.
+- **Blacklist Management** for blocked URLs or slugs.
 - **Database-Backed** with PostgreSQL.
 
 ---
@@ -35,36 +36,76 @@ A simple **link-shortening** service built with **TypeScript**, **React (Vite)**
 femto/
 ├── .github/
 │   └── workflows/
-│       └── deploy-dual.yml         # GitHub Actions CI/CD configuration
-├── client/                          # Frontend React (Vite) application
-│   ├── public/                      # Static assets (index.html, icons, etc.)
-│   ├── src/                         # Source code
-│   │   ├── autherization/           # Auth context, hooks, OIDC logic
-│   │   ├── components/              # Reusable React components (LinkCreator, auth components)
-│   │   ├── views/                   # Page components (Home, Links, LinkStats)
-│   │   ├── App.tsx                  # Main application component, routing
-│   │   └── main.tsx                 # Application entry point (replaces index.tsx)
-│   ├── Dockerfile                   # Dockerfile for building/serving the client
-│   ├── nginx.conf                   # Configuration for Nginx (used in Docker)
-│   ├── vite.config.ts               # Vite configuration
-│   ├── tsconfig.json                # TypeScript configuration
-│   ├── package.json                 # Dependencies and scripts
-│   └── .env.example                 # Example environment variables for client
-├── server/                          # Backend Express application
-│   ├── src/
-│   │   ├── db/                      # Database schema, setup, queries
-│   │   ├── middleware/              # Express middleware (auth, error handling)
-│   │   ├── routes/                  # API and redirect route definitions
-│   │   ├── types/                   # Shared TypeScript types
-│   │   └── index.ts                 # Server entry point
-│   ├── Dockerfile                   # Dockerfile for building the server
-│   ├── package.json                 # Dependencies and scripts
-│   ├── tsconfig.json                # TypeScript configuration
-│   ├── .env.example                 # Example environment variables for server
-│   └── .gitignore
-├── job.nomad.hcl                    # Nomad job specification
-├── docker-compose.yml               # Docker Compose configuration (client, server, db)
-└── README.md                        # This file
+│       └── deploy-dual.yml             # GitHub Actions CI/CD configuration
+├── client/                             # Frontend React (Vite) application
+│   ├── public/                         # Static assets (icons, manifest)
+│   ├── src/                            # Source code
+│   │   ├── authorization/              # Auth context, hooks, OIDC logic
+│   │   │   ├── authApi.ts              # Authentication API calls
+│   │   │   ├── AuthContext.tsx         # React context for auth state
+│   │   │   ├── types.ts                # Auth-related TypeScript types
+│   │   │   └── useAuth.ts              # Auth hook
+│   │   ├── components/                 # Reusable React components
+│   │   │   ├── auth/                   # Authentication components
+│   │   │   │   ├── LoginRedirect.tsx
+│   │   │   │   ├── Logout.tsx
+│   │   │   │   ├── OIDCCallback.tsx
+│   │   │   │   └── ProtectedRoute.tsx
+│   │   │   └── LinkCreator.tsx         # Main link creation component
+│   │   ├── types/                      # TypeScript type definitions
+│   │   │   └── methone.d.ts            # Methone-specific types
+│   │   ├── views/                      # Page components
+│   │   │   ├── Blacklist.tsx           # Blacklist management page
+│   │   │   ├── Home.tsx                # Main homepage
+│   │   │   ├── LinkDetails.tsx         # Individual link statistics
+│   │   │   └── Links.tsx               # User's links overview
+│   │   ├── App.css                     # Application styles
+│   │   ├── App.tsx                     # Main application component
+│   │   ├── configuration.ts            # Configuration constants
+│   │   ├── index.css                   # Global styles
+│   │   ├── index.tsx                   # Application entry point
+│   │   └── vite-env.d.ts               # Vite environment types
+│   ├── .env                            # Environment variables (local)
+│   ├── .env.example                    # Example environment variables
+│   ├── .gitignore                      # Git ignore rules
+│   ├── Dockerfile.client               # Docker configuration for client
+│   ├── eslint.config.js                # ESLint configuration
+│   ├── index.html                      # HTML template
+│   ├── nginx.conf                      # Nginx configuration for Docker
+│   ├── package.json                    # Dependencies and scripts
+│   ├── tsconfig.app.json               # TypeScript config for app
+│   ├── tsconfig.json                   # Main TypeScript configuration
+│   ├── tsconfig.node.json              # TypeScript config for Node tools
+│   └── vite.config.ts                  # Vite configuration
+├── server/                             # Backend Express application
+│   ├── database/                       # Database setup and schema
+│   │   ├── insert.sql                  # Sample data insertion
+│   │   └── schema.sql                  # Database schema definition
+│   ├── src/                            # Source code
+│   │   ├── controllers/                # Request handlers
+│   │   │   ├── authController.ts       # Authentication logic
+│   │   │   ├── blacklistController.ts  # Blacklist management
+│   │   │   ├── linkController.ts       # Link CRUD operations
+│   │   │   └── statusController.ts     # Health check endpoints
+│   │   ├── middlewares/                # Express middleware
+│   │   │   └── jwtAuthMiddleware.ts    # JWT token validation
+│   │   ├── routes/                     # Route definitions
+│   │   │   ├── apiRouter.ts            # API endpoints
+│   │   │   ├── loginRouter.ts          # Authentication routes
+│   │   │   └── redirectRouter.ts       # URL redirection logic
+│   │   ├── services/                   # Business logic services
+│   │   │   ├── cleanupService.ts       # Expired link cleanup
+│   │   │   └── db.ts                   # Database connection and queries
+│   │   └── index.ts                    # Server entry point
+│   ├── .env                            # Environment variables (local)
+│   ├── .env.example                    # Example environment variables
+│   ├── .gitignore                      # Git ignore rules
+│   ├── Dockerfile.server               # Docker configuration for server
+│   ├── package.json                    # Dependencies and scripts
+│   └── tsconfig.json                   # TypeScript configuration
+├── docker-compose.yml                  # Docker Compose configuration
+├── job.nomad.hcl                       # Nomad job specification
+└── README.md                           # This file
 ```
 
 ---
@@ -82,157 +123,103 @@ cd femto
 
 This project requires separate environment variables for the client and server.
 
-**A. Server Environment (`server/.env`)**
-
-Copy `server/.env.example` to `server/.env` and fill in the values:
-
-```bash
-# Database credentials
-POSTGRES_USER=your_db_user
-POSTGRES_PASSWORD=your_db_password
-POSTGRES_DB=your_db_name
-# POSTGRES_HOST=localhost # Use 'postgres' if using docker-compose
-
-# Secret key for signing JWT tokens (generate a strong random key)
-JWT_SECRET=your_strong_random_jwt_secret
-
-# Base URL where the frontend client will run (for CORS and redirects)
-CLIENT_URL=http://localhost:5173 # Default Vite port
-
-# OIDC/OAuth2 Client Credentials provided by your SSO provider
-CLIENT_ID=your_oidc_client_id
-CLIENT_SECRET=your_oidc_client_secret
-
-# OIDC Issuer URL provided by your SSO provider
-OIDC_ISSUER=https://your-sso-provider.com
-
-# Optional: API Key for external services (if needed)
-# HIVE_API_KEY=your_hive_api_key_if_needed
-```
-
-**B. Client Environment (`client/.env`)**
-
-Copy `client/.env.example` to `client/.env` and fill in the values:
-
-```bash
-# Base URL for the backend API server
-VITE_API_URL=http://localhost:5000 # Default server port
-
-# Base URL for the Single Sign-On (SSO) provider's authorization endpoint
-VITE_LOGIN_API_URL=https://your-sso-provider.com
-
-# Client ID provided by your authentication provider (must match server's CLIENT_ID)
-VITE_CLIENT_ID=your_oidc_client_id
-```
-
--   **Important**: Never commit your actual `.env` files to source control. The `.gitignore` files should prevent this.
+- Copy `server/.env.example` to `server/.env` and fill in the values.
+- Copy `client/.env.example` to `client/.env` and fill in the values.
 
 ---
 
-### 3. Running with Docker (Recommended)
+### 3. Database Setup
+
+The project includes SQL files for database initialization:
+
+-   `server/database/schema.sql` - Contains the database schema
+-   `server/database/insert.sql` - Contains sample data (optional)
+
+Schema setup is run automatically.
+
+---
+
+### 4. Running with Docker (Recommended)
 
 This is the easiest way to get all services (client, server, database) running together.
 
 1.  Ensure your `server/.env` file has `POSTGRES_HOST=postgres`.
 2.  Build and start the containers:
+
     ```bash
     docker-compose up --build -d
     ```
-    *   `-d` runs the containers in the background.
+
+    -   `-d` runs the containers in the background.
 
 This will:
 
--   Launch the **client** React app, accessible at [http://localhost:5173/](http://localhost:5173/) (or your `CLIENT_PORT`).
--   Launch the **server** Express app on port `5000` (or your `SERVER_PORT`).
--   Launch a **PostgreSQL** database container, accessible to the server via the hostname `postgres`.
+-   Launch the **client** React app, accessible at [http://localhost:3000/](http://localhost:3000/)
+-   Launch the **server** Express app, accessible at [http://localhost:5000/](http://localhost:5000/)
+-   Launch a **PostgreSQL** database container, accessible to the server via the hostname `postgres`
 
 #### Connecting to the Database (Docker)
 
 1.  List running containers: `docker ps`
 2.  Find the container ID for the `postgres` image.
 3.  Connect using psql:
+
     ```bash
     docker exec -it [container-ID] psql -U your_db_user -d your_db_name
     ```
-    (Use the `POSTGRES_USER` and `POSTGRES_DB` from your `server/.env`).
 
 ---
 
-## Local Development (Without Docker)
+## Local Development without Docker
 
 You can also run the client and server directly on your machine. Make sure you have a separate PostgreSQL instance running and accessible.
 
-1.  **Server**
-    *   Ensure `server/.env` is configured correctly (especially database connection details like `POSTGRES_HOST=localhost`).
-    ```bash
-    cd server
-    npm install
-    npm run dev # Runs server with nodemon for auto-restarts
-    # OR
-    # npm run build
-    # npm start # Runs the compiled version
-    ```
+### Database Setup
 
-2.  **Client**
-    *   Ensure `client/.env` is configured correctly.
-    ```bash
-    cd client
-    npm install
-    npm run dev
-    ```
-    The client app should start, typically on [http://localhost:5173/](http://localhost:5173/).
+1.  Create a PostgreSQL database
+2.  Run the schema from `server/database/schema.sql`
+3.  Optionally run `server/database/insert.sql` for sample data
 
----
-
-## Testing
-
-Test commands can be run from within the respective `client` or `server` directories:
+### Server
 
 ```bash
-# From the "server" folder:
-npm test # (If Jest or another test runner is configured)
-
-# From the "client" folder:
-npm test # (Runs Vitest tests, if configured)
+cd server
+npm install
+npm run dev # Runs server with auto-restart on changes
 ```
+
+### Client
+
+```bash
+cd client
+npm install
+npm run dev # Starts development server
+```
+
+The client app should start on [http://localhost:3000/](http://localhost:3000/).
 
 ---
 
 ## Usage
 
-1.  **Login**: Access the client URL (e.g., [http://localhost:5173/](http://localhost:5173/)). Click the login button, which will redirect you to your OIDC provider.
+1.  **Login**: Access the client URL (e.g., [http://localhost:3000/](http://localhost:3000/)). Click the login button, which will redirect you to your OIDC provider.
 2.  **Shorten a Link**: Once logged in, use the form on the homepage to enter a long URL. You can optionally provide a custom slug, expiry date, or associate a mandate.
-3.  **View Links**: Navigate to the "Länkar" (Links) page (if logged in) to see links you have created.
-4.  **View Stats**: Click the stats icon next to a link on the "Länkar" page.
-5.  **Redirect**: Navigate to `<SERVER_URL>/<slug>` (e.g., `http://localhost:5000/myslug`) to be redirected to the original long URL.
+3.  **View Links**: Navigate to the "Länkar" (Links) page to see links you have created.
+4.  **View Stats**: Click on a link to view its detailed statistics.
+5.  **Manage Blacklist**: Access the blacklist page to manage blocked URLs or slugs.
+6.  **Redirect**: Navigate to `<SERVER_URL>/<slug>` (e.g., `http://localhost:5000/myslug`) to be redirected to the original long URL.
 
 ---
-
-## Deployment
-
--   The project includes a **Nomad** configuration (`job.nomad.hcl`) which uses Nomad variables for secrets management.
--   **GitHub Actions** are configured for CI/CD (`.github/workflows/deploy-dual.yml`).
--   **Dockerfiles** are provided for containerizing the client and server.
--   Ensure all necessary environment variables (database credentials, OIDC secrets, JWT secret, URLs) are correctly configured in your deployment environment (e.g., Nomad variables, Kubernetes secrets).
-
----
-
-## Contributing
-
-1.  Branch off `main` (or `dev` if used) for new features or bug fixes.
-2.  Open a Pull Request towards the main development branch.
-3.  Keep changes focused and provide clear descriptions.
 
 ## FAQ
 
 -   **Why is the client showing a blank page or login errors?**
-    *   Ensure both `client/.env` and `server/.env` files exist and are correctly configured with all necessary variables (API URLs, OIDC details, Client ID).
-    *   Verify the `CLIENT_URL` in `server/.env` and `REDIRECT_URI` match where your client is running and the callback path it uses.
-    *   Check the browser console and network tab for specific errors.
-    *   Ensure the backend server is running and accessible from the client at the specified `VITE_API_URL`.
+    -   Ensure both `client/.env` and `server/.env` files exist and are correctly configured.
+    -   Verify the `CLIENT_URL` in `server/.env` matches where your client is running.
+    -   Check the browser console and network tab for specific errors.
+    -   Ensure the backend server is running and accessible at the specified `VITE_BACKEND_ROOT`.
 
----
-
-## License
-
-This project is licensed under the **MIT License**. See the `LICENSE` file or [the MIT License text](https://opensource.org/licenses/MIT) for more details.
+-   **Database connection issues?**
+    -   Verify your PostgreSQL instance is running and accessible.
+    -   Check that the database schema has been properly initialized.
+    -   Ensure the connection parameters in `server/.env` are correct.
