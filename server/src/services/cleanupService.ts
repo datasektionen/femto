@@ -25,16 +25,16 @@ async function cleanupExpiredLinks(): Promise<CleanupResult> {
         const deletedCount = result.rowCount || 0;
         
         if (deletedCount > 0) {
-            console.log(`🗑️ Cleanup completed: Deleted ${deletedCount} expired link(s)`);
-            console.log(`   Deleted slugs: ${deletedSlugs.join(', ')}`);
+            console.log(`[Cleanup] ✅ Cleanup completed: Deleted ${deletedCount} expired link(s)`);
+            console.log(`[Cleanup] 🗑️ Deleted slugs: ${deletedSlugs.join(', ')}`);
         } else {
-            console.log('✅ Cleanup completed: No expired links found');
+            console.log(`[Cleanup] ✅ Cleanup completed: No expired links found`);
         }
         
         return { deletedCount, deletedSlugs };
         
     } catch (error: any) {
-        console.error('❌ Error during cleanup:', error.message);
+        console.error(`[Cleanup] ❌ Error during cleanup:`, error.message);
         throw error;
     } finally {
         if (client) {
@@ -50,7 +50,7 @@ async function cleanupExpiredLinks(): Promise<CleanupResult> {
  */
 export async function checkExpiredLink(slug: string): Promise<boolean> {
     if (!slug || typeof slug !== 'string') {
-        console.warn('⚠️ Invalid slug provided to checkExpiredLink');
+        console.warn(`[Cleanup] ⚠️ Invalid slug provided to checkExpiredLink`);
         return false;
     }
     
@@ -68,13 +68,13 @@ export async function checkExpiredLink(slug: string): Promise<boolean> {
         const wasDeleted = (result.rowCount ?? 0) > 0;
         
         if (wasDeleted) {
-            console.log(`✅ Deleted expired link: ${slug}`);
+            console.log(`[Cleanup] ✅ Deleted expired link: ${slug}`);
         }
         
         return wasDeleted;
         
     } catch (error: any) {
-        console.error(`❌ Error checking expired link ${slug}:`, error.message);
+        console.error(`[Cleanup] ❌ Error checking expired link ${slug}:`, error.message);
         return false;
     } finally {
         if (client) {
@@ -97,31 +97,31 @@ export function scheduleCleanupJob(
         if (!cron.validate(cronSchedule)) {
             throw new Error(`Invalid cron expression: ${cronSchedule}`);
         }
-        
-        console.log(`📅 Scheduling cleanup job with pattern: ${cronSchedule}`);
-        
+
+        console.log(`[Cleanup] 📅 Scheduling cleanup job with pattern: ${cronSchedule}`);
+
         // Schedule the job
         cron.schedule(cronSchedule, async () => {
-            console.log('🚀 Running scheduled cleanup...');
+            console.log(`[Cleanup] 🚀 Running scheduled cleanup...`);
             try {
                 await cleanupExpiredLinks();
             } catch (error: any) {
-                console.error('❌ Scheduled cleanup failed:', error.message);
+                console.error(`[Cleanup] ❌ Scheduled cleanup failed:`, error.message);
             }
         });
         
         // Run initial cleanup if requested
         if (runOnStart) {
-            console.log('🚀 Running initial cleanup...');
+            console.log(`[Cleanup] 🚀 Running initial cleanup...`);
             cleanupExpiredLinks().catch(error => {
-                console.error('❌ Initial cleanup failed:', error.message);
+                console.error(`[Cleanup] ❌ Initial cleanup failed:`, error.message);
             });
         }
-        
-        console.log('✅ Cleanup service initialized successfully');
-        
+
+        console.log(`[Cleanup] ✅ Cleanup service initialized successfully`);
+
     } catch (error: any) {
-        console.error('❌ Failed to schedule cleanup job:', error.message);
+        console.error(`[Cleanup] ❌ Failed to schedule cleanup job:`, error.message);
         throw error;
     }
 }
@@ -131,6 +131,6 @@ export function scheduleCleanupJob(
  * @returns Promise<CleanupResult> - Result of the cleanup operation
  */
 export async function triggerCleanup(): Promise<CleanupResult> {
-    console.log('🔧 Manual cleanup triggered...');
+    console.log(`[Cleanup] 🔧 Manual cleanup triggered...`);
     return await cleanupExpiredLinks();
 }

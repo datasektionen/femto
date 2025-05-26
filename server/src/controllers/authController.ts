@@ -14,12 +14,12 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const HIVE_API_KEY = process.env.HIVE_API_KEY;
 
 if (!JWT_SECRET) {
-    console.error("JWT_SECRET is not set in environment variables!");
+    console.error("[Startup] ❌ JWT_SECRET is not set in environment variables!");
     process.exit(1); // Exit if the secret is not defined
 }
 
 if (!HIVE_API_KEY) {
-    console.error("HIVE_API_KEY is not set in environment variables!");
+    console.error("[Startup] ❌ HIVE_API_KEY is not set in environment variables!");
     process.exit(1); // Exit if the API key is not defined
 }
 
@@ -36,9 +36,9 @@ async function initializeClient() {
             redirect_uris: [`${CLIENT_URL}/auth/oidc-callback`],
             response_types: ['code'],
         });
-        console.log('✅ OIDC client initialized 🔒');
+        console.log('[OIDC] ✅ OIDC client initialized');
     } catch (err: any) {
-        console.error('❌ Error initializing OIDC client 🔒', err);
+        console.error('[OIDC] ❌ Error initializing OIDC client', err);
     }
 }
 
@@ -47,7 +47,6 @@ initializeClient();
 // Function to fetch user permissions from Hive
 async function fetchUserPermissions(username: string) {
     try {
-        console.log(`🔍 Fetching permissions for user: ${username}`);
         const response = await axios.get(
             `https://hive.datasektionen.se/api/v1/user/${username}/permissions`,
             {
@@ -56,10 +55,9 @@ async function fetchUserPermissions(username: string) {
                 }
             }
         );
-        console.log("✅ User permissions fetched from Hive");
         return response.data;
     } catch (error: any) {
-        console.error("❌ Error fetching user permissions:", {
+        console.error("[Permissions] ❌ Error fetching user permissions:", {
             status: error.response?.status,
             statusText: error.response?.statusText,
             message: error.message,
@@ -73,14 +71,10 @@ async function fetchUserPermissions(username: string) {
 // Function to fetch user memberships (group) from Hive
 async function fetchUserMemberships(username: string) {
     try {
-        console.log(`🔍 Fetching groups for user: ${username}`);
-        
         if (!HIVE_API_KEY) {
-            console.error("❌ HIVE_API_KEY is undefined");
+            console.error("[Groups] ❌ HIVE_API_KEY is undefined");
             return { error: true, message: "API key not configured" };
         }
-        
-        console.log(`🔑 Using API key with Bearer authentication`);
         
         const response = await axios.get(
             `https://hive.datasektionen.se/api/v1/tagged/link-manager/memberships/${username}`,
@@ -90,10 +84,9 @@ async function fetchUserMemberships(username: string) {
                 }
             }
         );
-        console.log("✅ User groups fetched from Hive");
         return response.data;
     } catch (error: any) {
-        console.error("❌ Error fetching user groups:", {
+        console.error("[Groups] ❌ Error fetching user groups:", {
             status: error.response?.status,
             statusText: error.response?.statusText,
             message: error.message,
@@ -121,7 +114,7 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
     try {
         // Check if the OIDC client is initialized
         if (!client) {
-            console.error('❌ OIDC client not initialized 🔒');
+            console.error('[OIDC] ❌ OIDC client not initialized');
             res.status(500).json({ error: 'OIDC client not initialized' });
             return;
         }
@@ -166,7 +159,7 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
             userGroups: groups
         });
     } catch (err: any) {
-        console.error('❌ Error verifying code 🔒', err);
+        console.error('[OIDC] ❌ Error verifying code', err);
         res.status(500).json({ error: 'Error verifying code' });
     }
 }
@@ -195,7 +188,7 @@ export async function getUserData(req: Request, res: Response): Promise<void> {
         userGroups: req.user.groups || []
       });
     } catch (err) {
-      console.error('Error getting user data:', err);
+      console.error('[JWT] ❌ Error getting user data:', err);
       res.status(500).json({ message: 'Server error' });
     }
 }

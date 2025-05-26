@@ -40,7 +40,7 @@ export const jwtAuth = (req: Request, res: Response, next: NextFunction): void =
 
     try {
         if (!JWT_SECRET) {
-            console.error("JWT_SECRET is not set in environment variables!");
+            console.error("[JWT] ❌ JWT_SECRET is not set in environment variables!");
             res.status(500).json({ message: 'Server configuration error' });
             return;
         }
@@ -49,7 +49,7 @@ export const jwtAuth = (req: Request, res: Response, next: NextFunction): void =
         req.user = decoded; // Attach user info to the request object
         next(); // Proceed to the next middleware/route handler
     } catch (err) {
-        console.error("JWT verification error:", err);
+        console.error("[JWT] ❌ JWT verification error:", err);
         res.status(403).json({ message: 'Invalid JWT token' }); // Forbidden
         return;
     }

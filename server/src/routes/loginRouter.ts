@@ -20,7 +20,6 @@ loginRouter.get('/', (req: Request, res: Response) => {
         `response_type=code&` +
         `scope=openid profile email pls_*`;
 
-    console.log("🔄 Redirecting user to OIDC:", authUrl);
     // Send HTTP 302 Redirect
     res.redirect(authUrl);
 });
