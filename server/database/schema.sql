@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS url_clicks (
     --user_agent TEXT       
 );
 
+CREATE TABLE IF NOT EXISTS blockedurls (
+    url VARCHAR(255) PRIMARY KEY
+
+);
+
 -- Function to increment clicks in the urls table
 CREATE OR REPLACE FUNCTION increment_url_clicks()
 RETURNS TRIGGER AS $$
@@ -41,7 +46,3 @@ AFTER INSERT ON url_clicks
 FOR EACH ROW
 EXECUTE FUNCTION increment_url_clicks();
 
-CREATE TABLE IF NOT EXISTS blockedurls (
-    url varchar(255) PRIMARY KEY
-
-);

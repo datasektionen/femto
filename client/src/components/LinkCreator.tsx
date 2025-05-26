@@ -281,6 +281,14 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
     return (
         <Center>
             <Card shadow="sm" radius="lg" withBorder w="100%" maw={1000} p="xl">
+
+                {disabled && (
+                    <Alert title="Du är inte inloggad" radius="md" color="blue">
+                        <a href="/login">Logga in</a> för att förkorta länkar
+                    </Alert>
+                )}
+
+
                 <Stack gap="lg">
                     <Title order={2}>Förkorta en länk</Title>
 
