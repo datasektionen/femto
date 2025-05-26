@@ -69,18 +69,6 @@ export async function checkExpiredLink(slug: string): Promise<boolean> {
         
         if (wasDeleted) {
             console.log(`✅ Deleted expired link: ${slug}`);
-        } else {
-            // Check if link exists but is not expired (optional logging)
-            const existsResult = await client.query(
-                "SELECT expires FROM urls WHERE slug = $1",
-                [slug]
-            );
-            
-            if (existsResult.rowCount === 0) {
-                console.log(`ℹ️ Link not found: ${slug}`);
-            } else {
-                console.log(`ℹ️ Link exists but not expired: ${slug}`);
-            }
         }
         
         return wasDeleted;
