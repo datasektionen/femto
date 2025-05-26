@@ -183,9 +183,9 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             description: ""
         };
 
-        console.log("Submitting link with data:", data);
-        console.log("Local time selected:", values.expire);
-        console.log("Converted to UTC:", data.expires);
+        console.log("[Link] ℹ️ Submitting link with data:", data);
+        console.log("[Link] ℹ️ Local time selected:", values.expire);
+        console.log("[Link] ℹ️ Converted to UTC:", data.expires);
 
         try {
             const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
@@ -241,7 +241,7 @@ const LinkCreator: React.FC<LinkCreatorProps> = ({
             setResult(slug);
             form.reset();
         } catch (err: any) {
-            console.error("❌ Error inserting link 📁", err.stack);
+            console.error("[Link] ❌ Error inserting link 📁", err.stack);
             if (!error) {
                 setError({ title: "Fel", message: "Internt serverfel" });
             }

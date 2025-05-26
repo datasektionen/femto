@@ -53,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Fetch user data from the backend
     const refreshAuthData = async () => {
-        console.log("🔄 Refreshing auth data from backend");
 
         if (!isAuthenticated()) {
             setHasToken(false);
@@ -72,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUserData(authData.userData);
                 setUserPermissions(authData.userPermissions);
                 setUserGroups(authData.userGroups);
-                console.log("✅ Auth data refreshed successfully");
             } else {
                 // If fetch failed, clear user data
                 setUserData(null);
@@ -81,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setHasToken(false);
             }
         } catch (error) {
-            console.error("❌ Error refreshing auth data:", error);
+            console.error(`[Auth] ❌ Error refreshing auth data:`, error);
             setUserData(null);
             setUserPermissions(null);
             setUserGroups(null);
@@ -111,18 +109,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .map(group => group.group_name)               // Extract just the group_name
         : [];
 
-    // Log groups for debugging
+    // Log groups for debugging - only once when groups are first loaded
     useEffect(() => {
-        console.log("Available groups:", groups);
-        console.log("Full group objects with domains:", userGroups);
-        console.log("Group names only:", groups);
-        // Log group with domain format examples
-        if (userGroups && userGroups.length > 0) {
+        if (userGroups && userGroups.length > 0 && !isLoading) {
+            console.log("[Auth] ℹ️ Available groups:", groups);
+            console.log("[Auth] ℹ️ Full group objects with domains:", userGroups);
+            console.log("[Auth] ℹ️ Group names only:", groups);
+            // Log group with domain format examples
             const exampleGroup = userGroups[0];
-            console.log("Example group object:", exampleGroup);
-            console.log("Example group with domain format:", `${exampleGroup.group_name}@${exampleGroup.group_domain}`);
+            console.log("[Auth] ℹ️ Example group object:", exampleGroup);
+            console.log("[Auth] ℹ️ Example group with domain format:", `${exampleGroup.group_name}@${exampleGroup.group_domain}`);
         }
-    }, [groups, userGroups]);
+    }, [userGroups, isLoading]); // Only depend on userGroups and isLoading, not groups
 
     // Update the groups getter to provide the full group objects
     const groupObjects = userGroups || [];

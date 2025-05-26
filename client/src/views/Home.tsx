@@ -8,9 +8,7 @@ import { useAuth } from "../authorization/useAuth.ts";
 const Home = () => {
     const {
         hasToken,
-        userPermissions,
         customLinks,
-        manageLinks,
         groups,
         userGroups,
         refreshAuthData
@@ -23,14 +21,6 @@ const Home = () => {
 
     // Check if user can create custom links
     const canCreateCustomLinks = customLinks;
-
-    const canManageLinks = manageLinks;
-
-    console.log("User permissions:", userPermissions);
-    console.log("User groups:", groups);
-    console.log("User can create custom links:", customLinks);
-    console.log("User has token:", hasToken);
-    console.log("User can manage all links:", canManageLinks);
 
     return (
         <>

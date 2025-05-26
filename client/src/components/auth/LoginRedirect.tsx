@@ -6,7 +6,7 @@ export const LoginRedirect = () => {
     // Construct the backend login URL
     const backendLoginUrl = `${Configuration.backendApiUrl}/login`;
 
-    console.log("🔄 Redirecting to backend login:", backendLoginUrl);
+    console.log("[Auth] 🔄 Redirecting to backend login:", backendLoginUrl);
     // Redirect the user's browser to the backend endpoint
     window.location.href = backendLoginUrl;
   }, []); // Empty dependency array ensures this runs only once on mount
