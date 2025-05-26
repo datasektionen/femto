@@ -2,7 +2,7 @@ name: Deploy Dual-Task Job
 
 on:
   push:
-    branches: [ dev ] # FIXME: change to main when development slows down
+    branches: [ main ] # DONE: change to main when development slows down
   workflow_dispatch:
 
 jobs:
