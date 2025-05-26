@@ -132,7 +132,7 @@ const BlacklistUploadPage: React.FC = () => {
                         const percentCompleted = Math.round(
                             (progressEvent.loaded * 100) / progressEvent.total
                         );
-                        console.log(`Upload progress: ${percentCompleted}%`);
+                        console.log(`[Blacklist] ℹ️ Upload progress: ${percentCompleted}%`);
                     }
                 }
             });
@@ -141,7 +141,7 @@ const BlacklistUploadPage: React.FC = () => {
             setFile(null); // Clear the file input after successful upload
 
         } catch (err) {
-            console.error("Upload error:", err);
+            console.error("[Blacklist] ❌ Upload error:", err);
 
             if (axios.isAxiosError(err)) {
                 if (err.response?.status === 401) {

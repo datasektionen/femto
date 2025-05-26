@@ -36,7 +36,7 @@ export async function isBlacklistedDB(link: string): Promise<boolean> {
         
         return false;
     } catch (err: any) {
-        console.warn(`Error checking blacklist for "${link}":`, err.message);
+        console.warn(`[Blacklist] ❌ Error checking blacklist for "${link}":`, err.message);
         return false;
     } finally {
         if (client) {
@@ -106,12 +106,12 @@ async function databaseInsertBlacklist(domains: string[]): Promise<DatabaseInser
         
         const totalDomains = domains.length;
         if (totalDomains === 0) {
-            console.log("No domains to add to the blacklist.");
+            console.log("[Blacklist] ℹ️ No domains to add to the blacklist.");
             return { processedCount: 0, insertedCount: 0, skippedCount: 0 };
         }
-        
-        console.log(`Starting to insert ${totalDomains} domains into blacklist...`);
-        
+
+        console.log(`[Blacklist] ℹ️ Starting to insert ${totalDomains} domains into blacklist...`);
+
         // Process domains in batches
         for (let i = 0; i < domains.length; i += BATCH_SIZE) {
             const batch = domains.slice(i, i + BATCH_SIZE);
@@ -137,23 +137,23 @@ async function databaseInsertBlacklist(domains: string[]): Promise<DatabaseInser
                 // Log progress
                 if (processedCount % PROGRESS_INTERVAL === 0 || processedCount === totalDomains) {
                     const progress = Math.round((processedCount / totalDomains) * 100);
-                    console.log(`Progress: ${processedCount}/${totalDomains} domains (${progress}%) - Inserted: ${insertedCount}, Skipped: ${skippedCount}`);
+                    console.log(`[Blacklist] ℹ️ Progress: ${processedCount}/${totalDomains} domains (${progress}%) - Inserted: ${insertedCount}, Skipped: ${skippedCount}`);
                 }
                 
             } catch (err: any) {
-                console.error(`Error inserting batch starting at index ${i}:`, err.message);
+                console.error(`[Blacklist] ❌ Error inserting batch starting at index ${i}:`, err.message);
                 // Count failed batch as skipped
                 skippedCount += batch.length;
                 processedCount += batch.length;
             }
         }
-        
-        console.log(`Completed: ${processedCount}/${totalDomains} domains processed - Inserted: ${insertedCount}, Skipped: ${skippedCount}`);
-        
+
+        console.log(`[Blacklist] ✅ Completed: ${processedCount}/${totalDomains} domains processed - Inserted: ${insertedCount}, Skipped: ${skippedCount}`);
+
         return { processedCount, insertedCount, skippedCount };
         
     } catch (err: any) {
-        console.error('Database connection error:', err.message);
+        console.error('[Database] ❌ Database connection error:', err.message);
         throw err;
     } finally {
         if (client) {
@@ -169,7 +169,7 @@ async function databaseInsertBlacklist(domains: string[]): Promise<DatabaseInser
  * @param {Response} res - Response object
  */
 export async function blacklistFile(req: MulterRequest, res: Response): Promise<void> {
-    console.log('Processing blacklist file upload...');
+    console.log('[Blacklist] ℹ️ Processing blacklist file upload...');
 
     // Simplified permission handling
     const userPermissions = Array.isArray(req.user?.permissions)
@@ -222,9 +222,9 @@ export async function blacklistFile(req: MulterRequest, res: Response): Promise<
         // Remove duplicates
         const uniqueDomains = [...new Set(domains)];
         
-        console.log(`Extracted ${uniqueDomains.length} unique domains from ${req.file.originalname}`);
+        console.log(`[Blacklist] ℹ️ Extracted ${uniqueDomains.length} unique domains from ${req.file.originalname}`);
         if (invalidLines.length > 0) {
-            console.log(`Skipped ${invalidLines.length} invalid lines`);
+            console.log(`[Blacklist] ℹ️ Skipped ${invalidLines.length} invalid lines`);
         }
         
         // Insert domains into database and get results
@@ -245,7 +245,7 @@ export async function blacklistFile(req: MulterRequest, res: Response): Promise<
         });
         
     } catch (error: any) {
-        console.error('Error processing blacklist file:', error.message);
+        console.error('[Blacklist] ❌ Error processing blacklist file:', error.message);
         res.status(500).json({ 
             error: 'Lyckades inte bearbeta filen',
             details: error.message 

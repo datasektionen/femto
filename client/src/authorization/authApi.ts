@@ -31,7 +31,7 @@ export const loginWithCode = async (code: string): Promise<string> => {
     localStorage.setItem('token', response.data.token);
     return response.data.token;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[Auth] ❌ Login error:', error);
     localStorage.removeItem('token');
     throw error;
   }
@@ -56,8 +56,8 @@ export const fetchUserData = async (): Promise<AuthData | null> => {
     
     return response.data;
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    
+    console.error(`[Auth] ❌ Error fetching user data:`, error);
+
     // If unauthorized, clear token
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       localStorage.removeItem('token');

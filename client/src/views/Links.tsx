@@ -114,11 +114,11 @@ const Links: React.FC = () => {
             })
             .then((res) => {
                 setLinksData(res.data);
-                console.log("Hämtade länkar:", res.data);
+                console.log("[Links] ℹ️ Fetched links:", res.data);
                 setLoading(false);
             })
             .catch((err) => {
-                console.error("Fel vid hämtning av länkar:", err);
+                console.error("[Links] ❌ Error fetching links:", err);
                 if (axios.isAxiosError(err)) {
                     if (err.response?.status === 401 || err.response?.status === 403) {
                         setError("Åtkomst nekad. Du behöver logga in igen.");
@@ -241,11 +241,11 @@ const Links: React.FC = () => {
         navigator.clipboard
             .writeText(shortUrl)
             .then(() => {
-                console.log("Kopierad kort länk:", shortUrl);
+                console.log("[Links] ℹ️ Copied short link:", shortUrl);
                 setCopiedSlug(slug); // Set the copied slug
                 setTimeout(() => setCopiedSlug(null), 2000); // Clear after 2 seconds
             })
-            .catch((err) => console.error("Kunde inte kopiera kort länk:", err));
+            .catch((err) => console.error("[Links] ❌ Could not copy short link:", err));
     };
 
     const handleShowDetails = (slug: string) => {
@@ -311,7 +311,7 @@ const Links: React.FC = () => {
 
     function stringToHexColor(str: string | null | undefined, brightness = 1): string {
         if (!str) {
-            console.warn("Input string is null or undefined. Using default value.");
+            console.warn("[Links] ℹ️ Input string is null or undefined. Using default value.");
             str = "default";
         }
 

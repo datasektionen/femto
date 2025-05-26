@@ -46,9 +46,6 @@ redirectRouter.get("/:slug", async (req: any, res: any) => {
 
   // Kontrollera om request är från en bot
   const isBot = isBotRequest(userAgent);
-  if (isBot) {
-    console.log(`🤖 Bot detected: ${userAgent}`);
-  }
 
   let client;
   try {
@@ -66,7 +63,6 @@ redirectRouter.get("/:slug", async (req: any, res: any) => {
 
       if (!isBot) {
         // Logga klicket i url_clicks-tabellen endast om det inte är en bot
-        console.log(`✅ Logging click for URL ID: ${urlId} 📁`);
         await client.query("INSERT INTO url_clicks (url_id, language) VALUES ($1, $2)", [
           urlId,
           language,
@@ -79,7 +75,7 @@ redirectRouter.get("/:slug", async (req: any, res: any) => {
       res.status(404).send("Slug not found");
     }
   } catch (err: any) {
-    console.error("❌ Error executing query 📁", err.stack);
+    console.error(`[Redirect] ❌ Error executing query 📁`, err.stack);
     res.status(500).send("Internal Server Error");
   } finally {
     if (client) {

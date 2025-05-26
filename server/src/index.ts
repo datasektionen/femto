@@ -17,12 +17,12 @@ app.use("/api", apiRouter);     // Specific route for API
 app.use("/", redirectRouter); // General/catch-all routes last
 
 app.listen(PORT, () => {
-    console.log(`✅ Server is running on port ${PORT} 🚀`);
+    console.log(`[Startup] ✅ Server is running on port ${PORT}`);
 
-    console.log(`💻 Client URL: ${process.env.CLIENT_URL}`);
-    
+    console.log(`[Startup] 💻 Client URL: ${process.env.CLIENT_URL}`);
+
     // Delay starting the cleanup service to give the DB time to start
-    console.log('⏱️ Waiting for database to start up...');
+    console.log(`[Startup] ⏱️ Waiting for database to start up...`);
     setTimeout(() => {
         // Run every hour to clean up expired links
         scheduleCleanupJob('0 * * * *');

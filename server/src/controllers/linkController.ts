@@ -26,8 +26,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     if (expiresString) {
         // Parse the ISO string correctly to ensure UTC handling
         expiresForDb = new Date(expiresString);
-        console.log(`Received expires string: ${expiresString}`);
-        console.log(`Parsed UTC time: ${expiresForDb.toISOString()}`);
+        console.log(`[Link] ℹ️ Received expires string: ${expiresString}`);
+        console.log(`[Link] ℹ️ Parsed UTC time: ${expiresForDb.toISOString()}`);
     }
 
     const userId = req.user?.sub;
@@ -41,23 +41,20 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
     const userGroups = req.user?.groups || [];
 
-    console.log(`🔍 Processing link creation for user: ${userId || "unknown"}`);
-
-
     if (!userId) {
-        console.error("❌ User ID not found in token");
+        console.warn(`[Link] ❌ User ID not found in token`);
         res.status(400).json({ error: "User ID not found in token" });
         return;
     }
 
     if (userId !== user_id) {
-        console.error("❌ User ID mismatch");
+        console.warn("[Link] ❌ User ID mismatch");
         res.status(403).json({ error: "User ID mismatch" });
         return;
     }
 
     if (await isBlacklistedDB(url)) {
-        console.error("❌ Denna URL är blacklistad");
+        console.log(`[Link] ❌ The URL is blacklisted: ${url}`);
         res.status(403).json({ error: "Denna URL är blacklistad" });
         return;
     }
@@ -67,7 +64,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         const hasCustomSlugPermission = userPermissions.includes("custom-links");
 
         if (!hasCustomSlugPermission) {
-            console.error("❌ User doesn't have permission to create custom slugs");
+            console.warn(`[Link] ❌ User doesn't have permission to create custom slugs`);
             res
                 .status(403)
                 .json({ error: "You don't have permission to create custom slugs" });
@@ -76,7 +73,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
         // Validate the slug format
         if (!slugRegex.test(slug)) {
-            console.error("❌ Invalid slug format");
+            console.warn(`[Link] ❌ Invalid slug format`);
             res.status(400).json({ error: "Invalid slug format" });
             return;
         }
@@ -95,7 +92,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
 
         if (!belongsToGroup) {
-            console.error(`❌ User doesn't belong to the group: ${groupWithDomain}`);
+            console.warn(`[Link] ❌ User doesn't belong to the group: ${groupWithDomain}`);
             res
                 .status(403)
                 .json({ error: `You don't belong to the group: ${group}` });
@@ -103,7 +100,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         }
     }
 
-    
+
     // Function to encode an ID to a slug, tested for uniqueness up to 1 million
     function encodeId(id: number): string {
         if (id < 0) throw new Error('ID must be non-negative');
@@ -132,7 +129,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             ]);
             return result.rows.length > 0;
         } catch (err: any) {
-            console.error("❌ Error checking slug 📁", err.stack);
+            console.error(`[Link] ❌ Error checking slug 📁`, err.stack);
             return false;
         } finally {
             if (client) {
@@ -168,7 +165,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             ]);
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
-            console.error("❌ Error inserting link 📁", err.stack);
+            console.error(`[Link] ❌ Error inserting link 📁`, err.stack);
             res.status(500).send("Internal Server Error");
         } finally {
             if (client) {
@@ -208,7 +205,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
             ]);
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
-            console.error("❌ Error executing query 📁", err.stack);
+            console.error(`[Link] ❌ Error executing query 📁`, err.stack);
             res.status(500).send("Internal Server Error");
         } finally {
             if (client) {
@@ -244,7 +241,7 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
     const userGroupNames = userGroups.map((m) => m.group_name); // Get just the group names
 
     if (!userId) {
-        console.error("❌ User ID not found in token for deletion attempt");
+        console.warn(`[Link] ❌ User ID not found in token for deletion attempt`);
         res.status(400).json({ error: "User ID not found in token" });
         return;
     }
@@ -254,10 +251,7 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
         client = await pool.connect();
 
         if (userPermissions.includes("manage-all")) {
-            // If the user has the "manage-all" permission, allow deletion without ownership checks
-            console.log(
-                `🔑 User ${userId} has manage-all permission - deleting link ${slug} without checks`
-            );
+
             const deleteResult = await client.query(
                 "DELETE FROM urls WHERE slug = $1 RETURNING slug",
                 [slug]
@@ -269,10 +263,6 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
                 res.status(204).send();
             }
         } else {
-            // If the user doesn't have "manage-all", check ownership or mandate membership
-            console.log(
-                `ℹ️ User ${userId} attempting to delete link ${slug} - checking ownership/mandate`
-            );
 
             // Fetch the link's owner and mandate
             const linkResult = await client.query(
@@ -293,22 +283,16 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
             const hasGroupAccess = linkGroup && userGroupNames.includes(linkGroup);
 
             if (isOwner || hasGroupAccess) {
-                console.log(
-                    `✅ User ${userId} has permission to delete link ${slug} (Owner: ${isOwner}, Group Access: ${hasGroupAccess})`
-                );
                 await client.query("DELETE FROM urls WHERE slug = $1", [slug]);
                 res.status(204).send();
             } else {
-                console.warn(
-                    `🚫 User ${userId} denied deletion of link ${slug} - Not owner or matching group`
-                );
                 res
                     .status(403)
                     .send("Forbidden: You do not have permission to delete this link.");
             }
         }
     } catch (err: any) {
-        console.error(`❌ Error deleting link ${slug} 📁`, err.stack);
+        console.error(`[Link] ❌ Error deleting link ${slug} 📁`, err.stack);
         res.status(500).send("Internal Server Error");
     } finally {
         if (client) {
@@ -341,7 +325,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     const userGroupNames = userGroups.map((m) => m.group_name);
 
     if (!userId) {
-        console.error("❌ User ID not found in token for update attempt");
+        console.warn(`[Link] ❌ User ID not found in token for update attempt`);
         res.status(400).json({ error: "User ID not found in token" });
         return;
     }
@@ -358,7 +342,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     }
 
     if (await isBlacklistedDB(url)) {
-        console.error("❌ URL is blacklisted");
+        console.log(`[Link] ❌ URL is blacklisted: ${url}`);
         res.status(403).json({ error: "Denna URL är blacklistad" });
         return;
     }
@@ -396,9 +380,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 );
 
                 if (!isGroupFromHive) {
-                    console.warn(
-                        `🚫 User ${userId} tried to assign link ${slug} to a group (${groupWithDomain}) that is not part of Hive memberships.`
-                    );
+                    console.warn(`[Link] 🚫 User ${userId} tried to assign link ${slug} to a group (${groupWithDomain}) that is not part of Hive memberships.`);
                     res
                         .status(400)
                         .json({
@@ -411,9 +393,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
 
                 if (!belongsToGroup) {
-                    console.warn(
-                        `🚫 User ${userId} tried to assign link ${slug} to group ${groupWithDomain} they don't belong to.`
-                    );
+                    console.warn(`[Link] 🚫 User ${userId} tried to assign link ${slug} to group ${groupWithDomain} they don't belong to.`);
                     res
                         .status(403)
                         .json({ error: `You don't belong to the group: ${group}` });
@@ -436,10 +416,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
         const setClauseString = setClauses.join(", ");
 
         if (userPermissions.includes("manage-all")) {
-            // User has manage-all permission, update directly
-            console.log(
-                `🔑 User ${userId} has manage-all permission - updating link ${slug}`
-            );
+
             const updateQuery = `UPDATE urls SET ${setClauseString} WHERE slug = $${slugParamIndex} RETURNING *`;
             const updateResult = await client.query(updateQuery, queryParams);
 
@@ -449,10 +426,6 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 res.status(200).json(updateResult.rows[0]);
             }
         } else {
-            // User does not have manage-all, check ownership or mandate
-            console.log(
-                `ℹ️ User ${userId} attempting to update link ${slug} - checking ownership/mandate`
-            );
 
             // Fetch the link's owner and group first
             const linkResult = await client.query(
@@ -475,9 +448,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
 
             if (isOwner || hasGroupAccess) {
                 // Updated condition
-                console.log(
-                    `✅ User ${userId} has permission to update link ${slug} (Owner: ${isOwner}, Group Access: ${hasGroupAccess})`
-                ); // Updated log message
+
                 // Add user_id or group check to the WHERE clause for safety
                 // This ensures they can only update links they own or manage via group
                 const updateQuery = `
@@ -494,9 +465,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
 
                 if (updateResult.rowCount === 0) {
                     // This might happen if the link exists but doesn't match the final WHERE clause (should theoretically not happen due to prior checks, but good for safety)
-                    console.warn(
-                        `🚫 Update for link ${slug} by user ${userId} failed unexpectedly after permission check.`
-                    );
+                    console.warn(`[Link] 🚫 Update for link ${slug} by user ${userId} failed unexpectedly after permission check.`);
                     res
                         .status(404)
                         .send("Link not found or permission mismatch during update.");
@@ -504,16 +473,14 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                     res.status(200).json(updateResult.rows[0]);
                 }
             } else {
-                console.warn(
-                    `🚫 User ${userId} denied update of link ${slug} - Not owner or matching mandate`
-                );
+                console.warn(`[Link] 🚫 User ${userId} denied update of link ${slug} - Not owner or matching mandate`);
                 res
                     .status(403)
                     .send("Forbidden: You do not have permission to update this link.");
             }
         }
     } catch (err: any) {
-        console.error(`❌ Error updating link ${slug} 📁`, err.stack);
+        console.error(`[Link] ❌ Error updating link ${slug} 📁`, err.stack);
         // Handle potential unique constraint violation if changing URL/description makes it non-unique if needed
         if (err.code === "23505") {
             // Unique violation error code in PostgreSQL
@@ -550,10 +517,8 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
 
         const userGroups = req.user?.groups || [];
 
-        console.log(`🔍 Fetching links for user: ${userId || "unknown"}`);
-
         if (!userId) {
-            console.error("❌ User ID not found in token");
+            console.warn(`[Link] ❌ User ID not found in token`);
             res.status(400).json({ error: "User ID not found in token" });
             return;
         }
@@ -566,7 +531,6 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
 
         if (canManageAllLinks) {
             // If user can manage all links, don't filter
-            console.log("🔑 User has manage-all permission - fetching all links");
             query = `SELECT * FROM urls ORDER BY expires DESC NULLS LAST`;
         } else {
             // Extract user's group names
@@ -592,9 +556,6 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
             }
         }
 
-        console.log("Executing query:", query);
-        console.log("With parameters:", queryParams);
-
         const result = await pool.query(query, queryParams);
 
         // Format timestamps for each link before sending
@@ -604,10 +565,9 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
             expires: link.expires?.toISOString() || null,
         }));
 
-        console.log(`✅ Found ${formatted.length} links for user ${userId}`);
         res.status(200).json(formatted);
     } catch (error) {
-        console.error("❌ Error getting links:", error);
+        console.error(`[Link] ❌ Error getting links:`, error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -642,7 +602,7 @@ export async function getLink(req: Request, res: Response): Promise<void> {
             res.status(200).json(responseLink);
         }
     } catch (err: any) {
-        console.error("❌ Error getting link 📁", err.stack);
+        console.error(`[Link] ❌ Error getting link 📁`, err.stack);
         res.status(500).send("Internal Server Error");
     } finally {
         if (client) {
@@ -703,7 +663,7 @@ export async function getLinkStats(req: Request, res: Response): Promise<void> {
 
         res.json(data);
     } catch (err: any) {
-        console.error("❌ Error retrieving link stats 📁", err.stack);
+        console.error(`[Link] ❌ Error retrieving link stats 📁`, err.stack);
         res.status(500).json({ error: "Internal Server Error" });
     } finally {
         if (client) {
@@ -747,7 +707,7 @@ export async function getLangstats(req: Request, res: Response): Promise<void> {
             }))
         );
     } catch (err: any) {
-        console.error("❌ Error retrieving language stats 📁:", err);
+        console.error(`[Link] ❌ Error retrieving language stats 📁:`, err);
         res.status(500).json({ error: "Internal Server Error" });
     } finally {
         client?.release();

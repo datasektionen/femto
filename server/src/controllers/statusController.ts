@@ -16,7 +16,7 @@ export async function getAPIStatus(req: Request, res: Response){
         const result = await client.query('SELECT NOW()');
         res.status(200).json({ status: 'ok', time: result.rows[0].now });
     } catch (err: any) {
-        console.error('❌ Error executing query 📁', err.stack);
+        console.error(`[Status] ❌ Error executing query 📁`, err.stack);
         res.status(500).send('Internal Server Error');
     } finally {
         if (client) {
