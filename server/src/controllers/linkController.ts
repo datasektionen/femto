@@ -1,6 +1,6 @@
 import { raw, Request, Response } from "express";
 import pool from "../services/db";
-import { isBlacklistedDB } from "./blacklistController";
+import { isBlacklisted } from "./blacklistController";
 
 const slugRegex: RegExp = /^[a-z0-9-]+$/; // Regex to validate slugs (lowercase alphanumeric and hyphens)
 
@@ -53,7 +53,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         return;
     }
 
-    if (await isBlacklistedDB(url)) {
+    if (await isBlacklisted(url)) {
         console.log(`[Link] ❌ The URL is blacklisted: ${url}`);
         res.status(403).json({ error: "Denna URL är blacklistad" });
         return;
@@ -341,7 +341,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
         return;
     }
 
-    if (await isBlacklistedDB(url)) {
+    if (await isBlacklisted(url)) {
         console.log(`[Link] ❌ URL is blacklisted: ${url}`);
         res.status(403).json({ error: "Denna URL är blacklistad" });
         return;

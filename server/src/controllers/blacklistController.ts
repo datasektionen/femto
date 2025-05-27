@@ -14,27 +14,43 @@ export interface MulterRequest extends Request {
 
 /**
  * Queries database for given link and returns true if it is blacklisted.
+ * Blocks main domains and all their subdomains.
  * @param {string} link - The link to check.
  * @returns {Promise<boolean>} - True if the link is in the blacklist, false otherwise.
  */
-export async function isBlacklistedDB(link: string): Promise<boolean> {
+export async function isBlacklisted(link: string): Promise<boolean> {
     let client;
     
     try {
         const url = new URL(link);
-        const host = url.hostname;
-        const linkVariants = [host, `www.${host}`, host.replace(/^www\./, "")];
-
+        let hostname = url.hostname.toLowerCase();
+        
+        // Remove www prefix if present
+        if (hostname.startsWith('www.')) {
+            hostname = hostname.substring(4);
+        }
+        
         client = await pool.connect();
         
-        for (const linkVariant of linkVariants) {
-            const result = await client.query('SELECT 1 FROM blockedurls WHERE url = $1 LIMIT 1', [linkVariant]);
+        // Check if any parent domain is blacklisted
+        // For example: api.sub.example.com will check api.sub.example.com, sub.example.com, example.com
+        const domainParts = hostname.split('.');
+        
+        for (let i = 0; i < domainParts.length - 1; i++) {
+            const domainToCheck = domainParts.slice(i).join('.');
+            
+            const result = await client.query(
+                'SELECT 1 FROM blockedurls WHERE url = $1 LIMIT 1', 
+                [domainToCheck]
+            );
+            
             if (result.rowCount && result.rowCount > 0) {
                 return true;
             }
         }
         
         return false;
+        
     } catch (err: any) {
         console.warn(`[Blacklist] ❌ Error checking blacklist for "${link}":`, err.message);
         return false;
