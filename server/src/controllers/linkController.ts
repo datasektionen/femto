@@ -1,4 +1,3 @@
-
 import { raw, Request, Response } from "express";
 import pool from "../services/db";
 import { isBlacklisted } from "./blacklistController";
@@ -552,9 +551,13 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
     try {
         const userId = req.user?.sub;
         const userPermissions = Array.isArray(req.user?.permissions)
-            ? req.user.permissions.map((perm) =>
-                typeof perm === "string" ? perm : (perm as { id: string }).id
-            )
+            ? req.user.permissions.map((perm: string | { id: string }) => // Added type for perm
+                typeof perm === "string"
+                    ? perm
+                    : typeof perm === "object" && perm !== null && "id" in perm
+                        ? (perm as { id: string }).id
+                        : "" // Handle cases where perm might be an object without id
+            ).filter(p => p !== "") // Remove empty strings if any permission was invalid
             : [];
         const userGroups = req.user?.groups || []; // Expects [{ group_id, group_name, group_domain, ... }]
 
@@ -565,7 +568,6 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
         }
 
         const canManageAllLinks = userPermissions.includes("manage-all");
-        // Define which columns to select to include the new display_group_name
         const selectColumns = "id, slug, url, date, user_id, expires, description, group_identifier, display_group_name, clicks";
 
         let query;
@@ -574,14 +576,22 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
         if (canManageAllLinks) {
             query = `SELECT ${selectColumns} FROM urls ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST`;
         } else {
-            // User's group identifiers (id@domain)
-            const userGroupIdentifiers = userGroups.map((g: any) => `${g.group_id}@${g.group_domain}`);
+            const userGroupIdentifiers = userGroups
+                .map((g: any) => {
+                    if (g && typeof g.group_id === 'string' && typeof g.group_domain === 'string') {
+                        return `${g.group_id}@${g.group_domain}`;
+                    }
+                    // Optionally log a warning for malformed group objects
+                    // console.warn('[Link] getAllLinks: Malformed group object in userGroups:', g);
+                    return null;
+                })
+                .filter((identifier): identifier is string => identifier !== null);
 
             if (userGroupIdentifiers.length > 0) {
                 query = `
                   SELECT ${selectColumns} FROM urls 
                   WHERE user_id = $1 
-                  OR group_identifier = ANY($2::text[])  -- Compare against group_identifier (id@domain)
+                  OR group_identifier = ANY($2::text[])
                   ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST
                 `;
                 queryParams = [userId, userGroupIdentifiers];
@@ -599,18 +609,14 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
 
         const formatted = result.rows.map((link) => ({
             ...link,
-            // Ensure group_identifier is aliased to group_name if frontend expects that for the id@domain
-            // and display_group_name is present for the actual name.
-            // Or, adjust frontend Link interface to use group_identifier and display_group_name directly.
-            // For now, let's assume frontend will adapt to group_identifier and display_group_name.
-            date: link.date.toISOString(),
-            expires: link.expires?.toISOString() || null,
+            date: link.date ? new Date(link.date).toISOString() : null, // Safely handle link.date
+            expires: link.expires ? new Date(link.expires).toISOString() : null, // Safely handle link.expires
         }));
 
         res.status(200).json(formatted);
-    } catch (error) {
-        console.error(`[Link] ❌ Error getting links:`, error);
-        res.status(500).json({ error: "Internal server error" });
+    } catch (error: any) { // Added type for error
+        console.error(`[Link] ❌ Error getting links:`, error.stack || error); // Log stack trace
+        res.status(500).json({ error: "Server error while retrieving links." });
     }
 }
 
