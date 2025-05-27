@@ -46,4 +46,3 @@ CREATE OR REPLACE TRIGGER url_click_insert_trigger
 AFTER INSERT ON url_clicks
 FOR EACH ROW
 EXECUTE FUNCTION increment_url_clicks();
-
