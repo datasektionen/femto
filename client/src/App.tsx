@@ -5,10 +5,10 @@ import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
 import { AuthProvider } from "./authorization/AuthContext.tsx";
 import { useAuth } from "./authorization/useAuth.ts";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
-import { LoginRedirect } from "./components/auth/LoginRedirect.tsx";
-import { Logout } from "./components/auth/Logout.tsx";
-import { OIDCCallback } from "./components/auth/OIDCCallback.tsx";
+import { ProtectedRoute } from "./authentication/ProtectedRoute.tsx";
+import { LoginRedirect } from "./authentication/LoginRedirect.tsx";
+import { Logout } from "./authentication/Logout.tsx";
+import { OIDCCallback } from "./authentication/OIDCCallback.tsx";
 import Blacklist from "./views/Blacklist.tsx"; // Import Blacklist component
 import LinkDetails from "./views/LinkDetails.tsx";
 
