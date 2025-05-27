@@ -406,21 +406,11 @@ const LinkDetails: React.FC = () => {
     // Populate form fields when linkDetails are fetched or updated.
     useEffect(() => {
         if (linkDetails) {
-            // Helper function to clean up null strings
-            const cleanGroupName = (groupName: string | null) => {
-                if (!groupName || groupName === 'null@null' || groupName === 'null') {
-                    return '';
-                }
-                return groupName;
-            };
-
             form.setValues({
                 url: linkDetails.url || '',
                 description: linkDetails.description || '',
                 expires: linkDetails.expires ? toLocalISOString(linkDetails.expires) : '',
-
                 group_name: linkDetails.group_identifier || '', // Use group_identifier here
-
             });
         }
     }, [linkDetails]); // Removed form.setValues from deps
@@ -463,7 +453,6 @@ const LinkDetails: React.FC = () => {
         let payload_actual_group_name: string | null = null; // Explicitly type as string | null
         let payload_group_domain: string | null = null; // Explicitly type as string | null
 
-
         if (values.group_name && values.group_name.includes('@')) { // values.group_name is 'id@domain' from Select
             const parts = values.group_name.split("@");
             payload_group_id = parts[0] || null;
@@ -482,29 +471,18 @@ const LinkDetails: React.FC = () => {
             }
         } else if (values.group_name === '') { // User cleared the Select field
             // All payloads remain null as initialized
-
         }
         // If values.group_name is undefined or some other non-empty, non-@ string, 
         // it's an invalid state from Select. The current logic defaults to nulls.
-
-        // Debug logging
-        console.log("Form values:", values);
-        console.log("Parsed group:", group);
-        console.log("Parsed group_domain:", group_domain);
-        console.log("Type of group:", typeof group);
-        console.log("Type of group_domain:", typeof group_domain);
 
         const payload = {
             url: values.url,
             description: values.description,
             expires: values.expires ? new Date(values.expires).toISOString() : null,
-
             group_id: payload_group_id,
             actual_group_name: payload_actual_group_name,
             group_domain: payload_group_domain,
-
         };
-
 
         try {
             const response = await api.patch<Link>(
