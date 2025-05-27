@@ -548,26 +548,37 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
  * till t.ex. requireRole('admin')-middleware.
  */
 export async function getAllLinks(req: Request, res: Response): Promise<void> {
+    console.log("[Link] getAllLinks: Received request.");
     try {
         const userId = req.user?.sub;
+        console.log("[Link] getAllLinks: User ID from token:", userId);
+        console.log("[Link] getAllLinks: Full req.user object:", JSON.stringify(req.user, null, 2));
+
+
         const userPermissions = Array.isArray(req.user?.permissions)
-            ? req.user.permissions.map((perm: string | { id: string }) => // Added type for perm
+            ? req.user.permissions.map((perm: string | { id: string }) =>
                 typeof perm === "string"
                     ? perm
                     : typeof perm === "object" && perm !== null && "id" in perm
                         ? (perm as { id: string }).id
-                        : "" // Handle cases where perm might be an object without id
-            ).filter(p => p !== "") // Remove empty strings if any permission was invalid
+                        : "" 
+            ).filter(p => p !== "")
             : [];
-        const userGroups = req.user?.groups || []; // Expects [{ group_id, group_name, group_domain, ... }]
+        console.log("[Link] getAllLinks: Parsed userPermissions:", userPermissions);
+
+        const userGroups = req.user?.groups || [];
+        console.log("[Link] getAllLinks: Raw userGroups from token:", JSON.stringify(userGroups, null, 2));
+
 
         if (!userId) {
-            console.warn(`[Link] ❌ User ID not found in token for getAllLinks`);
+            console.warn(`[Link] getAllLinks: User ID not found in token.`);
             res.status(400).json({ error: "User ID not found in token" });
             return;
         }
 
         const canManageAllLinks = userPermissions.includes("manage-all");
+        console.log("[Link] getAllLinks: canManageAllLinks:", canManageAllLinks);
+
         const selectColumns = "id, slug, url, date, user_id, expires, description, group_identifier, display_group_name, clicks";
 
         let query;
@@ -575,17 +586,18 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
 
         if (canManageAllLinks) {
             query = `SELECT ${selectColumns} FROM urls ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST`;
+            console.log("[Link] getAllLinks: Admin query:", query);
         } else {
             const userGroupIdentifiers = userGroups
                 .map((g: any) => {
                     if (g && typeof g.group_id === 'string' && typeof g.group_domain === 'string') {
                         return `${g.group_id}@${g.group_domain}`;
                     }
-                    // Optionally log a warning for malformed group objects
-                    // console.warn('[Link] getAllLinks: Malformed group object in userGroups:', g);
+                    console.warn('[Link] getAllLinks: Malformed group object in userGroups:', g);
                     return null;
                 })
                 .filter((identifier): identifier is string => identifier !== null);
+            console.log("[Link] getAllLinks: Parsed userGroupIdentifiers for query:", userGroupIdentifiers);
 
             if (userGroupIdentifiers.length > 0) {
                 query = `
@@ -603,155 +615,29 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
                 `;
                 queryParams = [userId];
             }
+            console.log("[Link] getAllLinks: Non-admin query:", query);
+            console.log("[Link] getAllLinks: Non-admin queryParams:", queryParams);
         }
 
+        console.log("[Link] getAllLinks: Executing query:", query, "with params:", JSON.stringify(queryParams));
         const result = await pool.query(query, queryParams);
+        console.log("[Link] getAllLinks: Query successful, rowCount:", result.rowCount);
 
         const formatted = result.rows.map((link) => ({
             ...link,
-            date: link.date ? new Date(link.date).toISOString() : null, // Safely handle link.date
-            expires: link.expires ? new Date(link.expires).toISOString() : null, // Safely handle link.expires
+            date: link.date ? new Date(link.date).toISOString() : null,
+            expires: link.expires ? new Date(link.expires).toISOString() : null,
         }));
 
         res.status(200).json(formatted);
-    } catch (error: any) { // Added type for error
-        console.error(`[Link] ❌ Error getting links:`, error.stack || error); // Log stack trace
-        res.status(500).json({ error: "Server error while retrieving links." });
-    }
-}
-
-export async function getLink(req: Request, res: Response): Promise<void> {
-    const { slug } = req.params;
-    let client;
-    try {
-        client = await pool.connect();
-        // Define which columns to select
-        const selectColumns = "id, slug, url, date, user_id, expires, description, group_identifier, display_group_name, clicks";
-        const result = await client.query(`SELECT ${selectColumns} FROM urls WHERE slug = $1`, [
-            slug,
-        ]);
-
-        if (result.rows.length === 0) {
-            res.status(404).send("Link not found");
-        } else {
-            const link = result.rows[0];
-            const responseLink = {
-                ...link,
-                // Again, ensure frontend Link interface matches these fields (group_identifier, display_group_name)
-                date: link.date.toISOString(),
-                expires: link.expires?.toISOString() || null,
-            };
-            res.status(200).json(responseLink);
+    } catch (error: any) {
+        console.error(`[Link] ❌ getAllLinks: Error caught!`);
+        console.error(`[Link] ❌ getAllLinks: Error message: ${error.message}`);
+        console.error(`[Link] ❌ getAllLinks: Error stack: ${error.stack}`);
+        if (error.code) { // Log PostgreSQL error code if available
+            console.error(`[Link] ❌ getAllLinks: PostgreSQL error code: ${error.code}`);
         }
-    } catch (err: any) {
-        console.error(`[Link] ❌ Error getting link ${slug} 📁`, err.stack);
-        res.status(500).send("Internal Server Error");
-    } finally {
-        if (client) {
-            client.release();
-        }
-    }
-}
-
-/**
- * GET /api/links/:slug/stats
- * Param: ?granularity=hour|day (valfritt, default "day")
- * Returnerar klick-data ENDAST för de tidpunkter där det faktiskt finns klick.
- */
-export async function getLinkStats(req: Request, res: Response): Promise<void> {
-    const { slug } = req.params;
-    const { granularity = "day" } = req.query; // t.ex. ?granularity=hour
-    let client;
-
-    try {
-        client = await pool.connect();
-
-        // 1. Verifiera att länken finns
-        const linkResult = await client.query(
-            "SELECT id FROM urls WHERE slug = $1",
-            [slug]
-        );
-        if (linkResult.rows.length === 0) {
-            res.status(404).json({ error: "Link not found" });
-            return;
-        }
-        const urlId = linkResult.rows[0].id;
-
-        // 2. Tillåt endast "hour" eller "day"
-        const validIntervals = ["hour", "day"];
-        const interval = validIntervals.includes(granularity as string)
-            ? granularity
-            : "day";
-
-        // 3. Gruppar klickdata per timme eller dag
-        const statsResult = await client.query(
-            `
-        SELECT
-          date_trunc('${interval}', clicked_at) AS date,
-          COUNT(*) AS clicks
-        FROM url_clicks
-        WHERE url_id = $1
-        GROUP BY 1
-        ORDER BY 1
-      `,
-            [urlId]
-        );
-
-        // 4. Mappa resultatet till { date, clicks }
-        const data = statsResult.rows.map((row: any) => ({
-            date: row.date.toISOString(), // ex: "2025-01-01T09:00:00.000Z"
-            clicks: Number(row.clicks),
-        }));
-
-        res.json(data);
-    } catch (err: any) {
-        console.error(`[Link] ❌ Error retrieving link stats 📁`, err.stack);
-        res.status(500).json({ error: "Internal Server Error" });
-    } finally {
-        if (client) {
-            client.release();
-        }
-    }
-}
-
-export async function getLangstats(req: Request, res: Response): Promise<void> {
-    const { slug } = req.params;
-    let client;
-
-    try {
-        client = await pool.connect();
-
-        // 1. Verifiera att länken finns
-        const linkResult = await client.query(
-            "SELECT id FROM urls WHERE slug = $1",
-            [slug]
-        );
-        if (linkResult.rows.length === 0) {
-            res.status(404).json({ error: "Link not found" });
-            return;
-        }
-        const urlId = linkResult.rows[0].id;
-
-        // 2. Hämta språkstatistik
-        const langRes = await client.query(
-            `SELECT language, COUNT(*) AS clicks
-            FROM url_clicks
-            WHERE url_id = $1
-            GROUP BY language
-            ORDER BY clicks DESC`,
-            [urlId]
-        );
-
-        res.json(
-            langRes.rows.map((r: any) => ({
-                language: r.language,
-                clicks: Number(r.clicks),
-            }))
-        );
-    } catch (err: any) {
-        console.error(`[Link] ❌ Error retrieving language stats 📁:`, err);
-        res.status(500).json({ error: "Internal Server Error" });
-    } finally {
-        client?.release();
+        console.error(`[Link] ❌ getAllLinks: Full error object:`, error);
+        res.status(500).json({ error: "Server error while retrieving links.", details: error.message });
     }
 }
