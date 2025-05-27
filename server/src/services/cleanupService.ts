@@ -12,27 +12,27 @@ interface CleanupResult {
  */
 async function cleanupExpiredLinks(): Promise<CleanupResult> {
     let client;
-    
+
     try {
         client = await pool.connect();
-        
+
         // Single query: delete expired links and return their slugs
         const result = await client.query(
             "DELETE FROM urls WHERE expires IS NOT NULL AND expires < NOW() RETURNING slug"
         );
-        
+
         const deletedSlugs = result.rows.map(row => row.slug);
         const deletedCount = result.rowCount || 0;
-        
+
         if (deletedCount > 0) {
             console.log(`[Cleanup] ✅ Cleanup completed: Deleted ${deletedCount} expired link(s)`);
             console.log(`[Cleanup] 🗑️ Deleted slugs: ${deletedSlugs.join(', ')}`);
         } else {
             console.log(`[Cleanup] ✅ Cleanup completed: No expired links found`);
         }
-        
+
         return { deletedCount, deletedSlugs };
-        
+
     } catch (error: any) {
         console.error(`[Cleanup] ❌ Error during cleanup:`, error.message);
         throw error;
@@ -53,26 +53,26 @@ export async function checkExpiredLink(slug: string): Promise<boolean> {
         console.warn(`[Cleanup] ⚠️ Invalid slug provided to checkExpiredLink`);
         return false;
     }
-    
+
     let client;
-    
+
     try {
         client = await pool.connect();
-        
+
         // Single query: delete if expired and return the slug
         const result = await client.query(
             "DELETE FROM urls WHERE slug = $1 AND expires IS NOT NULL AND expires < NOW() RETURNING slug",
             [slug]
         );
-        
+
         const wasDeleted = (result.rowCount ?? 0) > 0;
-        
+
         if (wasDeleted) {
             console.log(`[Cleanup] ✅ Deleted expired link: ${slug}`);
         }
-        
+
         return wasDeleted;
-        
+
     } catch (error: any) {
         console.error(`[Cleanup] ❌ Error checking expired link ${slug}:`, error.message);
         return false;
@@ -109,7 +109,7 @@ export function scheduleCleanupJob(
                 console.error(`[Cleanup] ❌ Scheduled cleanup failed:`, error.message);
             }
         });
-        
+
         // Run initial cleanup if requested
         if (runOnStart) {
             console.log(`[Cleanup] 🚀 Running initial cleanup...`);

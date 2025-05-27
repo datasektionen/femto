@@ -75,7 +75,7 @@ async function fetchUserMemberships(username: string) {
             console.error("[Groups] ❌ HIVE_API_KEY is undefined");
             return { error: true, message: "API key not configured" };
         }
-        
+
         const response = await axios.get(
             `https://hive.datasektionen.se/api/v1/tagged/link-manager/memberships/${username}`,
             {
@@ -124,35 +124,35 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
 
         // Verify the code and send the access token in the response
         const tokenSet = await client.callback(`${CLIENT_URL}/auth/oidc-callback`, { code });
-        
+
         // Add a non-null assertion operator to accessToken
         const accessToken = tokenSet.access_token!;
 
         // Fetch user info
         const userInfo = await client.userinfo(accessToken);
-        
+
         // Extract username from userInfo and ensure it's a string
         const usernameRaw = userInfo.sub || userInfo.username || userInfo.user;
         const username = typeof usernameRaw === 'string' ? usernameRaw : String(usernameRaw);
-        
+
         // Fetch permissions and group if username is available
         let permissions = [];
         let groups = [];
-        
+
         if (username) {
             permissions = await fetchUserPermissions(username);
             groups = await fetchUserMemberships(username);
         }
 
         // Create a JWT with user info, permissions, and groups
-        const token = jwt.sign({ 
+        const token = jwt.sign({
             ...userInfo,
             permissions: permissions,
             groups: groups
         }, JWT_SECRET!, { expiresIn: '1h' });
 
         // Return both token and decoded data separately
-        res.status(200).json({ 
+        res.status(200).json({
             token: token,
             userData: userInfo,
             userPermissions: permissions,
@@ -170,25 +170,25 @@ export async function verifyCode(req: Request, res: Response): Promise<void> {
  */
 export async function getUserData(req: Request, res: Response): Promise<void> {
     try {
-      // The JWT middleware already verified the token and added user to req
-      if (!req.user) {
-        res.status(401).json({ message: 'Unauthorized' });
-        return;
-      }
-  
-      // Return extracted data from the token
-      res.status(200).json({
-        userData: {
-          sub: req.user.sub,
-          email: req.user.email,
-          name: req.user.name,
-          // Add other fields you need
-        },
-        userPermissions: req.user.permissions || [],
-        userGroups: req.user.groups || []
-      });
+        // The JWT middleware already verified the token and added user to req
+        if (!req.user) {
+            res.status(401).json({ message: 'Unauthorized' });
+            return;
+        }
+
+        // Return extracted data from the token
+        res.status(200).json({
+            userData: {
+                sub: req.user.sub,
+                email: req.user.email,
+                name: req.user.name,
+                // Add other fields you need
+            },
+            userPermissions: req.user.permissions || [],
+            userGroups: req.user.groups || []
+        });
     } catch (err) {
-      console.error('[JWT] ❌ Error getting user data:', err);
-      res.status(500).json({ message: 'Server error' });
+        console.error('[JWT] ❌ Error getting user data:', err);
+        res.status(500).json({ message: 'Server error' });
     }
 }

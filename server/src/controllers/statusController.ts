@@ -10,7 +10,7 @@ import pool from '../services/db';
  * @param {Response} res - Express response object.
  * @returns {Promise<void>} - A promise that resolves when the status is sent.
  */
-export async function getAPIStatus(req: Request, res: Response){
+export async function getAPIStatus(req: Request, res: Response) {
     const client = await pool.connect();
     try {
         const result = await client.query('SELECT NOW()');

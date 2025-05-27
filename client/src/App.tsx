@@ -1,6 +1,7 @@
-import { BrowserRouter, Route, Routes, Link} from "react-router-dom";
+import { BrowserRouter, Route, Routes, Link } from "react-router-dom";
 import Methone from "methone"; // Import Methone (Header is optional)
-import { MantineProvider } from "@mantine/core";
+import { MantineProvider, Box, Center, Stack, Text, Button, Card, ThemeIcon, Title } from "@mantine/core";
+import { IconError404, IconHome } from "@tabler/icons-react"; // Import icons for UI
 import Home from "./views/Home.tsx";
 import Links from "./views/Links.tsx";
 import { AuthProvider } from "./authorization/AuthContext.tsx";
@@ -31,6 +32,42 @@ const AppContent = () => {
             ...(hasToken && manageBlacklist ? [<Link to="/blacklist" key="methone-link-3">Svartlista</Link>] : []),
         ],
     };
+
+    // NotFound component to display when a route is not found
+    const NotFound = () => (
+        <>
+            <Box id="content" p="md">
+                <Center style={{ height: '70vh' }}>
+                    <Card shadow="sm" radius="lg" withBorder w="100%" maw={800} p="xl">
+                        <Stack>
+                            <ThemeIcon size={60} radius="lg" color="red" variant="light" mx="auto">
+                                <IconError404 size={30} />
+                            </ThemeIcon>
+
+                            <Title order={2} ta="center" mb="md">
+                                Sidan hittades inte
+                            </Title>
+
+                            <Text c="dimmed" ta="center" mb="md">
+                                Den sida du letade efter kunde inte hittas.
+                            </Text>
+
+                            <Button
+                                leftSection={<IconHome size={16} />}
+                                component={Link}
+                                to="/"
+                                radius="md"
+                                variant="light"
+                                fullWidth
+                            >
+                                Tillbaka till startsidan
+                            </Button>
+                        </Stack>
+                    </Card>
+                </Center>
+            </Box>
+        </>
+    );
 
     return (
         // This div wraps Methone and the page content.
@@ -78,6 +115,9 @@ const AppContent = () => {
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Catch-all route for 404 Not Found */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </div>
     );
