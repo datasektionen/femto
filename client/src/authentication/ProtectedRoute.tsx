@@ -1,4 +1,4 @@
-import { useAuth } from '../../authorization/useAuth.ts';
+import { useAuth } from '../authorization/useAuth.ts';
 import React from 'react';
 
 interface ProtectedRouteProps {

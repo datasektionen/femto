@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import Configuration from '../../configuration.ts';
+import Configuration from '../configuration.ts';
 
 export const LoginRedirect = () => {
   useEffect(() => {
