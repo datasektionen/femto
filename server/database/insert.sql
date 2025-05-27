@@ -1,11 +1,11 @@
 -- Test-data för urls
-INSERT INTO urls (slug, url, user_id, expires, description, group_name) 
+INSERT INTO urls (slug, url, user_id, expires, description, group_identifier, display_group_name) 
 VALUES 
-  ('gh123', 'https://github.com/',         'armanmo',  '2025-12-31 23:59:59', 'GruppmedDomain1',       'grupp@domain1'),
-  ('goo456','https://www.google.com/',     'armanmo', NULL,                'GruppmedDomain2',  'grupp@testarmedenlängre'),
-  ('nyt789','https://www.nytimes.com/',    'armanmo','2025-06-30 23:59:59','The New York Times',    'news'),
-  ('ytube','https://www.youtube.com/',     'mbene',   '2026-01-01 00:00:00',  'YouTube platform',      'videos'),
-  ('wiki1','https://en.wikipedia.org/wiki/Main_Page','mbene',NULL,'Wikipedia main page','reference')
+  ('gh123', 'https://github.com/',         'armanmo',  '2025-12-31 23:59:59', 'GruppmedDomain1',       '1@domain1','test' ),
+  ('goo456','https://www.google.com/',     'armanmo', NULL,                'GruppmedDomain2',  '2@testarmedenlängre', 'wow'),
+  ('nyt789','https://www.nytimes.com/',    'armanmo','2025-06-30 23:59:59','The New York Times', '3',     'news'),
+  ('ytube','https://www.youtube.com/',     'mbene',   '2026-01-01 00:00:00',  'YouTube platform', '4',      'videos'),
+  ('wiki1','https://en.wikipedia.org/wiki/Main_Page','mbene',NULL,'Wikipedia main page', '5','reference')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Test-inserts för gh123 (url_id = 1), språk = 'sv-SE'

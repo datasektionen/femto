@@ -84,7 +84,8 @@ interface Link {
     expires: string | null; // ISO date string or null
     clicks: number;
     user_id: string | null;
-    group_name: string | null;
+    group_identifier: string | null; // CHANGED: from group_name, now stores id@domain
+    display_group_name: string | null; // NEW: stores the actual group name for display
 }
 
 /**
@@ -417,10 +418,12 @@ const LinkDetails: React.FC = () => {
                 url: linkDetails.url || '',
                 description: linkDetails.description || '',
                 expires: linkDetails.expires ? toLocalISOString(linkDetails.expires) : '',
-                group_name: cleanGroupName(linkDetails.group_name),
+
+                group_name: linkDetails.group_identifier || '', // Use group_identifier here
+
             });
         }
-    }, [linkDetails, form.setValues]);
+    }, [linkDetails]); // Removed form.setValues from deps
 
     // Fetch language-based click statistics when linkDetails changes.
     useEffect(() => {
@@ -442,9 +445,9 @@ const LinkDetails: React.FC = () => {
         console.log("[Auth] ℹ️ userGroups with domains:", userGroups);
         console.log("[Auth] ℹ️ simple group names:", groups);
 
-        if (linkDetails?.group_name) {
-            console.log("[Auth] ℹ️ Current link group (with domain):", linkDetails.group_name);
-            console.log("[Auth] ℹ️ Current link group (extracted):", extractGroupName(linkDetails.group_name));
+        if (linkDetails?.group_identifier) {
+            console.log("[Auth] ℹ️ Current link group (with domain):", linkDetails.group_identifier);
+            console.log("[Auth] ℹ️ Current link group (extracted):", extractGroupName(linkDetails.group_identifier));
         }
     }, [userGroups, groups, linkDetails]);
 
@@ -456,16 +459,33 @@ const LinkDetails: React.FC = () => {
         if (!linkDetails) return;
         setError(null);
 
-        // Parse group_name to extract the group name and domain
-        let group = null;
-        let group_domain = null;
+        let payload_group_id: string | null = null; // Explicitly type as string | null
+        let payload_actual_group_name: string | null = null; // Explicitly type as string | null
+        let payload_group_domain: string | null = null; // Explicitly type as string | null
 
-        // Only process if group_name exists and is not empty
-        if (values.group_name && values.group_name.trim() !== "") {
+
+        if (values.group_name && values.group_name.includes('@')) { // values.group_name is 'id@domain' from Select
             const parts = values.group_name.split("@");
-            group = parts[0] && parts[0].trim() !== "" ? parts[0] : null;
-            group_domain = parts[1] && parts[1].trim() !== "" ? parts[1] : null;
+            payload_group_id = parts[0] || null;
+            payload_group_domain = parts[1] || null;
+
+            // Find the display name (actual_group_name) from userGroups
+            if (payload_group_id && payload_group_domain && userGroups) {
+                const selectedGroupObject = userGroups.find(
+                    (g: any) => g.group_id === payload_group_id && g.group_domain === payload_group_domain
+                );
+                if (selectedGroupObject) {
+                    payload_actual_group_name = selectedGroupObject.group_name; // This is the display name from Hive
+                } else {
+                    payload_actual_group_name = payload_group_id; 
+                }
+            }
+        } else if (values.group_name === '') { // User cleared the Select field
+            // All payloads remain null as initialized
+
         }
+        // If values.group_name is undefined or some other non-empty, non-@ string, 
+        // it's an invalid state from Select. The current logic defaults to nulls.
 
         // Debug logging
         console.log("Form values:", values);
@@ -478,8 +498,11 @@ const LinkDetails: React.FC = () => {
             url: values.url,
             description: values.description,
             expires: values.expires ? new Date(values.expires).toISOString() : null,
-            group,
-            group_domain,
+
+            group_id: payload_group_id,
+            actual_group_name: payload_actual_group_name,
+            group_domain: payload_group_domain,
+
         };
 
 
@@ -495,7 +518,6 @@ const LinkDetails: React.FC = () => {
 
             let msg = "Kunde inte spara ändringarna. Kontrollera fälten och försök igen.";
             if (axios.isAxiosError(err) && err.response) {
-                // Extract the error message from the backend response
                 msg = err.response.data.error || msg;
             }
             setError(msg);
@@ -746,18 +768,20 @@ const LinkDetails: React.FC = () => {
                                         min={minDateTimeLocal()} // ← disallow past times
                                         mb="sm"
                                     />
-                                    {hasGroups && (
+                                    {hasGroups && ( // hasGroups should ideally check userGroups
                                         <Select
                                             label="Grupp (valfritt)"
                                             radius="md"
                                             placeholder="Välj grupp"
-                                            data={userGroups?.map((g) => ({
-                                                value: `${g.group_name}@${g.group_domain}`, // Full identifier as value
-                                                label: g.group_name // Just the name as label
-                                            }))}
+                                            // Ensure userGroups is populated correctly from useAuth()
+                                            // It should be an array of { group_id, group_name, group_domain, ... }
+                                            data={userGroups?.map((g: any) => ({ 
+                                                value: g.group_id && g.group_domain ? `${g.group_id}@${g.group_domain}` : '', 
+                                                label: g.group_name || 'Okänd grupp' // Display name from Hive
+                                            })) || []}
                                             searchable
-                                            clearable
-                                            {...form.getInputProps("group_name")}
+                                            clearable // Allows user to select "no group"
+                                            {...form.getInputProps("group_name")} // This form field will hold 'id@domain' or ''
                                             mb="sm"
                                         />
                                     )}
@@ -790,7 +814,7 @@ const LinkDetails: React.FC = () => {
                                                     expires: linkDetails.expires
                                                         ? toLocalISOString(linkDetails.expires)
                                                         : "",
-                                                    group_name: linkDetails.group_name || "",
+                                                    group_name: linkDetails.group_identifier || "",
                                                 });
                                             }}
                                         >
@@ -823,7 +847,7 @@ const LinkDetails: React.FC = () => {
                                     </Text>
                                     <Text size="sm">
                                         <strong>Grupp:</strong>{" "}
-                                        {extractGroupName(linkDetails.group_name)}
+                                        {linkDetails.display_group_name || "Ingen grupp"} 
                                     </Text>
                                     {/* Display general errors if any occurred outside editing mode (e.g., stats fetch error) */}
                                     {error && !loadingStats && (
