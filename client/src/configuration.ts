@@ -8,12 +8,12 @@ const backendApiUrl = import.meta.env.VITE_BACKEND_ROOT || "https://femto.betase
 
 // Define the AppConfig interface
 interface AppConfig {
-  backendApiUrl: string;
+    backendApiUrl: string;
 }
 
 // Create a configuration object
 const Configuration: AppConfig = {
-  backendApiUrl: backendApiUrl,
+    backendApiUrl: backendApiUrl,
 };
 
 export default Configuration;

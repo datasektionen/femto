@@ -23,6 +23,13 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         expires: expiresString,
     } = req.body;
 
+    //check if url is empty or only contains protocol
+    if (!url || /^https?:\/\/$/i.test(url.trim())) {
+        console.warn(`[Link] ❌ URL is empty or only contains protocol`);
+        res.status(400).json({ error: "URL cannot be empty or only contain protocol" });
+        return;
+    }
+
     let expiresForDb: Date | null = null;
     if (expiresString) {
         expiresForDb = new Date(expiresString);
@@ -314,6 +321,17 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
     const { url, description, group_id, actual_group_name, group_domain, expires } = req.body;
     const userId = req.user?.sub;
+
+
+
+    //check if url is empty or only contains protocol
+    if (!url || /^https?:\/\/$/i.test(url.trim())) {
+        console.warn(`[Link] ❌ URL is empty or only contains protocol`);
+        res.status(400).json({ error: "URL cannot be empty or only contain protocol" });
+        return;
+    }
+
+    // Simplified permission handling
 
     const userPermissions = Array.isArray(req.user?.permissions)
         ? req.user.permissions.map((perm: string | { id: string }) =>

@@ -109,6 +109,6 @@ apiRouter.get('/links/:slug/lang-stats', getLangstats);
  * Requires authentication.
  * Expects a 'file' field in the multipart/form-data request.
  */
-apiRouter.post('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); } ); 
+apiRouter.post('/blacklist/upload', upload.single('file'), async (req: MulterRequest, res) => { blacklistFile(req, res); });
 
 export default apiRouter;
