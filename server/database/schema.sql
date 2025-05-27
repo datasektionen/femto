@@ -1,13 +1,3 @@
--- WARNING: These DROP commands are intended for a ONE-TIME automatic reset
--- triggered by the next Nomad job deployment.
--- YOU MUST REMOVE THESE DROP LINES from this file in your Git repository
--- AFTER this deployment successfully resets the database,
--- and BEFORE your NEXT deployment, to prevent continuous data loss.
-
-DROP TABLE IF EXISTS url_clicks CASCADE;
-DROP TABLE IF EXISTS blockedurls CASCADE;
-DROP TABLE IF EXISTS urls CASCADE;
-DROP FUNCTION IF EXISTS increment_url_clicks() CASCADE;
 
 -- PostgreSQL schema for shortened links
 CREATE TABLE IF NOT EXISTS urls (
@@ -27,6 +17,7 @@ CREATE TABLE IF NOT EXISTS urls (
 CREATE TABLE IF NOT EXISTS url_clicks (
     id BIGSERIAL PRIMARY KEY,
     url_id BIGINT REFERENCES urls(id) ON DELETE CASCADE,
+
     clicked_at TIMESTAMPTZ DEFAULT now(),  -- UTC timestamp
     language VARCHAR(10)
     --ip_address INET,      
@@ -36,6 +27,7 @@ CREATE TABLE IF NOT EXISTS url_clicks (
 -- Table to store blocked URLs
 CREATE TABLE IF NOT EXISTS blockedurls (
     url VARCHAR(255) PRIMARY KEY
+
 );
 
 -- Function to increment clicks in the urls table
