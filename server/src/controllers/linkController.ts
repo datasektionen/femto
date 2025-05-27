@@ -547,6 +547,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
  * Om du vill skydda den här vägen kan du lägga
  * till t.ex. requireRole('admin')-middleware.
  */
+// ...existing code...
 export async function getAllLinks(req: Request, res: Response): Promise<void> {
     console.log("[Link] getAllLinks: Received request.");
     try {
@@ -639,5 +640,141 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
         }
         console.error(`[Link] ❌ getAllLinks: Full error object:`, error);
         res.status(500).json({ error: "Server error while retrieving links.", details: error.message });
+    }
+}
+
+export async function getLink(req: Request, res: Response): Promise<void> {
+    const { slug } = req.params;
+    let client;
+    try {
+        client = await pool.connect();
+        // Define which columns to select
+        const selectColumns = "id, slug, url, date, user_id, expires, description, group_identifier, display_group_name, clicks";
+        const result = await client.query(`SELECT ${selectColumns} FROM urls WHERE slug = $1`, [
+            slug,
+        ]);
+
+        if (result.rows.length === 0) {
+            res.status(404).send("Link not found");
+        } else {
+            const link = result.rows[0];
+            const responseLink = {
+                ...link,
+                // Again, ensure frontend Link interface matches these fields (group_identifier, display_group_name)
+                date: link.date.toISOString(),
+                expires: link.expires?.toISOString() || null,
+            };
+            res.status(200).json(responseLink);
+        }
+    } catch (err: any) {
+        console.error(`[Link] ❌ Error getting link ${slug} 📁`, err.stack);
+        res.status(500).send("Internal Server Error");
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+}
+
+/**
+ * GET /api/links/:slug/stats
+ * Param: ?granularity=hour|day (valfritt, default "day")
+ * Returnerar klick-data ENDAST för de tidpunkter där det faktiskt finns klick.
+ */
+export async function getLinkStats(req: Request, res: Response): Promise<void> {
+    const { slug } = req.params;
+    const { granularity = "day" } = req.query; // t.ex. ?granularity=hour
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        // 1. Verifiera att länken finns
+        const linkResult = await client.query(
+            "SELECT id FROM urls WHERE slug = $1",
+            [slug]
+        );
+        if (linkResult.rows.length === 0) {
+            res.status(404).json({ error: "Link not found" });
+            return;
+        }
+        const urlId = linkResult.rows[0].id;
+
+        // 2. Tillåt endast "hour" eller "day"
+        const validIntervals = ["hour", "day"];
+        const interval = validIntervals.includes(granularity as string)
+            ? granularity
+            : "day";
+
+        // 3. Gruppar klickdata per timme eller dag
+        const statsResult = await client.query(
+            `
+        SELECT
+          date_trunc('${interval}', clicked_at) AS date,
+          COUNT(*) AS clicks
+        FROM url_clicks
+        WHERE url_id = $1
+        GROUP BY 1
+        ORDER BY 1
+      `,
+            [urlId]
+        );
+
+        // 4. Mappa resultatet till { date, clicks }
+        const data = statsResult.rows.map((row: any) => ({
+            date: row.date.toISOString(), // ex: "2025-01-01T09:00:00.000Z"
+            clicks: Number(row.clicks),
+        }));
+
+        res.json(data);
+    } catch (err: any) {
+        console.error(`[Link] ❌ Error retrieving link stats 📁`, err.stack);
+        res.status(500).json({ error: "Internal Server Error" });
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+}
+
+export async function getLangstats(req: Request, res: Response): Promise<void> {
+    const { slug } = req.params;
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        // 1. Verifiera att länken finns
+        const linkResult = await client.query(
+            "SELECT id FROM urls WHERE slug = $1",
+            [slug]
+        );
+        if (linkResult.rows.length === 0) {
+            res.status(404).json({ error: "Link not found" });
+            return;
+        }
+        const urlId = linkResult.rows[0].id;
+
+        // 2. Hämta språkstatistik
+        const langRes = await client.query(
+            `SELECT language, COUNT(*) AS clicks
+            FROM url_clicks
+            WHERE url_id = $1
+            GROUP BY language
+            ORDER BY clicks DESC`,
+            [urlId]
+        );
+
+        res.json(
+            langRes.rows.map((r: any) => ({
+                language: r.language,
+                clicks: Number(r.clicks),
+            }))
+        );
+    } catch (err: any) {
+        console.error(`[Link] ❌ Error retrieving language stats 📁:`, err);
+        res.status(500).json({ error: "Internal Server Error" });
+    } finally {
+        client?.release();
     }
 }
