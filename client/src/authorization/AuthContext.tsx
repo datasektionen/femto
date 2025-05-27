@@ -109,19 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .map(group => group.group_name)               // Extract just the group_name
         : [];
 
-    // Log groups for debugging - only once when groups are first loaded
-    useEffect(() => {
-        if (userGroups && userGroups.length > 0 && !isLoading) {
-            console.log("[Auth] ℹ️ Available groups:", groups);
-            console.log("[Auth] ℹ️ Full group objects with domains:", userGroups);
-            console.log("[Auth] ℹ️ Group names only:", groups);
-            // Log group with domain format examples
-            const exampleGroup = userGroups[0];
-            console.log("[Auth] ℹ️ Example group object:", exampleGroup);
-            console.log("[Auth] ℹ️ Example group with domain format:", `${exampleGroup.group_name}@${exampleGroup.group_domain}`);
-        }
-    }, [userGroups, isLoading]); // Only depend on userGroups and isLoading, not groups
-
     // Update the groups getter to provide the full group objects
     const groupObjects = userGroups || [];
 

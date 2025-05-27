@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS urls (
     user_id VARCHAR(255),
     expires TIMESTAMPTZ DEFAULT NULL,     -- UTC timestamp
     description TEXT,
-    group_name VARCHAR(255),
+    group_identifier VARCHAR(255),
+    display_group_name VARCHAR(255), 
     clicks BIGINT DEFAULT 0
 );
 

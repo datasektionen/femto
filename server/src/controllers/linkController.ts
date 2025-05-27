@@ -17,7 +17,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         url,
         user_id,
         description,
-        group,
+        group_id, // CHANGED: from 'group' to 'group_id'
+        actual_group_name, // NEW: the display name of the group
         group_domain,
         expires: expiresString,
     } = req.body;
@@ -31,22 +32,18 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
     let expiresForDb: Date | null = null;
     if (expiresString) {
-        // Parse the ISO string correctly to ensure UTC handling
         expiresForDb = new Date(expiresString);
         console.log(`[Link] ℹ️ Received expires string: ${expiresString}`);
         console.log(`[Link] ℹ️ Parsed UTC time: ${expiresForDb.toISOString()}`);
     }
 
     const userId = req.user?.sub;
-
-    // Simplified permission handling to handle strings
     const userPermissions = Array.isArray(req.user?.permissions)
         ? req.user.permissions.map((perm: string | { id: string }) =>
             typeof perm === "string" ? perm : (perm as { id: string }).id
         )
         : [];
-
-    const userGroups = req.user?.groups || [];
+    const userGroups = req.user?.groups || []; // Expects userGroups to be [{ group_id, group_name, group_domain, ... }]
 
     if (!userId) {
         console.warn(`[Link] ❌ User ID not found in token`);
@@ -69,16 +66,11 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     // Custom slug permission check
     if (slug) {
         const hasCustomSlugPermission = userPermissions.includes("custom-links");
-
         if (!hasCustomSlugPermission) {
             console.warn(`[Link] ❌ User doesn't have permission to create custom slugs`);
-            res
-                .status(403)
-                .json({ error: "You don't have permission to create custom slugs" });
+            res.status(403).json({ error: "You don't have permission to create custom slugs" });
             return;
         }
-
-        // Validate the slug format
         if (!slugRegex.test(slug)) {
             console.warn(`[Link] ❌ Invalid slug format`);
             res.status(400).json({ error: "Invalid slug format" });
@@ -87,22 +79,18 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     }
 
     // Mandate/group permission check
-    if (group) {
-        const user_GroupsWithDomain = userGroups.map(
-            (m) => `${m.group_name}@${m.group_domain}`
+    if (group_id && group_domain) { // Check if a group is being assigned
+        const userGroupIdentifiers = userGroups.map(
+            (g: any) => `${g.group_id}@${g.group_domain}` // Create id@domain from user's groups
         );
 
-        // Format the combined group identifier
-        const groupWithDomain = `${group}@${group_domain}`;
+        const targetGroupIdentifier = `${group_id}@${group_domain}`;
+        const groupForErrorMessage = actual_group_name || group_id; // Use display name for error if available
 
-        // Check if user has access to this group
-        const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
-
-        if (!belongsToGroup) {
-            console.warn(`[Link] ❌ User doesn't belong to the group: ${groupWithDomain}`);
-            res
-                .status(403)
-                .json({ error: `You don't belong to the group: ${group}` });
+        // Check if user has access to this group_id@group_domain
+        if (!userGroupIdentifiers.includes(targetGroupIdentifier)) {
+            console.warn(`[Link] ❌ User ${userId} doesn't belong to the group: ${targetGroupIdentifier}`);
+            res.status(403).json({ error: `You don't belong to the group: ${groupForErrorMessage}` });
             return;
         }
     }
@@ -145,12 +133,13 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         }
     }
 
-    if (slug) {
-        // If a slug is provided, check if it's already taken
-        const slugAlreadyTaken = await checkSlug(slug);
+    // Prepare group data for storage
+    const groupIdentifierForDb = group_id && group_domain ? `${group_id}@${group_domain}` : null;
+    const displayGroupNameForDb = actual_group_name || null; // If actual_group_name is empty/null, this becomes null
 
+    if (slug) {
+        const slugAlreadyTaken = await checkSlug(slug);
         if (slugAlreadyTaken) {
-            // If the slug is taken, return a 409 Conflict response
             res.status(409).send("Denna slug är redan upptagen.");
             return;
         }
@@ -158,16 +147,15 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         let client;
         try {
             client = await pool.connect();
-            // Insert the new link with the provided slug
-            const groupIdentifier = `${group}@${group_domain}`;
-            const query = `INSERT INTO urls (slug, url, user_id, description, group_name, expires) 
-               VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING *`;
+            const query = `INSERT INTO urls (slug, url, user_id, description, group_identifier, display_group_name, expires) 
+                           VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz) RETURNING *`;
             const result = await client.query(query, [
                 slug,
                 url,
                 user_id,
                 description,
-                groupIdentifier,
+                groupIdentifierForDb,      // Storing group_id@group_domain
+                displayGroupNameForDb,     // Storing actual_group_name
                 expiresForDb?.toISOString(),
             ]);
             res.status(201).json(result.rows[0]);
@@ -184,31 +172,25 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         let client;
         try {
             client = await pool.connect();
-
-            const groupIdentifier = `${group}@${group_domain}`;
-
-            // Insert the new link without a slug, and retrieve the generated ID
             const idResult = await client.query(
-                "INSERT INTO urls (url, user_id, description, group_name, expires) VALUES ($1, $2, $3, $4, $5::timestamptz) RETURNING id",
+                "INSERT INTO urls (url, user_id, description, group_identifier, display_group_name, expires) VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING id",
                 [
                     url,
                     user_id,
                     description,
-                    groupIdentifier,
+                    groupIdentifierForDb,      // Storing group_id@group_domain
+                    displayGroupNameForDb,     // Storing actual_group_name
                     expiresForDb?.toISOString(),
-                ] // FIX: Convert to ISO string
+                ]
             );
-            const id = idResult.rows[0].id;
+            const newId = idResult.rows[0].id;
+            const generatedSlug = encodeId(newId);
 
-            // Generate a a Slug from the ID
-            const slug = encodeId(id);
-
-            // Update the link with the generated slug
-            await client.query("UPDATE urls SET slug = $1 WHERE id = $2", [slug, id]);
+            await client.query("UPDATE urls SET slug = $1 WHERE id = $2", [generatedSlug, newId]);
 
             // Retrieve the newly created link
             const result = await client.query("SELECT * FROM urls WHERE id = $1", [
-                id,
+                newId,
             ]);
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
@@ -258,7 +240,6 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
         client = await pool.connect();
 
         if (userPermissions.includes("manage-all")) {
-
             const deleteResult = await client.query(
                 "DELETE FROM urls WHERE slug = $1 RETURNING slug",
                 [slug]
@@ -270,32 +251,53 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
                 res.status(204).send();
             }
         } else {
-
-            // Fetch the link's owner and mandate
+            // Non-admin path:
+            // Fetch the link's owner and group_identifier
             const linkResult = await client.query(
-                "SELECT user_id, group_name FROM urls WHERE slug = $1",
+                "SELECT user_id, group_identifier FROM urls WHERE slug = $1", // CORRECTED: fetch group_identifier
                 [slug]
             );
 
             if (linkResult.rows.length === 0) {
                 res.status(404).send("Link not found");
-                return; // Exit early if link doesn't exist
+                return; 
             }
 
             const linkOwnerId = linkResult.rows[0].user_id;
-            const linkGroup = linkResult.rows[0].group_name;
+            const linkGroupIdentifier = linkResult.rows[0].group_identifier; // This is id@domain or null
 
-            // Check if the user owns the link OR if the link has a group and the user belongs to that group
             const isOwner = linkOwnerId === userId;
-            const hasGroupAccess = linkGroup && userGroupNames.includes(linkGroup);
+
+            // User's group identifiers (id@domain)
+            const userGroupIdentifiersForDeletion = userGroups.map((g: any) => `${g.group_id}@${g.group_domain}`);
+            
+            // Check if user has access to the link's group (if it has one)
+            const hasGroupAccess = !!linkGroupIdentifier && userGroupIdentifiersForDeletion.includes(linkGroupIdentifier);
 
             if (isOwner || hasGroupAccess) {
-                await client.query("DELETE FROM urls WHERE slug = $1", [slug]);
-                res.status(204).send();
+                // Construct WHERE clause for deletion to ensure they only delete what they are allowed to
+                let deleteQuery = "DELETE FROM urls WHERE slug = $1 AND (user_id = $2";
+                const queryParamsForDelete: any[] = [slug, userId];
+                let currentParamIndexForDelete = 3;
+
+                if (userGroupIdentifiersForDeletion.length > 0) {
+                    deleteQuery += ` OR group_identifier = ANY($${currentParamIndexForDelete}::text[])`;
+                    queryParamsForDelete.push(userGroupIdentifiersForDeletion);
+                }
+                deleteQuery += ") RETURNING slug"; // Add RETURNING to check if a row was actually deleted by this user
+
+                const deleteResult = await client.query(deleteQuery, queryParamsForDelete);
+                
+                if (deleteResult.rowCount === 0) {
+                    // This means the link existed (checked above) but this user didn't have permission to delete it with the refined WHERE.
+                    console.warn(`[Link] 🚫 Delete for link ${slug} by user ${userId} failed permission check during final delete operation.`);
+                    res.status(403).send("Forbidden: You do not have permission to delete this link (final check).");
+                } else {
+                    res.status(204).send();
+                }
             } else {
-                res
-                    .status(403)
-                    .send("Forbidden: You do not have permission to delete this link.");
+                console.warn(`[Link] 🚫 User ${userId} denied deletion of link ${slug} - Not owner or no access to group ${linkGroupIdentifier}`);
+                res.status(403).send("Forbidden: You do not have permission to delete this link.");
             }
         }
     } catch (err: any) {
@@ -317,8 +319,10 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
  */
 export async function updateLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
-    const { url, description, group, group_domain, expires } = req.body;
+    const { url, description, group_id, actual_group_name, group_domain, expires } = req.body;
     const userId = req.user?.sub;
+
+
 
     //check if url is empty or only contains protocol
     if (!url || /^https?:\/\/$/i.test(url.trim())) {
@@ -328,15 +332,13 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     }
 
     // Simplified permission handling
+
     const userPermissions = Array.isArray(req.user?.permissions)
         ? req.user.permissions.map((perm: string | { id: string }) =>
             typeof perm === "string" ? perm : (perm as { id: string }).id
         )
         : [];
-
-    // Extract user mandates and group names
-    const userGroups = req.user?.groups || [];
-    const userGroupNames = userGroups.map((m) => m.group_name);
+    const userGroups = req.user?.groups || []; // Expects [{ group_id, group_name, group_domain, ... }]
 
     if (!userId) {
         console.warn(`[Link] ❌ User ID not found in token for update attempt`);
@@ -348,14 +350,16 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     if (
         url === undefined &&
         description === undefined &&
-        group === undefined &&
+        group_id === undefined && // if group_id is undefined, actual_group_name and group_domain are also implicitly not being set for a *new* group
+        actual_group_name === undefined && // if only actual_group_name is sent, it implies changing display name of existing group
+        group_domain === undefined && // if only group_domain is sent, it implies changing domain of existing group (less common)
         expires === undefined
     ) {
         res.status(400).json({ error: "No update fields provided" });
         return;
     }
 
-    if (await isBlacklisted(url)) {
+    if (url && await isBlacklisted(url)) { // Check url only if it's provided
         console.log(`[Link] ❌ URL is blacklisted: ${url}`);
         res.status(403).json({ error: "Denna URL är blacklistad" });
         return;
@@ -365,7 +369,6 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     try {
         client = await pool.connect();
 
-        // Build the SET part of the SQL query dynamically
         const setClauses: string[] = [];
         const queryParams: any[] = [];
         let paramIndex = 1;
@@ -378,46 +381,63 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
             setClauses.push(`description = $${paramIndex++}`);
             queryParams.push(description);
         }
-        if (group !== undefined) {
-            // Check if user belongs to the new mandate group if they don't have manage-all
-            if (!userPermissions.includes("manage-all") && group !== null) {
-                const user_GroupsWithDomain = userGroups.map(
-                    (m) => `${m.group_name}@${m.group_domain}`
-                );
+        if (group_id !== undefined || actual_group_name !== undefined) { // A change related to group is intended
+            if (group_id === null) { // Frontend signals to REMOVE group association
+                setClauses.push(`group_identifier = $${paramIndex++}`);
+                queryParams.push(null); // SQL NULL for group_identifier
+                setClauses.push(`display_group_name = $${paramIndex++}`);
+                queryParams.push(null); // SQL NULL for display_group_name
+            } else if (group_id && group_domain) { // Assigning or changing to a NEW group
+                const groupForErrorMessage = actual_group_name || group_id; // For user-facing errors
+                const targetGroupIdentifier = `${group_id}@${group_domain}`; // The id@domain identifier we want to assign
 
-                // Format the combined group identifier
-                const groupWithDomain = `${group}@${group_domain}`;
+                // Check if user belongs to the new mandate group if they don't have manage-all
+                if (!userPermissions.includes("manage-all")) {
+                    // Check 1: Is the target group (identified by group_id and group_domain) 
+                    // one of the user's actual Hive groups?
+                    const isGroupFromUserHive = userGroups.some(
+                        (g: any) => g.group_id === group_id && g.group_domain === group_domain
+                    );
 
-                // Check if the group exists in Hive memberships
-                const isGroupFromHive = userGroups.some(
-                    (g) => g.group_name === group && g.group_domain === group_domain
-                );
-
-                if (!isGroupFromHive) {
-                    console.warn(`[Link] 🚫 User ${userId} tried to assign link ${slug} to a group (${groupWithDomain}) that is not part of Hive memberships.`);
-                    res
-                        .status(400)
-                        .json({
-                            error: `Gruppen ${group} är inte en del av dina HIVE grupper.`,
+                    if (!isGroupFromUserHive) {
+                        console.warn(`[Link] 🚫 User ${userId} tried to assign link ${slug} to a group (${targetGroupIdentifier}) that is not part of their Hive memberships.`);
+                        res.status(400).json({
+                            error: `Gruppen '${groupForErrorMessage}' är inte en del av dina HIVE grupper.`,
                         });
-                    return;
+                        return;
+                    }
+                    // If isGroupFromUserHive is true, it implies the user "belongs" to this targetGroupIdentifier,
+                    // as userGroups comes from their authenticated session and contains their legitimate groups.
                 }
 
-                // Check if user has access to this group
-                const belongsToGroup = user_GroupsWithDomain.includes(groupWithDomain);
-
-                if (!belongsToGroup) {
-                    console.warn(`[Link] 🚫 User ${userId} tried to assign link ${slug} to group ${groupWithDomain} they don't belong to.`);
-                    res
-                        .status(403)
-                        .json({ error: `You don't belong to the group: ${group}` });
-                    return;
+                // If all permission checks pass, prepare for storage:
+                const groupIdentifierForStorage = targetGroupIdentifier; // This is id@domain
+                
+                let groupDisplayNameForStorage = actual_group_name;
+                // If frontend doesn't send actual_group_name with group_id,
+                // try to find the display name from the user's authenticated groups.
+                if (!groupDisplayNameForStorage) { 
+                    const matchingUserGroup = userGroups.find((g:any) => g.group_id === group_id && g.group_domain === group_domain);
+                    // Use the group_name from user's Hive groups as the display name
+                    groupDisplayNameForStorage = matchingUserGroup ? matchingUserGroup.group_name : group_id; // Fallback to group_id if not found
                 }
+
+                setClauses.push(`group_identifier = $${paramIndex++}`);
+                queryParams.push(groupIdentifierForStorage); // Stores group_id@group_domain
+                setClauses.push(`display_group_name = $${paramIndex++}`);
+                queryParams.push(groupDisplayNameForStorage); // Stores the actual group name
+
+            } else if (actual_group_name !== undefined && group_id === undefined && group_domain === undefined) {
+                // This case means only the display name is being updated for the *currently associated* group.
+                // The group_identifier (id@domain) itself is not changing.
+                // The general permission check later (isOwner or hasAccessToCurrentGroup) will cover this.
+                setClauses.push(`display_group_name = $${paramIndex++}`);
+                queryParams.push(actual_group_name);
             }
-            const groupIdentifier = `${group}@${group_domain}`;
-            setClauses.push(`group_name = $${paramIndex++}`);
-            queryParams.push(groupIdentifier); // Allow setting group to null
+            // Note: The old lines that set `group_name` column using `${group}@${group_domain}` should be removed
+            // as we are now setting `group_identifier` and `display_group_name`.
         }
+        
         if (expires !== undefined) {
             setClauses.push(`expires = $${paramIndex++}`);
             queryParams.push(expires); // Allow setting expires to null
@@ -440,10 +460,10 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 res.status(200).json(updateResult.rows[0]);
             }
         } else {
-
-            // Fetch the link's owner and group first
+            // Non-admin path:
+            // Fetch the link's owner and current group_identifier
             const linkResult = await client.query(
-                "SELECT user_id, group_name FROM urls WHERE slug = $1",
+                "SELECT user_id, group_identifier FROM urls WHERE slug = $1", // CORRECTED: fetch group_identifier
                 [slug]
             );
 
@@ -453,44 +473,53 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
             }
 
             const linkOwnerId = linkResult.rows[0].user_id;
-            const linkGroup = linkResult.rows[0].group_name;
+            const currentLinkGroupIdentifier = linkResult.rows[0].group_identifier; // This is id@domain or null
 
             const isOwner = linkOwnerId === userId;
-            const linkGroupName = linkGroup ? linkGroup.split("@")[0] : null;
-            const hasGroupAccess =
-                linkGroup && userGroupNames.includes(linkGroupName);
+            
+            // User's group identifiers (id@domain)
+            const userGroupIdentifiersForQuery = userGroups.map((g:any) => `${g.group_id}@${g.group_domain}`);
+            
+            // Check if user has access to the *current* group of the link
+            // This is true if currentLinkGroupIdentifier is not null AND it's in the user's list of group identifiers
+            const hasAccessToCurrentGroup = !!currentLinkGroupIdentifier && userGroupIdentifiersForQuery.includes(currentLinkGroupIdentifier);
 
-            if (isOwner || hasGroupAccess) {
-                // Updated condition
+            if (isOwner || hasAccessToCurrentGroup) {
+                // If the user is trying to change the group_identifier (e.g. group_id was in req.body),
+                // the permission for the *new* group was already checked earlier in the function.
+                // If they are only changing description, url, expires, or display_group_name of a link they own
+                // or have current group access to, this is allowed.
 
-                // Add user_id or group check to the WHERE clause for safety
-                // This ensures they can only update links they own or manage via group
+                // The WHERE clause needs to ensure they can only modify links they own OR are part of their manageable groups.
+                // If currentLinkGroupIdentifier is null, only owner can modify (unless they are assigning a group they have access to).
+                // If currentLinkGroupIdentifier is not null, they must be in userGroupIdentifiersForQuery.
+                
+                let whereClausePermission = `user_id = $${slugParamIndex + 1}`;
+                const finalQueryParams = [...queryParams, userId];
+                let currentParamIndexForWhere = slugParamIndex + 2;
+
+                if (userGroupIdentifiersForQuery.length > 0) {
+                    whereClausePermission += ` OR group_identifier = ANY($${currentParamIndexForWhere}::text[])`;
+                    finalQueryParams.push(userGroupIdentifiersForQuery);
+                }
+                
                 const updateQuery = `
                     UPDATE urls
                     SET ${setClauseString}
-                    WHERE slug = $${slugParamIndex} AND (user_id = $${slugParamIndex + 1
-                    } OR group_name = ANY($${slugParamIndex + 2}::text[]))
+                    WHERE slug = $${slugParamIndex} AND (${whereClausePermission})
                     RETURNING *`;
-
-                // Add userId and userGroupNames to the parameters for the WHERE clause check
-                const finalQueryParams = [...queryParams, userId, userGroupNames];
-
+                
                 const updateResult = await client.query(updateQuery, finalQueryParams);
 
                 if (updateResult.rowCount === 0) {
-                    // This might happen if the link exists but doesn't match the final WHERE clause (should theoretically not happen due to prior checks, but good for safety)
-                    console.warn(`[Link] 🚫 Update for link ${slug} by user ${userId} failed unexpectedly after permission check.`);
-                    res
-                        .status(404)
-                        .send("Link not found or permission mismatch during update.");
+                    console.warn(`[Link] 🚫 Update for link ${slug} by user ${userId} failed. Link not found or permission mismatch during final update.`);
+                    res.status(404).send("Link not found or permission mismatch during update.");
                 } else {
                     res.status(200).json(updateResult.rows[0]);
                 }
             } else {
-                console.warn(`[Link] 🚫 User ${userId} denied update of link ${slug} - Not owner or matching mandate`);
-                res
-                    .status(403)
-                    .send("Forbidden: You do not have permission to update this link.");
+                console.warn(`[Link] 🚫 User ${userId} denied update of link ${slug} - Not owner or no access to current group ${currentLinkGroupIdentifier}`);
+                res.status(403).send("Forbidden: You do not have permission to update this link.");
             }
         }
     } catch (err: any) {
@@ -521,61 +550,59 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
 export async function getAllLinks(req: Request, res: Response): Promise<void> {
     try {
         const userId = req.user?.sub;
-
-        // Simplified permission handling to handle strings
         const userPermissions = Array.isArray(req.user?.permissions)
             ? req.user.permissions.map((perm) =>
                 typeof perm === "string" ? perm : (perm as { id: string }).id
             )
             : [];
-
-        const userGroups = req.user?.groups || [];
+        const userGroups = req.user?.groups || []; // Expects [{ group_id, group_name, group_domain, ... }]
 
         if (!userId) {
-            console.warn(`[Link] ❌ User ID not found in token`);
+            console.warn(`[Link] ❌ User ID not found in token for getAllLinks`);
             res.status(400).json({ error: "User ID not found in token" });
             return;
         }
 
-        // Check if user has manage-all permission
         const canManageAllLinks = userPermissions.includes("manage-all");
+        // Define which columns to select to include the new display_group_name
+        const selectColumns = "id, slug, url, date, user_id, expires, description, group_identifier, display_group_name, clicks";
 
         let query;
         let queryParams: any[] = [];
 
         if (canManageAllLinks) {
-            // If user can manage all links, don't filter
-            query = `SELECT * FROM urls ORDER BY expires DESC NULLS LAST`;
+            query = `SELECT ${selectColumns} FROM urls ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST`;
         } else {
-            // Extract user's group names
-            const userGroupNames = userGroups.map((group) => group.group_name);
+            // User's group identifiers (id@domain)
+            const userGroupIdentifiers = userGroups.map((g: any) => `${g.group_id}@${g.group_domain}`);
 
-            if (userGroupNames.length > 0) {
-                // Return links created by the user OR connected to a group they belong to
+            if (userGroupIdentifiers.length > 0) {
                 query = `
-          SELECT * FROM urls 
-          WHERE user_id = $1 
-          OR group_name = ANY($2::text[])
-          ORDER BY expires DESC NULLS LAST
-        `;
-                queryParams = [userId, userGroupNames];
+                  SELECT ${selectColumns} FROM urls 
+                  WHERE user_id = $1 
+                  OR group_identifier = ANY($2::text[])  -- Compare against group_identifier (id@domain)
+                  ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST
+                `;
+                queryParams = [userId, userGroupIdentifiers];
             } else {
-                // Return only links created by the user if they have no groups
                 query = `
-          SELECT * FROM urls 
-          WHERE user_id = $1
-          ORDER BY expires DESC NULLS LAST
-        `;
+                  SELECT ${selectColumns} FROM urls 
+                  WHERE user_id = $1
+                  ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST
+                `;
                 queryParams = [userId];
             }
         }
 
         const result = await pool.query(query, queryParams);
 
-        // Format timestamps for each link before sending
         const formatted = result.rows.map((link) => ({
             ...link,
-            date: link.date.toISOString(), // still UTC
+            // Ensure group_identifier is aliased to group_name if frontend expects that for the id@domain
+            // and display_group_name is present for the actual name.
+            // Or, adjust frontend Link interface to use group_identifier and display_group_name directly.
+            // For now, let's assume frontend will adapt to group_identifier and display_group_name.
+            date: link.date.toISOString(),
             expires: link.expires?.toISOString() || null,
         }));
 
@@ -586,20 +613,14 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
     }
 }
 
-/**
- * Retrieves a single link from the database based on the provided slug.
- *
- * @param {any} req - Express request object.
- * @param {any} res - Express response object.
- * @returns {Promise<void>} - A promise that resolves when the link is retrieved and the response is sent.
- */
-
 export async function getLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
     let client;
     try {
         client = await pool.connect();
-        const result = await client.query("SELECT * FROM urls WHERE slug = $1", [
+        // Define which columns to select
+        const selectColumns = "id, slug, url, date, user_id, expires, description, group_identifier, display_group_name, clicks";
+        const result = await client.query(`SELECT ${selectColumns} FROM urls WHERE slug = $1`, [
             slug,
         ]);
 
@@ -607,16 +628,16 @@ export async function getLink(req: Request, res: Response): Promise<void> {
             res.status(404).send("Link not found");
         } else {
             const link = result.rows[0];
-
             const responseLink = {
                 ...link,
+                // Again, ensure frontend Link interface matches these fields (group_identifier, display_group_name)
                 date: link.date.toISOString(),
                 expires: link.expires?.toISOString() || null,
             };
             res.status(200).json(responseLink);
         }
     } catch (err: any) {
-        console.error(`[Link] ❌ Error getting link 📁`, err.stack);
+        console.error(`[Link] ❌ Error getting link ${slug} 📁`, err.stack);
         res.status(500).send("Internal Server Error");
     } finally {
         if (client) {

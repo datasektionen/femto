@@ -37,13 +37,6 @@ import { useAuth } from "../authorization/useAuth.ts"; // Import your authentica
 import Configuration from "../configuration.ts";
 import { toCanvas } from "qrcode";
 
-// Function to extract just the group name from "group_name@group_domain" format
-function extractGroupName(groupWithDomain: string | null): string {
-    if (!groupWithDomain) return "Ingen grupp";
-
-    const parts = groupWithDomain.split("@");
-    return parts[0] || "Okänd grupp";
-}
 
 // Create axios instance with base URL - we'll add the token dynamically in the requests
 const api = axios.create({
@@ -60,7 +53,8 @@ interface Link {
     expires: string | null; // ISO String or null
     clicks: number;
     user_id: string | null;
-    group_name: string | null;
+    group_identifier: string | null; // CHANGED: from group_name, now stores id@domain
+    display_group_name: string | null; // NEW: stores the actual group name for display
 }
 
 const Links: React.FC = () => {
@@ -115,6 +109,16 @@ const Links: React.FC = () => {
             .then((res) => {
                 setLinksData(res.data);
                 console.log("[Links] ℹ️ Fetched links:", res.data);
+
+                // Log group_identifier for each link to verify id@domain
+                res.data.forEach(link => {
+                    if (link.group_identifier) {
+                        console.log(`[Links] ℹ️ Link slug: ${link.slug}, Group Identifier (id@domain): ${link.group_identifier}, Display Group Name: ${link.display_group_name}`);
+                    } else {
+                        console.log(`[Links] ℹ️ Link slug: ${link.slug} has no group_identifier.`);
+                    }
+                });
+
                 setLoading(false);
             })
             .catch((err) => {
@@ -148,15 +152,18 @@ const Links: React.FC = () => {
             options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
         });
 
-        const uniqueGroupNames = new Set<string>();
+    
         linksData.forEach(link => {
-            const groupName = extractGroupName(link.group_name);
-            if (groupName && groupName !== "Ingen grupp" && groupName !== "Okänd grupp" && groupName.toUpperCase() !== "NULL") {
-                uniqueGroupNames.add(groupName);
+            // const groupName = extractGroupName(link.group_identifier); // OLD
+            // Use display_group_name for filter labels, and group_identifier for filter values
+            if (link.group_identifier && link.display_group_name) { // Ensure both exist
+                // Check if this group_identifier is already added to avoid duplicate filter options
+                // The value should be the identifier, the label should be the display name
+                const filterValue = `group_${link.group_identifier}`; // e.g., group_d-sys@example.com
+                if (!options.some(opt => opt.value === filterValue)) {
+                    options.push({ value: filterValue, label: `Grupp: ${link.display_group_name}` });
+                }
             }
-        });
-        uniqueGroupNames.forEach(groupName => {
-            options.push({ value: `group_${groupName}`, label: `Grupp: ${groupName}` });
         });
 
         return options;
@@ -175,8 +182,8 @@ const Links: React.FC = () => {
             return linksData.filter(link => link.user_id === userIdToFilter);
         }
         if (propertyFilter.startsWith("group_")) {
-            const groupNameToFilter = propertyFilter.substring(6);
-            return linksData.filter(link => extractGroupName(link.group_name) === groupNameToFilter);
+            const groupIdentifierToFilter = propertyFilter.substring(6); // This is 'id@domain'
+            return linksData.filter(link => link.group_identifier === groupIdentifierToFilter);
         }
         return linksData;
     }, [linksData, propertyFilter]);
@@ -432,18 +439,22 @@ const Links: React.FC = () => {
                                                         </Badge>
                                                     </Tooltip>
                                                 )}
-                                                {extractGroupName(link.group_name) !== "null" && (
+                                                {/* OLD: {extractGroupName(link.group_identifier) !== "null" && ( */}
+                                                {/* NEW: Check display_group_name for rendering the badge */}
+                                                {link.display_group_name && (
                                                     <Tooltip label="Grupp" withArrow>
                                                         <Badge
                                                             size="lg"
                                                             leftSection={<IconUsersGroup size={badgeIconSize} />}
                                                             variant="gradient"
                                                             gradient={{
-                                                                from: stringToHexColor(link.group_name),
-                                                                to: stringToHexColor(link.group_name, 1.4),
+                                                                from: stringToHexColor(link.group_identifier), // Color based on id@domain for consistency
+                                                                to: stringToHexColor(link.group_identifier, 1.4),
                                                             }}
                                                         >
-                                                            {extractGroupName(link.group_name)}
+                                                            {/* OLD: {extractGroupName(link.display_group_name)} */}
+                                                            {/* NEW: Directly use display_group_name */}
+                                                            {link.display_group_name}
                                                         </Badge>
                                                     </Tooltip>
                                                 )}
