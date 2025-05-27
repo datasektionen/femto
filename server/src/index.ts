@@ -7,10 +7,7 @@ import { scheduleCleanupJob } from './services/cleanupService';
 
 const app = express();
 const PORT = process.env.PORT;
-app.use(cors({ // Enable CORS for all origins
-  origin: "https://admin.femto.betasektionen.se",
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json()); // Middleware to parse JSON request bodies
 
 // Routes
