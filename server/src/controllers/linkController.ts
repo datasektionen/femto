@@ -22,6 +22,13 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         expires: expiresString,
     } = req.body;
 
+    //check if url is empty
+    if (!url || url.trim() === "") {
+        console.warn(`[Link] ❌ URL is empty`);
+        res.status(400).json({ error: "URL cannot be empty" });
+        return;
+    }
+
     let expiresForDb: Date | null = null;
     if (expiresString) {
         // Parse the ISO string correctly to ensure UTC handling
@@ -312,6 +319,13 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
     const { url, description, group, group_domain, expires } = req.body;
     const userId = req.user?.sub;
+
+    //check if url is empty
+    if (!url || url.trim() === "") {
+        console.warn(`[Link] ❌ URL is empty`);
+        res.status(400).json({ error: "URL cannot be empty" });
+        return;
+    }
 
     // Simplified permission handling
     const userPermissions = Array.isArray(req.user?.permissions)
