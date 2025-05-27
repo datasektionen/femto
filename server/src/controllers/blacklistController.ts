@@ -5,8 +5,11 @@ import pool from "../services/db";
 import multer from 'multer';
 
 // Multer configuration for file uploads
-const storage = multer.memoryStorage();
-export const upload = multer({ storage: storage });
+export const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 } // 100 MB
+});
+
 
 export interface MulterRequest extends Request {
     file?: Express.Multer.File;
