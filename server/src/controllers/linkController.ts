@@ -23,7 +23,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
     } = req.body;
 
     //check if url is empty or only contains protocol
-    if (!url || url.trim().test(/^https?:\/\/$/)) {
+    if (!url || /^https?:\/\/$/i.test(url.trim())) {
         console.warn(`[Link] ❌ URL is empty or only contains protocol`);
         res.status(400).json({ error: "URL cannot be empty or only contain protocol" });
         return;
@@ -321,7 +321,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     const userId = req.user?.sub;
 
     //check if url is empty or only contains protocol
-    if (!url || url.trim().test(/^https?:\/\/$/)) {
+    if (!url || /^https?:\/\/$/i.test(url.trim())) {
         console.warn(`[Link] ❌ URL is empty or only contains protocol`);
         res.status(400).json({ error: "URL cannot be empty or only contain protocol" });
         return;
