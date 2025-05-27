@@ -448,23 +448,18 @@ const LinkDetails: React.FC = () => {
         if (!linkDetails) return;
         setError(null);
 
-        // Parse group_name to extract the group name and domain
-        let group = null;
-        let group_domain = null;
-
-        if (values.group_name) {
-            const parts = values.group_name.split("@");
-            group = parts[0] || null;
-            group_domain = parts[1] || null;
-        }
-
-        const payload = {
+        const payload: any = {
             url: values.url,
             description: values.description,
             expires: values.expires ? new Date(values.expires).toISOString() : null,
-            group: group,
-            group_domain: group_domain,
         };
+
+        // Only include group fields if a group is actually selected
+        if (values.group_name) {
+            const parts = values.group_name.split("@");
+            payload.group = parts[0] || null;
+            payload.group_domain = parts[1] || null;
+        }
 
         try {
             const response = await api.patch<Link>(
