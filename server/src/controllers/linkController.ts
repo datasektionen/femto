@@ -22,10 +22,10 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         expires: expiresString,
     } = req.body;
 
-    //check if url is empty
-    if (!url || url.trim() === "") {
-        console.warn(`[Link] ❌ URL is empty`);
-        res.status(400).json({ error: "URL cannot be empty" });
+    //check if url is empty or only contains protocol
+    if (!url || url.trim().test(/^https?:\/\/$/)) {
+        console.warn(`[Link] ❌ URL is empty or only contains protocol`);
+        res.status(400).json({ error: "URL cannot be empty or only contain protocol" });
         return;
     }
 
@@ -320,10 +320,10 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     const { url, description, group, group_domain, expires } = req.body;
     const userId = req.user?.sub;
 
-    //check if url is empty
-    if (!url || url.trim() === "") {
-        console.warn(`[Link] ❌ URL is empty`);
-        res.status(400).json({ error: "URL cannot be empty" });
+    //check if url is empty or only contains protocol
+    if (!url || url.trim().test(/^https?:\/\/$/)) {
+        console.warn(`[Link] ❌ URL is empty or only contains protocol`);
+        res.status(400).json({ error: "URL cannot be empty or only contain protocol" });
         return;
     }
 
