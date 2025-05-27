@@ -405,11 +405,19 @@ const LinkDetails: React.FC = () => {
     // Populate form fields when linkDetails are fetched or updated.
     useEffect(() => {
         if (linkDetails) {
+            // Helper function to clean up null strings
+            const cleanGroupName = (groupName: string | null) => {
+                if (!groupName || groupName === 'null@null' || groupName === 'null') {
+                    return '';
+                }
+                return groupName;
+            };
+
             form.setValues({
                 url: linkDetails.url || '',
                 description: linkDetails.description || '',
                 expires: linkDetails.expires ? toLocalISOString(linkDetails.expires) : '',
-                group_name: linkDetails.group_name || '', // Keep full identifier in form value
+                group_name: cleanGroupName(linkDetails.group_name),
             });
         }
     }, [linkDetails, form.setValues]);
@@ -448,18 +456,32 @@ const LinkDetails: React.FC = () => {
         if (!linkDetails) return;
         setError(null);
 
-        const payload: any = {
+        // Parse group_name to extract the group name and domain
+        let group = null;
+        let group_domain = null;
+
+        // Only process if group_name exists and is not empty
+        if (values.group_name && values.group_name.trim() !== "") {
+            const parts = values.group_name.split("@");
+            group = parts[0] && parts[0].trim() !== "" ? parts[0] : null;
+            group_domain = parts[1] && parts[1].trim() !== "" ? parts[1] : null;
+        }
+
+        // Debug logging
+        console.log("Form values:", values);
+        console.log("Parsed group:", group);
+        console.log("Parsed group_domain:", group_domain);
+        console.log("Type of group:", typeof group);
+        console.log("Type of group_domain:", typeof group_domain);
+
+        const payload = {
             url: values.url,
             description: values.description,
             expires: values.expires ? new Date(values.expires).toISOString() : null,
+            group,
+            group_domain,
         };
 
-        // Only include group fields if a group is actually selected
-        if (values.group_name) {
-            const parts = values.group_name.split("@");
-            payload.group = parts[0] || null;
-            payload.group_domain = parts[1] || null;
-        }
 
         try {
             const response = await api.patch<Link>(
