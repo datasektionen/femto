@@ -1,4 +1,4 @@
-const backendApiUrl = import.meta.env.VITE_BACKEND_ROOT || "https://femto.betasektionen.se";
+const backendApiUrl = import.meta.env.VITE_BACKEND_ROOT || "https://femto.datasektionen.se";
 
 /**
  * This file contains the configuration for the application.
