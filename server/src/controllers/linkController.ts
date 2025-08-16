@@ -18,7 +18,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         user_id,
         description,
         group_id, // CHANGED: from 'group' to 'group_id'
-        actual_group_name, // NEW: the display name of the group
+        group_name, // NEW: the display name of the group
         group_domain,
         expires: expiresString,
     } = req.body;
@@ -85,7 +85,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         );
 
         const targetGroupIdentifier = `${group_id}@${group_domain}`;
-        const groupForErrorMessage = actual_group_name || group_id; // Use display name for error if available
+        const groupForErrorMessage = group_name || group_id; // Use display name for error if available
 
         // Check if user has access to this group_id@group_domain
         if (!userGroupIdentifiers.includes(targetGroupIdentifier)) {
@@ -135,7 +135,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
 
     // Prepare group data for storage
     const groupIdentifierForDb = group_id && group_domain ? `${group_id}@${group_domain}` : null;
-    const displayGroupNameForDb = actual_group_name || null; // If actual_group_name is empty/null, this becomes null
+    const displayGroupNameForDb = group_name || null; // If group_name is empty/null, this becomes null
 
     if (slug) {
         const slugAlreadyTaken = await checkSlug(slug);
@@ -155,7 +155,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
                 user_id,
                 description,
                 groupIdentifierForDb,      // Storing group_id@group_domain
-                displayGroupNameForDb,     // Storing actual_group_name
+                displayGroupNameForDb,     // Storing group_name
                 expiresForDb?.toISOString(),
             ]);
             res.status(201).json(result.rows[0]);
@@ -179,7 +179,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
                     user_id,
                     description,
                     groupIdentifierForDb,      // Storing group_id@group_domain
-                    displayGroupNameForDb,     // Storing actual_group_name
+                    displayGroupNameForDb,     // Storing group_name
                     expiresForDb?.toISOString(),
                 ]
             );
@@ -319,7 +319,7 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
  */
 export async function updateLink(req: Request, res: Response): Promise<void> {
     const { slug } = req.params;
-    const { url, description, group_id, actual_group_name, group_domain, expires } = req.body;
+    const { url, description, group_id, group_name, group_domain, expires } = req.body;
     const userId = req.user?.sub;
 
 
@@ -350,8 +350,8 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     if (
         url === undefined &&
         description === undefined &&
-        group_id === undefined && // if group_id is undefined, actual_group_name and group_domain are also implicitly not being set for a *new* group
-        actual_group_name === undefined && // if only actual_group_name is sent, it implies changing display name of existing group
+        group_id === undefined && // if group_id is undefined, group_name and group_domain are also implicitly not being set for a *new* group
+        group_name === undefined && // if only group_name is sent, it implies changing display name of existing group
         group_domain === undefined && // if only group_domain is sent, it implies changing domain of existing group (less common)
         expires === undefined
     ) {
@@ -381,14 +381,14 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
             setClauses.push(`description = $${paramIndex++}`);
             queryParams.push(description);
         }
-        if (group_id !== undefined || actual_group_name !== undefined) { // A change related to group is intended
+        if (group_id !== undefined || group_name !== undefined) { // A change related to group is intended
             if (group_id === null) { // Frontend signals to REMOVE group association
                 setClauses.push(`group_identifier = $${paramIndex++}`);
                 queryParams.push(null); // SQL NULL for group_identifier
                 setClauses.push(`display_group_name = $${paramIndex++}`);
                 queryParams.push(null); // SQL NULL for display_group_name
             } else if (group_id && group_domain) { // Assigning or changing to a NEW group
-                const groupForErrorMessage = actual_group_name || group_id; // For user-facing errors
+                const groupForErrorMessage = group_name || group_id; // For user-facing errors
                 const targetGroupIdentifier = `${group_id}@${group_domain}`; // The id@domain identifier we want to assign
 
                 // Check if user belongs to the new mandate group if they don't have manage-all
@@ -413,8 +413,8 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 // If all permission checks pass, prepare for storage:
                 const groupIdentifierForStorage = targetGroupIdentifier; // This is id@domain
                 
-                let groupDisplayNameForStorage = actual_group_name;
-                // If frontend doesn't send actual_group_name with group_id,
+                let groupDisplayNameForStorage = group_name;
+                // If frontend doesn't send group_name with group_id,
                 // try to find the display name from the user's authenticated groups.
                 if (!groupDisplayNameForStorage) { 
                     const matchingUserGroup = userGroups.find((g:any) => g.group_id === group_id && g.group_domain === group_domain);
@@ -427,12 +427,12 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 setClauses.push(`display_group_name = $${paramIndex++}`);
                 queryParams.push(groupDisplayNameForStorage); // Stores the actual group name
 
-            } else if (actual_group_name !== undefined && group_id === undefined && group_domain === undefined) {
+            } else if (group_name !== undefined && group_id === undefined && group_domain === undefined) {
                 // This case means only the display name is being updated for the *currently associated* group.
                 // The group_identifier (id@domain) itself is not changing.
                 // The general permission check later (isOwner or hasAccessToCurrentGroup) will cover this.
                 setClauses.push(`display_group_name = $${paramIndex++}`);
-                queryParams.push(actual_group_name);
+                queryParams.push(group_name);
             }
             // Note: The old lines that set `group_name` column using `${group}@${group_domain}` should be removed
             // as we are now setting `group_identifier` and `display_group_name`.

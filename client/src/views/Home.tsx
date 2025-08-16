@@ -47,7 +47,7 @@ interface ApiError {
     message: string;
 }
 
-// Function to extract just the group name from "group_name@group_domain" format
+// Function to extract just the group name from "group_name@group_id@group_domain" format
 function extractGroupName(groupWithDomain: string | null): string {
     if (!groupWithDomain) return "Ingen grupp";
 
@@ -55,12 +55,20 @@ function extractGroupName(groupWithDomain: string | null): string {
     return parts[0] || "Okänd grupp";
 }
 
-// Function to extract just the group domain from "group_name@group_domain" format
+// Function to extract just the group name from "group_name@group_id@group_domain" format
+function extractGroupId(groupWithDomain: string | null): string {
+    if (!groupWithDomain) return "Ingen grupp";
+
+    const parts = groupWithDomain.split("@");
+    return parts[1] || "Okänd grupp";
+}
+
+// Function to extract just the group domain from "group_name@group_id@group_domain" format
 function extractGroupDomain(groupWithDomain: string | null): string {
     if (!groupWithDomain) return "Ingen grupp";
 
     const parts = groupWithDomain.split("@");
-    return parts[1] || "Okänd domän";
+    return parts[2] || "Okänd domän";
 }
 
 const Home = () => {
@@ -165,7 +173,8 @@ const Home = () => {
             url: values.url,
             user_id: userId,
             expires: expiresUtc,
-            group: values.group ? extractGroupName(values.group) : null,
+            group_name: values.group ? extractGroupName(values.group) : null,
+            group_id: values.group ? extractGroupId(values.group) : null,
             group_domain: values.group ? extractGroupDomain(values.group) : null,
             description: ""
         };
@@ -311,7 +320,7 @@ const Home = () => {
                                             onChange={(value) => form.setFieldValue('group', value)}
                                             data={
                                                 userGroups!.map(group => ({
-                                                    value: `${group.group_name}@${group.group_domain}`,
+                                                    value: `${group.group_name}@${group.group_id}@${group.group_domain}`,
                                                     label: group.group_name
                                                 }))
                                             }
