@@ -1,6 +1,6 @@
 variable "domain_name" {
   type    = string
-  default = "femto.betasektionen.se"
+  default = "femto.datasektionen.se"
 }
 
 job "femto" {
@@ -49,8 +49,8 @@ job "femto" {
 PORT={{ env "NOMAD_PORT_backend" }}
 POSTGRES_HOST=postgres.dsekt.internal
 POSTGRES_PORT=5432
-POSTGRES_DB=femto-dev
-POSTGRES_USER=femto-dev
+POSTGRES_DB=femto
+POSTGRES_USER=femto
 {{ with nomadVar "nomad/jobs/femto" }}
 POSTGRES_PASSWORD={{ .db_password }}
 OIDC_CLIENT_ID={{ .oidc_client_id }}
