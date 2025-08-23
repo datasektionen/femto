@@ -19,7 +19,6 @@ jobs:
           build-dockerfile: ./client/Dockerfile.client
           build-vars: |
             VITE_BACKEND_ROOT=https://dsekt.se
-            NODE_ENV=production
           skip-deploy: true
 
       - name: Build Backend and Deploy Both
