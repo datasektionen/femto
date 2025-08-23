@@ -1,6 +1,6 @@
 variable "domain_name" {
   type    = string
-  default = "femto.datasektionen.se"
+  default = "dsekt.se"
 }
 
 job "femto" {
