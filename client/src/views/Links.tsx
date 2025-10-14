@@ -148,7 +148,8 @@ const Links: React.FC = () => {
                 uniqueUserIds.add(link.user_id);
             }
         });
-        uniqueUserIds.forEach(userId => {
+        const sortedUserIds = [...uniqueUserIds].sort();
+        sortedUserIds.forEach(userId => {
             options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
         });
 
