@@ -12,6 +12,7 @@ const CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET || 'client-secret';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET;
 const HIVE_API_KEY = process.env.HIVE_API_KEY;
+const HIVE_API_URL = process.env.HIVE_API_URL || 'https://hive.datasektionen.se/api/v1'
 
 if (!JWT_SECRET) {
     console.error("[Startup] ❌ JWT_SECRET is not set in environment variables!");
@@ -29,7 +30,7 @@ let client: Client | null = null;
 // Initialize the OpenID client
 async function initializeClient() {
     try {
-        const issuer = await Issuer.discover(`${OIDC_ISSUER}/op/`);
+        const issuer = await Issuer.discover(`${OIDC_ISSUER}`);
         client = new issuer.Client({
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
@@ -48,7 +49,7 @@ initializeClient();
 async function fetchUserPermissions(username: string) {
     try {
         const response = await axios.get(
-            `https://hive.datasektionen.se/api/v1/user/${username}/permissions`,
+            `${HIVE_API_URL}/user/${username}/permissions`,
             {
                 headers: {
                     "Authorization": `Bearer ${HIVE_API_KEY}`
@@ -77,7 +78,7 @@ async function fetchUserMemberships(username: string) {
         }
 
         const response = await axios.get(
-            `https://hive.datasektionen.se/api/v1/tagged/link-manager/memberships/${username}`,
+            `${HIVE_API_URL}/tagged/link-manager/memberships/${username}`,
             {
                 headers: {
                     "Authorization": `Bearer ${HIVE_API_KEY}`

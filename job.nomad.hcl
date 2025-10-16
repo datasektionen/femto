@@ -58,7 +58,8 @@ OIDC_CLIENT_SECRET={{ .oidc_client_secret }}
 JWT_SECRET={{ .jwt_secret }}
 HIVE_API_KEY={{ .hive_api_token_secret }}
 {{ end }}
-OIDC_ISSUER=https://sso.datasektionen.se
+OIDC_ISSUER=https://sso.datasektionen.se/op
+HIVE_API_URL=https://hive.datasektionen.se/api/v1
 API_URL=https://${var.domain_name}
 CLIENT_URL=https://admin.${var.domain_name}
 ENV

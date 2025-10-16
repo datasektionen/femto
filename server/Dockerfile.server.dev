@@ -1,0 +1,27 @@
+# Build the Express app
+FROM node:22
+
+# Set the working directory
+WORKDIR /app
+
+RUN apt update
+RUN apt upgrade -y
+RUN apt install -y nginx
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Build TypeScript and run the server
+RUN npm run build
+
+RUN echo "nginx &" >> run.sh
+RUN echo "node dist/index.js" >> run.sh
+RUN chmod +x run.sh
+
+ENTRYPOINT ./run.sh

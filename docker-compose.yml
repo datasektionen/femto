@@ -11,14 +11,15 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile.server
+      dockerfile: Dockerfile.server.dev
     environment:
       - CLIENT_URL=http://localhost:3000
-      - HIVE_API_KEY=${HIVE_API_KEY}
-      - JWT_SECRET=${JWT_SECRET}
-      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
-      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
-      - OIDC_ISSUER=https://sso.datasektionen.se
+      - HIVE_API_URL=http://nyckeln:7004/api/v1
+      - HIVE_API_KEY=1234567890abcdefabcdef
+      - JWT_SECRET=1234567890abcdefabcdef
+      - OIDC_CLIENT_ID=client-id
+      - OIDC_CLIENT_SECRET=client-secret
+      - OIDC_ISSUER=http://localhost:7003
       - POSTGRES_PORT=5432
       - POSTGRES_HOST=db
       - POSTGRES_PASSWORD=postgres
@@ -27,6 +28,9 @@ services:
       - PORT=5000
     ports:
       - "5000:5000"
+    configs:
+    - source: nginx.conf
+      target: /etc/nginx/nginx.conf
     depends_on:
       db:
         condition: service_healthy
@@ -49,6 +53,76 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+  nyckeln:
+    image: ghcr.io/datasektionen/nyckeln-under-dorrmattan
+    configs:
+      - source: nyckeln.yaml
+        target: /config.yaml
+    ports:
+      - 7001:7001
+      - 7002:7002
+      - 7003:7003
+      - 7004:7004
 
+configs:
+  nginx.conf:
+    content: |
+      events {}
 
+      http {
+        server {
+          listen 7003;
 
+          location / {
+            proxy_pass http://nyckeln:7003;
+          }
+        }
+      }
+
+  nyckeln.yaml:
+    content: |
+      clients:
+        - id: "client-id"
+          secret: "client-secret"
+          redirect_uris:
+          - http://localhost:3000/auth/oidc-callback 
+
+      users:
+        - ug_kth_id: some-id
+          kth_id: turetek
+          email: turetek@kth.se
+          first_name: Ture
+          family_name: Teknolog
+        - ug_kth_id: some-other-id
+          kth_id: diadat
+          email: diadat@kth.se
+          first_name: Diana
+          family_name: Datalog
+
+      hive:
+        tokens:
+          - secret: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa
+            permissions:
+              - id: admin
+                scope: null
+        groups:
+          - name: Systemansvarig
+            id: d-sys
+            domain: example.com
+            members:
+              - turetek
+            tags:
+              - id: link-manager
+            permissions:
+              - id: custom-links
+              - id: manage-all
+              - id: manage-blacklist
+          - name: Näringslivsgruppen
+            id: nlg
+            domain: example.com
+            members:
+              - diadat
+            tags:
+              - id: link-manager
+            permissions:
+              - id: custom-links

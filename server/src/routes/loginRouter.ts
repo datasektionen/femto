@@ -14,7 +14,7 @@ loginRouter.get('/', (req: Request, res: Response) => {
     const callbackUrlEncoded = encodeURIComponent(frontendCallbackUrl);
 
     // Construct the authorization URL for the OIDC provider
-    const authUrl = `${oidcIssuer}/op/authorize?` +
+    const authUrl = `${oidcIssuer}/authorize?` +
         `client_id=${clientId}&` +
         `redirect_uri=${callbackUrlEncoded}&` +
         `response_type=code&` +
