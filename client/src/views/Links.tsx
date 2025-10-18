@@ -153,21 +153,27 @@ const Links: React.FC = () => {
             options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
         });
 
-        const uniqueGroups = new Set<string>();
+	const groupDisplayNames: { [id: string]: string } = {};
         linksData.forEach(link => {
             if (link.display_group_name && link.group_identifier) {
-                // Display name comes first so it's sorted first.
-                // We cannot add an array [displayName, identifier] to the set
+                // We cannot add an array [displayName, identifier] to a set
                 // because in JavaScript [1, 2] !== [1, 2] (distinct objects),
                 // meaning that duplicates would not be removed.
-                uniqueGroups.add(`${link.display_group_name};${link.group_identifier}`);
+                // We also cannot just have a string `name;id` since the name
+                // might have changed throughout the group's history, which
+                // would lead to duplicate options (same identifier).
+
+                if (!groupDisplayNames.hasOwnProperty(link.group_identifier)) {
+                    // Only set if not already set (links are sorted newest
+                    // to oldest, so if already set, it's already newest known
+                    // group display name, so we shouldn't overwrite it)
+                    groupDisplayNames[link.group_identifier] = link.display_group_name;
+                }
             }
         });
-        const sortedGroups = [...uniqueGroups].sort();
-        sortedGroups.forEach((key) => {
-            const index = key.lastIndexOf(";"); // Safe because id cannot have ;
-            const displayName = key.slice(0, index); // before separator
-            const identifier = key.slice(index + 1); // after separator
+        const sortedGroupIds = Object.keys(groupDisplayNames).sort();
+        sortedGroupIds.forEach((identifier) => {
+            const displayName = groupDisplayNames[identifier];
 
             options.push({ value: `group_${identifier}`, label: `Grupp: ${displayName}` });
         })
