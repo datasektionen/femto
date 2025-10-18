@@ -388,9 +388,9 @@ const Home = () => {
                                             {constructShortUrl(result)}
                                         </Anchor>
                                         <Group gap="md">
-					    <Button variant="filled" radius="md" href={"/links/" + result + "/details"}>
-					        Se länkdetaljer
-					    </Button>
+                                            <Button variant="filled" radius="md" href={"/links/" + result + "/details"}>
+                                                Se länkdetaljer
+                                            </Button>
                                             <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
                                                 <Button variant="light" radius="md" onClick={handleCopy}>
                                                     Kopiera länk
