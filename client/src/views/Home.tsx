@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
     Box,
     Card,
@@ -389,11 +390,11 @@ const Home = () => {
                                         </Anchor>
                                         <Group gap="md">
                                             <Button
-                                                component="a"
+                                                component={Link}
                                                 variant="filled"
                                                 style={{ color: 'white' }}
                                                 radius="md"
-                                                href={"/links/" + result + "/details"}
+                                                to={"/links/" + result + "/details"}
                                             >
                                                 Se länkdetaljer
                                             </Button>
