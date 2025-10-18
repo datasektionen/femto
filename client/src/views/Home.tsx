@@ -387,11 +387,16 @@ const Home = () => {
                                         <Anchor size="lg" href={constructShortUrl(result)} target="_blank" rel="noopener noreferrer">
                                             {constructShortUrl(result)}
                                         </Anchor>
-                                        <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
-                                            <Button variant="light" radius="md" onClick={handleCopy}>
-                                                Kopiera länk
+                                        <Group gap="md">
+                                            <Button variant="filled" radius="md" href={"/links/" + result + "/details"}>
+                                                Se länkdetaljer
                                             </Button>
-                                        </Tooltip>
+                                            <Tooltip label="Kopierat!" opened={copied} transitionProps={{ transition: 'fade', duration: 200 }}>
+                                                <Button variant="light" radius="md" onClick={handleCopy}>
+                                                    Kopiera länk
+                                                </Button>
+                                            </Tooltip>
+                                        </Group>
                                         <QRCode
                                             value={constructShortUrl(result)}
                                             size={300}
