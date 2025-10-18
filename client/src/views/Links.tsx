@@ -153,19 +153,17 @@ const Links: React.FC = () => {
             options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
         });
 
-    
+        const uniqueGroups = new Set<[string, string]>();
         linksData.forEach(link => {
-            // const groupName = extractGroupName(link.group_identifier); // OLD
-            // Use display_group_name for filter labels, and group_identifier for filter values
-            if (link.group_identifier && link.display_group_name) { // Ensure both exist
-                // Check if this group_identifier is already added to avoid duplicate filter options
-                // The value should be the identifier, the label should be the display name
-                const filterValue = `group_${link.group_identifier}`; // e.g., group_d-sys@example.com
-                if (!options.some(opt => opt.value === filterValue)) {
-                    options.push({ value: filterValue, label: `Grupp: ${link.display_group_name}` });
-                }
+            if (link.display_group_name && link.group_identifier) {
+                // Display name comes first so it's sorted first
+                uniqueGroups.add([link.display_group_name, link.group_identifier]);
             }
         });
+        const sortedGroups = [...uniqueGroups].sort();
+        sortedGroups.forEach(([displayName, identifier]) => {
+            options.push({ value: `group_${identifier}`, label: `Grupp: {displayName}` });
+        })
 
         return options;
     }, [linksData]);
