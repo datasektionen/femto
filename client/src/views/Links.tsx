@@ -162,7 +162,7 @@ const Links: React.FC = () => {
         });
         const sortedGroups = [...uniqueGroups].sort();
         sortedGroups.forEach(([displayName, identifier]) => {
-            options.push({ value: `group_${identifier}`, label: `Grupp: {displayName}` });
+            options.push({ value: `group_${identifier}`, label: `Grupp: ${displayName}` });
         })
 
         return options;
