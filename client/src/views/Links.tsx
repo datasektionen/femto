@@ -153,15 +153,22 @@ const Links: React.FC = () => {
             options.push({ value: `user_${userId}`, label: `Användare: ${userId}` });
         });
 
-        const uniqueGroups = new Set<[string, string]>();
+        const uniqueGroups = new Set<string>();
         linksData.forEach(link => {
             if (link.display_group_name && link.group_identifier) {
-                // Display name comes first so it's sorted first
-                uniqueGroups.add([link.display_group_name, link.group_identifier]);
+                // Display name comes first so it's sorted first.
+                // We cannot add an array [displayName, identifier] to the set
+                // because in JavaScript [1, 2] !== [1, 2] (distinct objects),
+                // meaning that duplicates would not be removed.
+                uniqueGroups.add(`${link.display_group_name};${link.group_identifier}`);
             }
         });
         const sortedGroups = [...uniqueGroups].sort();
-        sortedGroups.forEach(([displayName, identifier]) => {
+        sortedGroups.forEach((key) => {
+            const index = key.lastIndexOf(";"); // Safe because id cannot have ;
+            const displayName = key.slice(0, index); // before separator
+            const identifier = key.slice(index + 1); // after separator
+
             options.push({ value: `group_${identifier}`, label: `Grupp: ${displayName}` });
         })
 
