@@ -2,18 +2,22 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile.client
+      dockerfile: Dockerfile.client.dev
       args:
         - VITE_BACKEND_ROOT=http://localhost:5000
         - NODE_ENV=development
     ports:
-      - "3000:80"
+      - 3000:3000
+    volumes:
+      - type: bind
+        source: ./client/src/
+        target: /app/src
   server:
     build:
       context: ./server
       dockerfile: Dockerfile.server.dev
     environment:
-      - CLIENT_URL=http://localhost:3000
+      - CLIENT_URL=http://client:3000
       - HIVE_API_URL=http://nyckeln:7004/api/v1
       - HIVE_API_KEY=1234567890abcdefabcdef
       - JWT_SECRET=1234567890abcdefabcdef
