@@ -17,7 +17,7 @@ services:
       context: ./server
       dockerfile: Dockerfile.server.dev
     environment:
-      - CLIENT_URL=http://client:3000
+      - CLIENT_URL=http://localhost:3000
       - HIVE_API_URL=http://nyckeln:7004/api/v1
       - HIVE_API_KEY=1234567890abcdefabcdef
       - JWT_SECRET=1234567890abcdefabcdef
