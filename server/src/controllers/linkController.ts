@@ -263,10 +263,10 @@ export async function deleteLink(req: Request, res: Response): Promise<void> {
                 return; 
             }
 
-            const linkOwnerId = linkResult.rows[0].user_id;
+            const linkUserId = linkResult.rows[0].user_id;
             const linkGroupIdentifier = linkResult.rows[0].group_identifier; // This is id@domain or null
 
-            const isOwner = linkOwnerId === userId;
+            const isOwner = linkUserId === userId && linkGroupIdentifier === null;
 
             // User's group identifiers (id@domain)
             const userGroupIdentifiersForDeletion = userGroups.map((g: any) => `${g.group_id}@${g.group_domain}`);
@@ -472,10 +472,10 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
                 return;
             }
 
-            const linkOwnerId = linkResult.rows[0].user_id;
+            const linkUserId = linkResult.rows[0].user_id;
             const currentLinkGroupIdentifier = linkResult.rows[0].group_identifier; // This is id@domain or null
 
-            const isOwner = linkOwnerId === userId;
+            const isOwner = linkUserId === userId && currentLinkGroupIdentifier === null;
             
             // User's group identifiers (id@domain)
             const userGroupIdentifiersForQuery = userGroups.map((g:any) => `${g.group_id}@${g.group_domain}`);
@@ -600,22 +600,13 @@ export async function getAllLinks(req: Request, res: Response): Promise<void> {
                 .filter((identifier): identifier is string => identifier !== null);
             console.log("[Link] getAllLinks: Parsed userGroupIdentifiers for query:", userGroupIdentifiers);
 
-            if (userGroupIdentifiers.length > 0) {
-                query = `
-                  SELECT ${selectColumns} FROM urls 
-                  WHERE user_id = $1 
-                  OR group_identifier = ANY($2::text[])
-                  ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST
-                `;
-                queryParams = [userId, userGroupIdentifiers];
-            } else {
-                query = `
-                  SELECT ${selectColumns} FROM urls 
-                  WHERE user_id = $1
-                  ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST
-                `;
-                queryParams = [userId];
-            }
+            query = `
+              SELECT ${selectColumns} FROM urls
+              WHERE user_id = $1 AND group_identifier IS NULL
+              OR group_identifier = ANY($2::text[])
+              ORDER BY date DESC NULLS LAST, expires DESC NULLS LAST
+            `;
+            queryParams = [userId, userGroupIdentifiers];
             console.log("[Link] getAllLinks: Non-admin query:", query);
             console.log("[Link] getAllLinks: Non-admin queryParams:", queryParams);
         }
