@@ -7,8 +7,6 @@ import {
     Title,
     TextInput,
     Alert,
-    Radio,
-    RadioGroup,
     Select,
     Center,
     Tooltip,
@@ -38,8 +36,7 @@ const copyShortUrlToClipboard = (slug: string) => navigator.clipboard.writeText(
 interface FormValues {
     url: string;
     short: string;
-    expire: string;         // This will hold the actual date
-    hasExpiration: boolean; // New toggle field
+    expire: string;
     group: string | null;
 }
 
@@ -110,24 +107,19 @@ const Home = () => {
             url: "",
             short: "",
             expire: "",
-            hasExpiration: false,
             group: null,
         },
         validate: {
             url: (value) =>
                 urlRegex.test(value) ? null : "Ogiltig URL. Ska inkludera http:// eller https://",
             short: (value) => slugRegex.test(value) ? null : "Ogiltig sökväg. Endast små bokstäver, siffror och bindestreck är tillåtna.",
-            expire: (value, values) => {
-                // Validate date only if expiration is enabled
-                if (values.hasExpiration) {
-                    if (new Date(value) < new Date(minDateTimeLocal())) {
-                        return "Utgångsdatum kan inte vara i det förflutna";
-                    }
-                    if (!value) {
-                        return "Vänligen välj ett utgångsdatum";
-                    }
+            expire: (value) => {
+                if (new Date(value) < new Date(minDateTimeLocal())) {
+                    return "Utgångsdatum kan inte vara i det förflutna";
                 }
-                return null;
+                if (!value) {
+                    return "Vänligen välj ett utgångsdatum";
+                }
             }
         },
     });
@@ -165,9 +157,7 @@ const Home = () => {
             return;
         }
 
-        const expiresUtc = values.hasExpiration
-            ? new Date(values.expire).toISOString()
-            : null;
+        const expiresUtc = new Date(values.expire).toISOString();
 
         const data = {
             slug: values.short || "",
@@ -329,34 +319,16 @@ const Home = () => {
                                         />
                                     )}
 
-                                    {/* Optional expiration toggle */}
-                                    <RadioGroup
-                                        label="Utgångsdatum"
-                                        value={form.values.hasExpiration ? "yes" : "no"}
-                                        onChange={(value) => {
-                                            form.setFieldValue('hasExpiration', value === 'yes');
-                                            // Clear the expire field if disabled
-                                            if (value === 'no') form.setFieldValue('expire', '');
-                                        }}
-                                    >
-                                        <Group gap="md">
-                                            <Radio value="yes" label="Ja" disabled={fetching || !hasToken} />
-                                            <Radio value="no" label="Nej" disabled={fetching || !hasToken} />
-                                        </Group>
-                                    </RadioGroup>
-
                                     {/* Expiration date/time input if enabled */}
-                                    {form.values.hasExpiration && (
-                                        <TextInput
-                                            radius="md"
-                                            type="datetime-local"
-                                            label="Välj datum och tid"
-                                            {...form.getInputProps("expire")}
-                                            min={minDateTimeLocal()}
-                                            withAsterisk
-                                            disabled={fetching || !hasToken}
-                                        />
-                                    )}
+                                    <TextInput
+                                        radius="md"
+                                        type="datetime-local"
+                                        label="Välj datum och tid"
+                                        {...form.getInputProps("expire")}
+                                        min={minDateTimeLocal()}
+                                        withAsterisk
+                                        disabled={fetching || !hasToken}
+                                    />
 
                                     {/* Submit Button */}
                                     <Button
