@@ -65,7 +65,7 @@ const Links: React.FC = () => {
     const [filter, setFilter] = useState<string>("newest-oldest"); // For sorting
     const [propertyFilter, setPropertyFilter] = useState<string>("all"); // New state for property filtering
     const [activePage, setActivePage] = useState(1);
-    const itemsPerPage = 5;
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const { hasToken } = useAuth(); // Get authentication state from your auth context
     const iconSize = 22; // Define icon size for consistency
     const badgeIconSize = 14; // Define badge icon size for consistency
@@ -396,6 +396,22 @@ const Links: React.FC = () => {
                                 setActivePage(1); // Reset pagination when filter changes
                             }}
                             data={propertyFilterOptions}
+                            radius="lg"
+                        />
+
+                        <Select
+                            label="Länkar/sida"
+                            value={`${itemsPerPage}`}
+                            onChange={(value) => {
+                                setItemsPerPage(value);
+                                setActivePage(1);
+                            }}
+                            data={[
+                                { value: "10", label: "10" },
+                                { value: "20", label: "20" },
+                                { value: "50", label: "50" },
+                                { value: "65537", label: "65537" },
+                            ]}
                             radius="lg"
                         />
                     </Group>
