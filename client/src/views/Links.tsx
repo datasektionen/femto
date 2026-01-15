@@ -403,7 +403,7 @@ const Links: React.FC = () => {
                             label="Länkar/sida"
                             value={`${itemsPerPage}`}
                             onChange={(value) => {
-                                setItemsPerPage(value);
+                                setItemsPerPage(parseInt(value ?? "5"));
                                 setActivePage(1);
                             }}
                             data={[
