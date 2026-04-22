@@ -18,7 +18,7 @@ loginRouter.get('/', (req: Request, res: Response) => {
         `client_id=${clientId}&` +
         `redirect_uri=${callbackUrlEncoded}&` +
         `response_type=code&` +
-        `scope=openid profile email pls_*`;
+        `scope=openid profile email`;
 
     // Send HTTP 302 Redirect
     res.redirect(authUrl);
