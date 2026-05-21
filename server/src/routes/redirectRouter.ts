@@ -38,7 +38,7 @@ redirectRouter.get("/", (req, res) => {
 redirectRouter.get("/:slug", async (req: any, res: any) => {
     // Använd any för att undvika typfel, kan förbättras senare (detta är korkat eftersom vi har en typ för req och res i express)
 
-    const slug = req.params.slug;
+    const slug = req.params.slug.toLowerCase(); // Gör slug till gemener för att säkerställa att det är case-insensitive
     const userAgent = req.get("User-Agent");
     const acceptLanguage = req.get("Accept-Language") || "en-US,en;q=0.9";
 
