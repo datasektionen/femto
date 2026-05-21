@@ -288,6 +288,18 @@ const Home = () => {
                                         required
                                         {...form.getInputProps("url")}
                                         disabled={fetching || !hasToken}
+                                        onBlur={(event) => {
+                                            let value = event.currentTarget.value.trim();
+
+                                            if (
+                                                value &&
+                                                !value.startsWith("http://") &&
+                                                !value.startsWith("https://")
+                                            ) {
+                                                value = `https://${value}`;
+                                                form.setFieldValue("url", value);
+                                            }
+                                        }}
                                     />
 
                                     {/* Optional short link slug */}
