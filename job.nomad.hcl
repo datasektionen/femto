@@ -68,7 +68,7 @@ ENV
       }
 
       resources {
-        memory = 256
+        memory = 64
         cpu    = 100
       }
     }
@@ -79,6 +79,10 @@ ENV
       config {
         image = var.admin_image_tag
         ports = ["admin-frontend"]
+      }
+
+      resources {
+        memory = 16
       }
     }
   }
