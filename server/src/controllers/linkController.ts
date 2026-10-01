@@ -95,23 +95,16 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         }
     }
 
-
-    // Function to encode an ID to a slug, tested for uniqueness up to 1 million
-    function encodeId(id: number): string {
-        if (id < 0) throw new Error('ID must be non-negative');
-
-        const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789'; // Avoid 'o'='0' and 'l'='1' to prevent confusion
-        const base = alphabet.length;
+    // Utility function to generate a random slug of specified length
+    function generateSlug(length = 4): string {
+        const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
 
         let slug = '';
-        let current = id;
+        for (let i = 0; i < length; i++) {
+            slug += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
 
-        do {
-            slug = alphabet[current % base] + slug;
-            current = Math.floor(current / base);
-        } while (current > 0);
-
-        return slug.padStart(4, alphabet[0]); // pad with 'a' to length 4
+        return slug;
     }
 
     // Checks if a slug is already in the database.
@@ -184,7 +177,10 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
                 ]
             );
             const newId = idResult.rows[0].id;
-            const generatedSlug = encodeId(newId);
+            let generatedSlug = generateSlug();
+            while (await checkSlug(generatedSlug)) {
+                generatedSlug = generateSlug();
+            }
 
             await client.query("UPDATE urls SET slug = $1 WHERE id = $2", [generatedSlug, newId]);
 
