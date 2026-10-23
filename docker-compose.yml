@@ -8,10 +8,20 @@ services:
         - NODE_ENV=development
     ports:
       - 3000:3000
-    volumes:
-      - type: bind
-        source: ./client/src/
-        target: /app/src
+    develop:
+      watch:
+        - action: sync
+          path: ./client/src
+          target: /app/src
+
+        - action: rebuild
+          path: ./client/package.json
+
+        - action: rebuild
+          path: ./client/package-lock.json
+
+        - action: rebuild
+          path: ./client/Dockerfile.client.dev
   server:
     build:
       context: ./server
@@ -38,6 +48,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+        
+    develop:
+      watch:
+        - action: sync
+          path: ./server/src
+          target: /app/src
+
+        - action: rebuild
+          path: ./server/package.json
+
+        - action: rebuild
+          path: ./server/package-lock.json
+
+        - action: rebuild
+          path: ./server/Dockerfile.server.dev
   db:
     image: postgres:15
     container_name: postgres
