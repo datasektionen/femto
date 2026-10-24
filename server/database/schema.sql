@@ -9,8 +9,10 @@ CREATE TABLE IF NOT EXISTS urls (
     expires TIMESTAMPTZ DEFAULT NULL,     -- UTC timestamp
     description TEXT,
     group_identifier VARCHAR(255),
-    display_group_name VARCHAR(255), 
-    clicks BIGINT DEFAULT 0
+    display_group_name VARCHAR(255),
+    clicks BIGINT DEFAULT 0,
+    image BYTEA DEFAULT NULL,
+    image_type VARCHAR(50) DEFAULT NULL
 );
 
 -- Table to store URL clicks
