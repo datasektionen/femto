@@ -1,10 +1,33 @@
 import { Router } from 'express';
-import { deleteLink, updateLink, getLinkStats, getAllLinks, getLink, insertLink, getLangstats } from '../controllers/linkController';
+import {
+    deleteLink,
+    updateLink,
+    getLinkStats,
+    getAllLinks,
+    getLink,
+    insertLink,
+    getLangstats,
+    getLinkImage } from '../controllers/linkController';
 import { verifyCode, getUserData } from '../controllers/authController';
 import { getAPIStatus } from '../controllers/statusController';
 import { blacklistFile } from '../controllers/blacklistController';
 import { jwtAuth } from '../middlewares/jwtAuthMiddleware';
 import { upload, MulterRequest } from '../controllers/blacklistController';
+import multer from 'multer';
+
+const imageUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 25 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb) => {
+        if (['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PNG, JPEG and WebP images are allowed'));
+        }
+    }
+});
 
 /**
  * Router for API endpoints.
@@ -51,7 +74,7 @@ apiRouter.get('/auth/user-data', getUserData);
  * Requires authentication.
  * Delegates the request handling to the insertLink controller.
  */
-apiRouter.post('/links', async (req, res) => { insertLink(req, res); });
+apiRouter.post('/links', imageUpload.single('image'), insertLink);
 
 /**
  * GET /api/links
@@ -68,6 +91,12 @@ apiRouter.get('/links', async (req, res) => { getAllLinks(req, res); });
  * Delegates the request handling to the getLink controller.
  */
 apiRouter.get('/links/:slug', async (req, res) => { getLink(req, res); });
+
+/**
+ * GET /api/links/:slug/image
+ * Retrieves the custom QR-code image for a link.
+ */
+apiRouter.get('/links/:slug/image', getLinkImage);
 
 /**
  * DELETE /api/links/:slug

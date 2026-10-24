@@ -261,6 +261,7 @@ const LinkDetails: React.FC = () => {
     const [error, setError] = useState<string | null>(null); // General error messages for the page
     const [errorLang, setErrorLang] = useState<string | null>(null); // Error messages specific to language stats
     const [editing, setEditing] = useState(false); // Toggles between display and edit mode for link details
+    const [qrImage, setQrImage] = useState<string | null>(null);
     const iconSize = 20; // Standard size for icons
 
     /**
@@ -440,6 +441,33 @@ const LinkDetails: React.FC = () => {
             console.log("[Auth] ℹ️ Current link group (extracted):", extractGroupName(linkDetails.group_identifier));
         }
     }, [userGroups, groups, linkDetails]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        let objectUrl: string | null = null;
+        let cancelled = false;
+
+        api.get(`/api/links/${id}/image`, {
+            responseType: "blob",
+        })
+        .then((response) => {
+            if (cancelled) return;
+
+            objectUrl = URL.createObjectURL(response.data);
+            setQrImage(objectUrl);
+        })
+        .catch((error) => {
+            if (!cancelled && error.response?.status !== 404) {
+                console.error("Failed to fetch QR image:", error);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [id]);
 
     /**
      * Handles saving changes made to the link details via the form.
@@ -863,7 +891,7 @@ const LinkDetails: React.FC = () => {
                                     value={`${Configuration.backendApiUrl}/${linkDetails.slug}`}
                                     size={300}
                                     ecLevel="H"
-                                    logoImage="/logo.svg"
+                                    logoImage={qrImage || "/logo.svg"}
                                     logoWidth={100}
                                 />
                             </Group>

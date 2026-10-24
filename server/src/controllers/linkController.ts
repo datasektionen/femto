@@ -23,6 +23,9 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         expires: expiresString,
     } = req.body;
 
+    const image = req.file?.buffer ?? null;
+    const image_type = req.file?.mimetype ?? null;
+
     //check if url is empty or only contains protocol
     if (!url || /^https?:\/\/$/i.test(url.trim())) {
         console.warn(`[Link] ❌ URL is empty or only contains protocol`);
@@ -140,8 +143,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         let client;
         try {
             client = await pool.connect();
-            const query = `INSERT INTO urls (slug, url, user_id, description, group_identifier, display_group_name, expires) 
-                           VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz) RETURNING *`;
+            const query = `INSERT INTO urls (slug, url, user_id, description, group_identifier, display_group_name, expires, image, image_type) 
+                           VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8, $9) RETURNING *`;
             const result = await client.query(query, [
                 slug,
                 url,
@@ -150,6 +153,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
                 groupIdentifierForDb,      // Storing group_id@group_domain
                 displayGroupNameForDb,     // Storing group_name
                 expiresForDb?.toISOString(),
+                image,
+                image_type
             ]);
             res.status(201).json(result.rows[0]);
         } catch (err: any) {
@@ -166,7 +171,7 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
         try {
             client = await pool.connect();
             const idResult = await client.query(
-                "INSERT INTO urls (url, user_id, description, group_identifier, display_group_name, expires) VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING id",
+                "INSERT INTO urls (url, user_id, description, group_identifier, display_group_name, expires, image, image_type) VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7, $8) RETURNING id",
                 [
                     url,
                     user_id,
@@ -174,6 +179,8 @@ export async function insertLink(req: Request, res: Response): Promise<void> {
                     groupIdentifierForDb,      // Storing group_id@group_domain
                     displayGroupNameForDb,     // Storing group_name
                     expiresForDb?.toISOString(),
+                    image,
+                    image_type
                 ]
             );
             const newId = idResult.rows[0].id;
@@ -318,8 +325,7 @@ export async function updateLink(req: Request, res: Response): Promise<void> {
     const { url, description, group_id, group_name, group_domain, expires } = req.body;
     const userId = req.user?.sub;
 
-
-
+    console.log(`[Link] updateLink: Received request to update link ${slug} by user ${userId}`);
     //check if url is empty or only contains protocol
     if (!url || /^https?:\/\/$/i.test(url.trim())) {
         console.warn(`[Link] ❌ URL is empty or only contains protocol`);
@@ -660,6 +666,41 @@ export async function getLink(req: Request, res: Response): Promise<void> {
         if (client) {
             client.release();
         }
+    }
+}
+
+/**
+ * GET /api/links/:slug/image
+ * Retrieves the custom QR-code image for a link.
+ */
+export async function getLinkImage(req: Request, res: Response): Promise<void> {
+    const { slug } = req.params;
+
+    try {
+        const result = await pool.query(
+            "SELECT image, image_type FROM urls WHERE slug = $1",
+            [slug]
+        );
+
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: "Link not found" });
+            return;
+        }
+
+        const { image, image_type } = result.rows[0];
+
+        if (!image) {
+            res.status(404).json({ error: "No custom image for this link" });
+            return;
+        }
+
+        res.setHeader("Content-Type", image_type);
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        res.send(image);
+
+    } catch (err: any) {
+        console.error(`[Link] Error retrieving image for ${slug}`, err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 }
 

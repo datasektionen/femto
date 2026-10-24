@@ -4,6 +4,7 @@ import {
     Box,
     Card,
     Button,
+    FileInput,
     Title,
     TextInput,
     Alert,
@@ -38,6 +39,8 @@ interface FormValues {
     short: string;
     expire: string;
     group: string | null;
+    image: File | null;
+    image_type: string | null;
 }
 
 interface ApiError {
@@ -83,6 +86,15 @@ const Home = () => {
     const [error, setError] = useState<ApiError | null>(null);
     const [result, setResult] = useState("");
     const [copied, setCopied] = useState(false);
+    const [resultImage, setResultImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (resultImage) {
+                URL.revokeObjectURL(resultImage);
+            }
+        };
+    }, [resultImage]);
 
     // Create a ref to the result section
     const resultRef = useRef<HTMLDivElement>(null);
@@ -108,6 +120,8 @@ const Home = () => {
             short: "",
             expire: "",
             group: null,
+            image: null,
+            image_type: null
         },
         validate: {
             url: (value) =>
@@ -158,30 +172,39 @@ const Home = () => {
         }
 
         const expiresUtc = new Date(values.expire).toISOString();
+        const formData = new FormData();
 
-        const data = {
-            slug: values.short || "",
-            url: values.url,
-            user_id: userId,
-            expires: expiresUtc,
-            group_name: values.group ? extractGroupName(values.group) : null,
-            group_id: values.group ? extractGroupId(values.group) : null,
-            group_domain: values.group ? extractGroupDomain(values.group) : null,
-            description: ""
-        };
+        formData.append("slug", values.short || "");
+        formData.append("url", values.url);
+        formData.append("user_id", userId);
+        formData.append("expires", expiresUtc);
 
-        console.log("[Link] ℹ️ Submitting link with data:", data);
+        if (values.group) {
+            formData.append("group_name", extractGroupName(values.group));
+            formData.append("group_id", extractGroupId(values.group));
+            formData.append("group_domain", extractGroupDomain(values.group));
+        }
+
+        formData.append("description", "");
+
+        if (values.image) {
+            formData.append("image", values.image);
+            formData.append("image_type", values.image_type || "");
+        }
+
+        console.log("[Link] ℹ️ Submitting link with data:", formData);
+        console.log("[Link] ℹ️ Submitting link with data.entries:", [...formData.entries()]);
         console.log("[Link] ℹ️ Local time selected:", values.expire);
-        console.log("[Link] ℹ️ Converted to UTC:", data.expires);
-
+        console.log("[Link] ℹ️ Converted to UTC:", expiresUtc);
+        console.log("Form values:", values);
+        console.log("FormData entries:", Array.from(formData.entries()));
         try {
             const response = await fetch(`${Configuration.backendApiUrl}/api/links`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify(data),
+                body: formData, // <-- data sent here
             });
 
             // read raw text first, then try JSON.parse, else wrap into an object
@@ -225,6 +248,7 @@ const Home = () => {
             const slug = resData.slug || resData.short || resData.url;
             if (!slug) throw new Error("No valid slug returned");
 
+            setResultImage(values.image ? URL.createObjectURL(values.image) : null);
             setResult(slug);
             form.reset();
         } catch (err: any) {
@@ -342,6 +366,25 @@ const Home = () => {
                                         disabled={fetching || !hasToken}
                                     />
 
+                                    {/* Optional image upload */}
+                                    <FileInput
+                                        radius="md"
+                                        label="Ladda upp en bild (valfritt, standard är Dataskölden)"
+                                        placeholder="Välj en bild"
+                                        accept="image/*"
+                                        clearable
+                                        value={form.values.image}
+                                        onChange={(file: { type: any; }) => {
+                                            form.setFieldValue("image", file);
+                                            if (file) {
+                                                const fileType = file.type;
+                                                form.setFieldValue("image_type", fileType);
+                                            } else {
+                                                form.setFieldValue("image_type", "");
+                                            }}}
+                                        disabled={fetching || !hasToken}
+                                    />
+
                                     {/* Submit Button */}
                                     <Button
                                         radius="md"
@@ -392,7 +435,7 @@ const Home = () => {
                                             value={constructShortUrl(result)}
                                             size={300}
                                             ecLevel="H"
-                                            logoImage="/logo.svg"
+                                            logoImage={resultImage || "/logo.svg"}
                                             logoWidth={100}
                                         />
                                     </Stack>

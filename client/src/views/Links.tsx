@@ -284,10 +284,30 @@ const Links: React.FC = () => {
         setLinksData((prevLinks) => prevLinks.filter((link) => link.slug !== slug));
     };
 
-    const handleQRCode = async (slug: string): Promise<void> => {
+    const handleQRCode = async (link: Link): Promise<void> => { // Accept the entire link object
         const canvas = document.createElement("canvas");
-        const logoSrc = "/logo.svg"; // Corresponds to QRCode component's logoImage prop
-        const url = `${Configuration.backendApiUrl}/${slug}`; // Corresponds to QRCode component's value prop
+        let logoSrc = "/logo.svg";
+        let imageObjectUrl: string | null = null;
+
+        try {
+            const response = await api.get(
+                `/api/links/${link.slug}/image`,
+                {
+                    responseType: "blob",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            imageObjectUrl = URL.createObjectURL(response.data);
+            logoSrc = imageObjectUrl;
+        } catch (error) {
+            if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+                console.error("Failed to fetch QR image:", error);
+            }
+        }
+        const url = `${Configuration.backendApiUrl}/${link.slug}`; // Corresponds to QRCode component's value prop
 
         const qrCanvasSize = 300; // Corresponds to QRCode component's size prop
         const errorCorrectionLevel = "H"; // Corresponds to QRCode component's ecLevel prop
@@ -309,23 +329,37 @@ const Links: React.FC = () => {
         if (!ctx) return;
 
         const logo = new Image();
-        logo.crossOrigin = "anonymous"; // Recommended for loading images, especially if they could be external
+
         logo.onload = () => {
-            // Calculate top-left coordinates to center the logo and its background
             const logoX = (canvas.width - logoDisplaySize) / 2;
             const logoY = (canvas.height - logoDisplaySize) / 2;
 
-            // Draw logo centered, scaled to logoDisplaySize x logoDisplaySize
-            // This will stretch the logo if it's not square.
-            ctx.drawImage(logo, logoX, logoY, logoDisplaySize, logoDisplaySize);
+            ctx.drawImage(
+                logo,
+                logoX,
+                logoY,
+                logoDisplaySize,
+                logoDisplaySize
+            );
 
-            // Trigger download
-            const link = document.createElement("a");
-            link.href = canvas.toDataURL("image/png");
-            link.download = `${slug}.png`;
-            link.click();
+            const downloadLink = document.createElement("a");
+            downloadLink.href = canvas.toDataURL("image/png");
+            downloadLink.download = `${link.slug}.png`;
+            downloadLink.click();
+
+            if (imageObjectUrl) {
+                URL.revokeObjectURL(imageObjectUrl);
+            }
         };
-        logo.src = logoSrc; // Start loading the logo image
+
+        logo.onerror = () => {
+            if (imageObjectUrl) {
+                URL.revokeObjectURL(imageObjectUrl);
+            }
+            console.error("Failed to load QR logo");
+        };
+
+        logo.src = logoSrc;
     };
 
     function stringToHexColor(str: string | null | undefined, brightness = 1): string {
@@ -534,7 +568,7 @@ const Links: React.FC = () => {
                                                     size="sm"
                                                     variant="light"
                                                     radius="md"
-                                                    onClick={() => handleQRCode(link.slug)}
+                                                    onClick={() => handleQRCode(link)}
                                                 >
                                                     <IconQrcode size={iconSize} />
                                                 </Button>
